@@ -119,3 +119,23 @@ int main()
         2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
         3. Edit properties via CMake GUI or command line
 
+### Dependencies:
+
+No external library dependencies, only standard library is used.
+
+- Common dependencies
+    - `#include <string>`
+    - `#include <stack>`
+- ssLOG_THREAD_SAFE
+    - `#include <unordered_map>`
+    - `#include <thread>`
+    - `#include <mutex>`
+- ssLOG_LOG_TO_FILE
+    - True: `#include <fstream>`
+    - False: `#include <iostream>`
+- ssLOG_SHOW_FILE_NAME
+    - `#include <ctime>`
+- ssLOG_SHOW_TIME
+    - `#include <chrono>`
+    - `#include <sstream>`
+    - `#include <iomanip>`
