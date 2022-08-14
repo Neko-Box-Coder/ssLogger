@@ -30,3 +30,18 @@
 *.exe
 *.out
 *.app
+
+# vscode
+.vscode/
+
+# IDE
+.editorconfig
+
+# Build folder
+build/
+
+# Cache
+.cache/
+
+# Language server
+compile_commands.json
