@@ -1,7 +1,9 @@
 #ifndef ssLOG
 #define ssLOG
 
-#include "ssLogger/ssLogSwitches.hpp"
+#ifndef ssLOG_USE_SOURCE
+    #include "ssLogger/ssLogSwitches.hpp"
+#endif
 
 #include <string>
 #include <stack>
@@ -28,6 +30,7 @@
 
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
+    #include <ctime>
     extern std::ofstream LogFileStream;
 
     #define ssLOG_SIMPLE(x)\
@@ -46,7 +49,6 @@
 
 
 #if ssLOG_SHOW_FILE_NAME
-    #include <ctime>
     #define GET_FILE_NAME()\
     []()\
     {\
@@ -78,6 +80,7 @@
     #include <chrono>
     #include <sstream>
     #include <iomanip>
+    #include <ctime>
     #define GET_TIME()\
     []()\
     {\
@@ -171,12 +174,12 @@
 
     #define ssLOG_LINE_0()\
     {\
-        ssLOG_SIMPLE(GET_FUNCTION_NAME_0()<<GET_FILE_NAME()<<GET_LINE_NUM());\
+        THREAD_SAFE_OP(ssLOG_SIMPLE(GET_TIME()<<GET_FUNCTION_NAME_0()<<GET_FILE_NAME()<<GET_LINE_NUM()));\
     }
 
     #define ssLOG_LINE_1(debugText)\
     {\
-        ssLOG_SIMPLE(GET_FUNCTION_NAME_0()<<GET_FILE_NAME()<<GET_LINE_NUM()<<": ["<<debugText<<"]");\
+        THREAD_SAFE_OP(ssLOG_SIMPLE(GET_TIME()<<GET_FUNCTION_NAME_0()<<GET_FILE_NAME()<<GET_LINE_NUM()<<": ["<<debugText<<"]"));\
     }
 #else    
     inline std::string TabAdder(int tabAmount, bool tree = false)

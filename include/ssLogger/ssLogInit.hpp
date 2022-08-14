@@ -23,11 +23,13 @@
     std::unordered_map<std::thread::id, ThreadLogInfo> ssLogInfoMap = std::unordered_map<std::thread::id, ThreadLogInfo>();
     std::thread::id ssLastThreadID = std::thread::id();
     std::mutex ssLogMutex;
-
 #else
-
     int ssTabSpace = 0;
     std::stack<std::string> ssFuncNameStack = std::stack<std::string>();
+#endif
 
+#if ssLOG_LOG_TO_FILE
+    #include <fstream>
+    std::ofstream LogFileStream = std::ofstream();
 #endif
 #endif

@@ -131,11 +131,10 @@ No external library dependencies, only standard library is used.
     - `#include <thread>`
     - `#include <mutex>`
 - ssLOG_LOG_TO_FILE
-    - True: `#include <fstream>`
+    - True: `#include <fstream>`, `#include <ctime>`
     - False: `#include <iostream>`
-- ssLOG_SHOW_FILE_NAME
-    - `#include <ctime>`
 - ssLOG_SHOW_TIME
     - `#include <chrono>`
     - `#include <sstream>`
     - `#include <iomanip>`
+    - `#include <ctime>`
