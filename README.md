@@ -33,6 +33,8 @@ ssLOG_LINE("Here's some value: "<<someValue);
 
 ### Logging a function:
 ```c++
+//Functions are only logged when ssLOG_CALL_STACK is true
+
 void A()
 {
     ssLOG_LINE("Function A content logged");
@@ -65,6 +67,8 @@ int main()
 ### Alternatively:
 
 ```c++
+//Again, functions are only logged when ssLOG_CALL_STACK is true
+
 //Wrap function with ssLOG_FUNC_ENTRY and ssLOG_FUNC_EXIT
 void B()
 {
