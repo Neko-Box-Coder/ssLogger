@@ -24,7 +24,7 @@ set(ssLOG_SHOW_TIME "ON" CACHE BOOL "Show log time for all logged functions")
 set(ssLOG_THREAD_SAFE "ON" CACHE BOOL "Use std::thread and ensure thread safety for all logged functions")
 set(ssLOG_LOG_TO_FILE "OFF" CACHE BOOL "Log to file instead for all logged functions")
 
-set(ssLOG_INCLUDE_LOCATION "${PROJECT_SOURCE_DIR}/../include")
+set(ssLOG_INCLUDE_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 
 #Find shared libraries in the same location as the executable
@@ -34,14 +34,14 @@ set(ssLOG_INCLUDE_LOCATION "${PROJECT_SOURCE_DIR}/../include")
 # ==========================================================
 # ssLogger for external use
 # ==========================================================
-if("${USE_SOURCE}")
+if("${ssLOG_USE_SOURCE}")
     if("${ssLOG_OUTPUT_STATIC}")
         add_library(ssLogger STATIC 
-        "${PROJECT_SOURCE_DIR}/ssLogInit.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/ssLogInit.cpp"
         )
     else()
         add_library(ssLogger SHARED
-        "${PROJECT_SOURCE_DIR}/ssGUI/ssLogInit.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/ssLogInit.cpp"
         )
     endif()
 
@@ -121,7 +121,7 @@ if(${ssLOG_BUILD_TESTS})
 
     # Build the library for testing
     add_library(ssLogger_SRC STATIC 
-        "${PROJECT_SOURCE_DIR}/ssLogInit.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/ssLogInit.cpp"
     )
     # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
     target_include_directories(ssLogger_SRC PUBLIC "${ssLOG_INCLUDE_LOCATION}")
@@ -148,7 +148,7 @@ if(${ssLOG_BUILD_TESTS})
     # ==========================================================
 
     # Get all cpp test files
-    file(GLOB TEST_CPP_FILES "${PROJECT_SOURCE_DIR}/headerOnlyTests/*cpp")
+    file(GLOB TEST_CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/headerOnlyTests/*cpp")
 
     foreach(CUR_SOURCE_PATH ${TEST_CPP_FILES})
         # Get the file name without path and extension
@@ -162,7 +162,7 @@ if(${ssLOG_BUILD_TESTS})
         target_link_libraries("${EXECUTABLE_NAME}_hdo" PUBLIC ssLogger_HEAD)
 
         # Sub-directory for build
-        set_target_properties("${EXECUTABLE_NAME}_hdo" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/headerOnlyTests/${EXECUTABLE_NAME}")
+        set_target_properties("${EXECUTABLE_NAME}_hdo" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/headerOnlyTests/${EXECUTABLE_NAME}")
 
     endforeach(CUR_SOURCE_PATH "${TEST_CPP_FILES}")
 
@@ -172,7 +172,7 @@ if(${ssLOG_BUILD_TESTS})
 
     # Get all cpp test files
     set(TEST_CPP_FILES "" STRING)
-    file(GLOB TEST_CPP_FILES "${PROJECT_SOURCE_DIR}/sourceTests/*cpp")
+    file(GLOB TEST_CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/sourceTests/*cpp")
 
     foreach(CUR_SOURCE_PATH ${TEST_CPP_FILES})
         # Get the file name without path and extension
@@ -187,7 +187,7 @@ if(${ssLOG_BUILD_TESTS})
         target_link_libraries("${EXECUTABLE_NAME}_src" PUBLIC ssLogger_SRC)
 
         # Sub-directory for build
-        set_target_properties("${EXECUTABLE_NAME}_src" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/sourceTests/${EXECUTABLE_NAME}")
+        set_target_properties("${EXECUTABLE_NAME}_src" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/sourceTests/${EXECUTABLE_NAME}")
 
     endforeach(CUR_SOURCE_PATH "${TEST_CPP_FILES}")
 

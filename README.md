@@ -31,17 +31,18 @@ int someValue = 42;
 ssLOG_LINE("Here's some value: "<<someValue);
 ```
 
-### Logging a function:
+### Logging functions call stack (*inline macro*):
 ```c++
-//Functions are only logged when ssLOG_CALL_STACK is true
+//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
 void A()
 {
-    ssLOG_LINE("Function A content logged");
+    //...
 }
 
 int B()
 {
+    //...
     return 42;
 }
 
@@ -50,31 +51,31 @@ int main()
     // Or without space
     ssLOG_FUNC( A() );
     
-    // You can log 1 or more statements too!
     ssLOG_FUNC( int retVal = B() );
 
-    // Or you can format it like this
-    // ssLOG_FUNC
-    // (
-    //     int retVal = B();
-    // );
+    // Or you can format it like this to log more than 1 statements!
+    ssLOG_FUNC
+    (
+         int retVal = B();
+         // Some other statements...
+    );
 
     return 0;
 }
 
 ```
 
-### Alternatively:
+### Logging functions call stack (*With wrapper macros*):
 
 ```c++
-//Again, functions are only logged when ssLOG_CALL_STACK is true
+//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
 //Wrap function with ssLOG_FUNC_ENTRY and ssLOG_FUNC_EXIT
 void B()
 {
     ssLOG_FUNC_ENTRY();
 
-    ssLOG_LINE("Function B content logged");
+    //...
     
     ssLOG_FUNC_EXIT();
 }
@@ -84,44 +85,43 @@ int C(bool b)
 {
     ssLOG_FUNC_ENTRY();
     
-    ssLOG_LINE("Function C content logged");
+    //...
+
     if(b)
     {
         ssLOG_FUNC_EXIT();
         return 42;
     }
 
+    //...
+
     ssLOG_FUNC_EXIT();
     return 43;
 }
 
-int main()
+//You can also have custom names for functions as well, which is useful for lambda functions.
+auto lambda = []()
 {
-    B();
-    C();
+    ssLOG_FUNC_ENTRY("My lambda function");
 
-    //You can also have custom names for functions as well.
-    auto lambda = []()
-    {
-        ssLOG_FUNC_ENTRY("Custom lambda");
-        ssLOG_FUNC_EXIT("Custom lambda");
-    };
+    //...
 
-    return 0;
-}
+    ssLOG_FUNC_EXIT("My lambda function");
+};
 ```
 
 ### How to use:
 1. Clone this repository
 2. Decide if you want to use this with header-only or with source
     - Header only:
-        1. Include `ssLogger/include/ssLog.hpp` to your header(s)
-        2. Include `ssLogger/include/ssLogInit.hpp` to your entry point **ONCE**
-        3. Edit `ssLogger/include/ssLogSwitches.hpp` as you like
+        1. Edit & include `include/ssLogSwitches.hpp` as you like
+        2. Include `include/ssLogger/ssLog.hpp` to your header(s) below `ssLogSwitches.hpp`
+        3. Include `include/ssLogger/ssLogInit.hpp` to your entry point **ONCE**
     - Source with CMake:
-        1. Add `add_subdirectory(<path to ssLogger>)` to your `CMakeList.txt`
+        1. Add `add_subdirectory(<path to ssLogger> <optional binary directory>)` to your `CMakeLists.txt`
         2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
-        3. Edit properties via CMake GUI or command line
+        3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
+        4. Edit properties via CMake GUI or command line
 
 ### Dependencies:
 
@@ -142,3 +142,7 @@ No external library dependencies, only standard library is used.
     - `#include <sstream>`
     - `#include <iomanip>`
     - `#include <ctime>`
+
+### TODOs:
+- Add option for only showing time instead of both date and time
+- Add executable to merge thread logs together
