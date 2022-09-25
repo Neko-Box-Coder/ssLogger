@@ -172,7 +172,7 @@ if(${ssLOG_BUILD_TESTS})
 
     # Get all cpp test files
     set(TEST_CPP_FILES "" STRING)
-    file(GLOB TEST_CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/sourceTests/*cpp")
+    file(GLOB TEST_CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/sourceTests/*cpp")
 
     foreach(CUR_SOURCE_PATH ${TEST_CPP_FILES})
         # Get the file name without path and extension
