@@ -47,7 +47,7 @@ if("${ssLOG_USE_SOURCE}")
 
     target_include_directories(ssLogger PUBLIC "${ssLOG_INCLUDE_LOCATION}")
 
-    if(LOG_CALL_STACK)
+    if(ssLOG_CALL_STACK)
         target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=1)
     else()
         target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=0)
@@ -107,6 +107,12 @@ else()
     # endforeach()
 endif()
 
+# DEBUGGING
+get_target_property(DEFS ssLogger COMPILE_DEFINITIONS)
+
+foreach(src ${DEFS})
+    message(STATUS "def='${src}'")
+endforeach()
 
 # If you are on 32 bit linux, uncomment this
 # set (CMAKE_CXX_FLAGS "-m32")
@@ -119,20 +125,20 @@ if(${ssLOG_BUILD_TESTS})
     # ssLogger for tests
     # ==========================================================
 
-    # Build the library for testing
-    add_library(ssLogger_SRC STATIC 
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/ssLogInit.cpp"
-    )
-    # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
-    target_include_directories(ssLogger_SRC PUBLIC "${ssLOG_INCLUDE_LOCATION}")
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK=0)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FILE_NAME=1)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_LINE_NUM=1)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FUNC_NAME=1)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_TIME=1)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE=0)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=1)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
+    # # Build the library for testing
+    # add_library(ssLogger_SRC STATIC 
+    #     "${CMAKE_CURRENT_SOURCE_DIR}/src/ssLogInit.cpp"
+    # )
+    # # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
+    # target_include_directories(ssLogger_SRC PUBLIC "${ssLOG_INCLUDE_LOCATION}")
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK=0)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FILE_NAME=1)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_LINE_NUM=1)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FUNC_NAME=1)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_TIME=1)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE=0)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=1)
+    # target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
 
     add_library(ssLogger_HEAD INTERFACE)
@@ -184,7 +190,7 @@ if(${ssLOG_BUILD_TESTS})
         # Add executable
         add_executable("${EXECUTABLE_NAME}_src" "${CUR_SOURCE_PATH}")
 
-        target_link_libraries("${EXECUTABLE_NAME}_src" PUBLIC ssLogger_SRC)
+        target_link_libraries("${EXECUTABLE_NAME}_src" PUBLIC ssLogger)
 
         # Sub-directory for build
         set_target_properties("${EXECUTABLE_NAME}_src" PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/sourceTests/${EXECUTABLE_NAME}")
