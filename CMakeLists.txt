@@ -108,11 +108,11 @@ else()
 endif()
 
 # DEBUGGING
-get_target_property(DEFS ssLogger COMPILE_DEFINITIONS)
+# get_target_property(DEFS ssLogger COMPILE_DEFINITIONS)
 
-foreach(src ${DEFS})
-    message(STATUS "def='${src}'")
-endforeach()
+# foreach(src ${DEFS})
+#     message(STATUS "def='${src}'")
+# endforeach()
 
 # If you are on 32 bit linux, uncomment this
 # set (CMAKE_CXX_FLAGS "-m32")
