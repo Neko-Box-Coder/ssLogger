@@ -8,14 +8,14 @@
 
     #ifndef ssTHREAD_LOG_INFO_DECL
     #define ssTHREAD_LOG_INFO_DECL
-    struct ThreadLogInfo
+    struct ssLogThreadLogInfo
     {
         int TabSpace = 0;
         std::stack<std::string> FuncNameStack = std::stack<std::string>();
     };
     #endif
 
-    std::unordered_map<std::thread::id, ThreadLogInfo> ssLogInfoMap = std::unordered_map<std::thread::id, ThreadLogInfo>();
+    std::unordered_map<std::thread::id, ssLogThreadLogInfo> ssLogInfoMap = std::unordered_map<std::thread::id, ssLogThreadLogInfo>();
     std::thread::id ssLastThreadID = std::thread::id();
     std::mutex ssLogMutex;
 #else
@@ -25,5 +25,5 @@
 
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
-    std::ofstream LogFileStream = std::ofstream();
+    std::ofstream ssLogFileStream = std::ofstream();
 #endif
