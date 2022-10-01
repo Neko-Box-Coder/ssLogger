@@ -276,9 +276,10 @@
         ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
     });
 
-    #define ssLOG_EXIT_PROGRAM() std::exit(EXIT_FAILURE);
 
 #endif
+
+#define ssLOG_EXIT_PROGRAM() std::exit(EXIT_FAILURE);
 
 
 #endif
