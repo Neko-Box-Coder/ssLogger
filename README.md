@@ -4,20 +4,23 @@ Super simple macro based Logger for call stack and quick debug logging, with min
 
 #### Both header only or CMake option available.
 
-#### Fully verbose with call stack?
+#### 🗒️ Fully verbose with call stack?
 ![demo](./resources/demo.gif)
 
-#### Simple logging with just function name and line number?
+#### 👟 Simple logging with just function name and line number?
 ![demo2](./resources/demo2.gif)
 
-#### Thread-safety for multithreading? (Can be disabled for performance)
+#### 🧵 Thread-safety for multithreading? (Can be disabled for performance)
 ![demo2](./resources/demo3.gif)
 
-#### Easy Customization:
+#### 🔧 Easy Customization:
 ![cus](./resources/customization.png)
+![header](./resources/header.png)
+![cmake](./resources/cmake.png)
 
+----
 
-## Usage:
+## 🔨 Usage:
 
 ### Logging a line:
 ```c++
@@ -110,6 +113,8 @@ auto lambda = []()
 };
 ```
 
+----
+
 ### How to use:
 1. Clone this repository
 2. Decide if you want to use this with header-only or with source
@@ -122,6 +127,10 @@ auto lambda = []()
         2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
         3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
         4. Edit properties via CMake GUI or command line
+
+> <font size="4">⚠️ **Warning:** Using ssLogger inside **static variable or  class initialization** will result undefined behaviour (as ssLogger uses global static variable).</font>
+
+----
 
 ### Dependencies:
 
@@ -143,6 +152,8 @@ No external library dependencies, only standard library is used.
     - `#include <iomanip>`
     - `#include <ctime>`
 
-### TODOs:
+----
+
+### 🔜 TODOs:
 - Add option for only showing time instead of both date and time
 - Add executable to merge thread logs together
