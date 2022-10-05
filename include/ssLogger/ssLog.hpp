@@ -21,8 +21,15 @@
 #define ssLOG_EXPAND() ,,,,,, // 6 commas (or 7 empty tokens)
 #define ssLOG_VA_SIZE( ... ) ssLOG_COMPOSE( ssLOG_GET_COUNT, (ssLOG_EXPAND __VA_ARGS__ (), 0, 6, 5, 4, 3, 2, 1) )
 
+#ifndef _MSC_VER
 #define ssLOG_VA_SELECT( NAME, ... ) ssLOG_SELECT( NAME, ssLOG_VA_SIZE(__VA_ARGS__) )(__VA_ARGS__)
+#else
 
+//MSVC workaround: https://stackoverflow.com/questions/48710758/how-to-fix-variadic-macro-related-issues-with-macro-overloading-in-msvc-mic
+//This is honestly retarded.
+#define ssLOG_VA_ARGS_FIX( macro, args ) macro args
+#define ssLOG_VA_SELECT( NAME, ... ) ssLOG_VA_ARGS_FIX(ssLOG_SELECT, ( NAME, ssLOG_VA_SIZE( __VA_ARGS__ ) )) (__VA_ARGS__)
+#endif
 
 // =======================================================================
 // Helper macro functions
