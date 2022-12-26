@@ -44,15 +44,28 @@
     {\
         if(!ssLogFileStream.is_open())\
         {\
-            time_t now = time(0);\
-            auto nowString = std::string(ctime(&now));\
-            ssLogFileStream.open( nowString.substr(0, nowString.size() - 1) +"_log.txt", std::ofstream::out);\
+            time_t ssRawtime;\
+            struct tm * ssTimeinfo;\
+            char ssBuffer [80];\
+            time(&ssRawtime);\
+            ssTimeinfo = localtime(&ssRawtime);\
+            strftime(ssBuffer, 80, "%a %b %d %H_%M_%S %Y", ssTimeinfo);\
+            std::string nowString = std::string(ssBuffer)+"_log.txt";\
+            ssLogFileStream.open( nowString, std::ofstream::out);\
+            if(!ssLogFileStream.good())\
+            {\
+                throw string("Failed to create log file!!");\
+            }\
         }\
         ssLogFileStream << x << "\n";\
     }
 #else
     #include <iostream>
     #define ssLOG_SIMPLE(x) std::cout<<x<<"\n";
+    #define ssLOG_SIMPLE(x)\
+    {\
+        std::cout<<x<<"\n";\
+    }
 #endif
 
 
@@ -191,8 +204,23 @@
         ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
     }
 #else    
+    #ifdef _WIN32
+    #include <windows.h>
+    #undef max
+    #undef DELETE
+    #endif
     inline std::string ssLog_TabAdder(int tabAmount, bool tree = false)
     {
+        //Yeah.... this is ugly. Can't do much because we don't really have initialization function
+        #ifdef _WIN32
+        static bool ssCalled = false;
+        if(!ssCalled)
+        {
+            ssCalled = true;
+            SetConsoleOutputCP(CP_UTF8);
+        }
+        #endif
+
         std::string returnString = "";
         for(int tab = 0; tab < tabAmount; tab++)
         {

@@ -32,4 +32,5 @@
     #include <fstream>
     std::ofstream ssLogFileStream = std::ofstream();
 #endif
+
 #endif
