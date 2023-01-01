@@ -61,7 +61,6 @@
     }
 #else
     #include <iostream>
-    #define ssLOG_SIMPLE(x) std::cout<<x<<"\n";
     #define ssLOG_SIMPLE(x)\
     {\
         std::cout<<x<<"\n";\
