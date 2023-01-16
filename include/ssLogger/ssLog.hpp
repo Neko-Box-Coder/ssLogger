@@ -313,7 +313,10 @@
 
 #endif
 
-#define ssLOG_EXIT_PROGRAM() std::exit(EXIT_FAILURE);
+#include <stdexcept>
+
+//#define ssLOG_EXIT_PROGRAM() std::exit(EXIT_FAILURE);
+#define ssLOG_EXIT_PROGRAM() throw std::exception();
 
 
 #endif
