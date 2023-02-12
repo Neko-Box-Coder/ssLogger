@@ -13,22 +13,22 @@
 // =======================================================================
 
 // https://stackoverflow.com/questions/16683146/can-macros-be-overloaded-by-number-of-arguments
-#define ssLOG_CAT( A, B ) A ## B
-#define ssLOG_SELECT( NAME, NUM ) ssLOG_CAT( NAME ## _, NUM )
-#define ssLOG_COMPOSE( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_CAT( A, B ) A ## B
+#define INTERNAL_ssLOG_SELECT( NAME, NUM ) INTERNAL_ssLOG_CAT( NAME ## _, NUM )
+#define INTERNAL_ssLOG_COMPOSE( NAME, ARGS ) NAME ARGS
 
-#define ssLOG_GET_COUNT( _0, _1, _2, _3, _4, _5, _6 /* ad nauseam */, COUNT, ... ) COUNT
-#define ssLOG_EXPAND() ,,,,,, // 6 commas (or 7 empty tokens)
-#define ssLOG_VA_SIZE( ... ) ssLOG_COMPOSE( ssLOG_GET_COUNT, (ssLOG_EXPAND __VA_ARGS__ (), 0, 6, 5, 4, 3, 2, 1) )
+#define INTERNAL_ssLOG_GET_COUNT( _0, _1, _2, _3, _4, _5, _6 /* ad nauseam */, COUNT, ... ) COUNT
+#define INTERNAL_ssLOG_EXPAND() ,,,,,, // 6 commas (or 7 empty tokens)
+#define INTERNAL_ssLOG_VA_SIZE( ... ) INTERNAL_ssLOG_COMPOSE( INTERNAL_ssLOG_GET_COUNT, (INTERNAL_ssLOG_EXPAND __VA_ARGS__ (), 0, 6, 5, 4, 3, 2, 1) )
 
 #ifndef _MSC_VER
-#define ssLOG_VA_SELECT( NAME, ... ) ssLOG_SELECT( NAME, ssLOG_VA_SIZE(__VA_ARGS__) )(__VA_ARGS__)
+#define INTERNAL_ssLOG_VA_SELECT( NAME, ... ) INTERNAL_ssLOG_SELECT( NAME, INTERNAL_ssLOG_VA_SIZE(__VA_ARGS__) )(__VA_ARGS__)
 #else
 
 //MSVC workaround: https://stackoverflow.com/questions/48710758/how-to-fix-variadic-macro-related-issues-with-macro-overloading-in-msvc-mic
 //This is honestly retarded.
-#define ssLOG_VA_ARGS_FIX( macro, args ) macro args
-#define ssLOG_VA_SELECT( NAME, ... ) ssLOG_VA_ARGS_FIX(ssLOG_SELECT, ( NAME, ssLOG_VA_SIZE( __VA_ARGS__ ) )) (__VA_ARGS__)
+#define INTERNAL_ssLOG_VA_ARGS_FIX( macro, args ) macro args
+#define INTERNAL_ssLOG_VA_SELECT( NAME, ... ) INTERNAL_ssLOG_VA_ARGS_FIX(INTERNAL_ssLOG_SELECT, ( NAME, INTERNAL_ssLOG_VA_SIZE( __VA_ARGS__ ) )) (__VA_ARGS__)
 #endif
 
 // =======================================================================
@@ -86,14 +86,14 @@
     #define ssLOG_GET_LINE_NUM() ""
 #endif
 
-// Nesting ssLOG_VA_SELECT doesn't work :/
-// #define GET_FUNCTION_NAME( ... ) ssLOG_VA_SELECT( GET_FUNCTION_NAME, __VA_ARGS__ )
+// Nesting INTERNAL_ssLOG_VA_SELECT doesn't work :/
+// #define GET_FUNCTION_NAME( ... ) INTERNAL_ssLOG_VA_SELECT( GET_FUNCTION_NAME, __VA_ARGS__ )
 #if ssLOG_SHOW_FUNC_NAME
-    #define ssLOG_GET_FUNCTION_NAME_0() "["<<__func__<<"]"
-    #define ssLOG_GET_FUNCTION_NAME_1(x) "["<<x<<"]"
+    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_0() "["<<__func__<<"]"
+    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_1(x) "["<<x<<"]"
 #else
-    #define ssLOG_GET_FUNCTION_NAME_0() ""
-    #define ssLOG_GET_FUNCTION_NAME_1(x) ""
+    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_0() ""
+    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_1(x) ""
 #endif
 
 #if ssLOG_SHOW_TIME
@@ -101,7 +101,7 @@
     #include <sstream>
     #include <iomanip>
     #include <ctime>
-    #define ssLOG_GET_TIME()\
+    #define INTERNAL_ssLOG_GET_TIME()\
     []()\
     {\
         std::chrono::system_clock::time_point ssLog_tp = std::chrono::system_clock::now();\
@@ -119,7 +119,7 @@
         return ssLog_ss.str();\
     }()
 #else
-    #define ssLOG_GET_TIME() ""
+    #define INTERNAL_ssLOG_GET_TIME() ""
 #endif
 
 #if ssLOG_THREAD_SAFE
@@ -127,8 +127,8 @@
     #include <thread>
     #include <mutex>
 
-    #ifndef ssTHREAD_LOG_INFO_DECL
-    #define ssTHREAD_LOG_INFO_DECL
+    #ifndef INTERNAL_ssTHREAD_LOG_INFO_DECL
+    #define INTERNAL_ssTHREAD_LOG_INFO_DECL
     struct ssLogThreadLogInfo
     {
         int TabSpace = 0;
@@ -140,7 +140,7 @@
     extern std::thread::id ssLastThreadID;
     extern std::mutex ssLogMutex;
 
-    #define ssLOG_CHECK_THREAD_DIFF()\
+    #define INTERNAL_ssLOG_CHECK_THREAD_DIFF()\
     {\
         if(ssLastThreadID != std::this_thread::get_id())\
         {\
@@ -153,39 +153,36 @@
         }\
     }
 
-    #define ssLOG_THREAD_SAFE_OP(x)\
+    #define INTERNAL_ssLOG_THREAD_SAFE_OP(x)\
     {\
         ssLogMutex.lock();\
-        ssLOG_CHECK_THREAD_DIFF();\
+        INTERNAL_ssLOG_CHECK_THREAD_DIFF();\
         x\
         ssLogMutex.unlock();\
     }\
 
-    #define ssLOG_GET_TAB_SPACE() ssLogInfoMap[std::this_thread::get_id()].TabSpace
+    #define INTERNAL_ssLOG_GET_TAB_SPACE() ssLogInfoMap[std::this_thread::get_id()].TabSpace
 
-    #define ssLOG_GET_FUNC_STACK() ssLogInfoMap[std::this_thread::get_id()].FuncNameStack    
+    #define INTERNAL_ssLOG_GET_FUNC_STACK() ssLogInfoMap[std::this_thread::get_id()].FuncNameStack    
 
 #else
     extern int ssTabSpace;
     extern std::stack<std::string> ssFuncNameStack;
 
-    #define ssLOG_THREAD_SAFE_OP(x) x
+    #define INTERNAL_ssLOG_THREAD_SAFE_OP(x) x
 
-    #define ssLOG_GET_TAB_SPACE() ssTabSpace
+    #define INTERNAL_ssLOG_GET_TAB_SPACE() ssTabSpace
 
-    #define ssLOG_GET_FUNC_STACK() ssFuncNameStack
+    #define INTERNAL_ssLOG_GET_FUNC_STACK() ssFuncNameStack
 
-    #define ssLOG_CHECK_THREAD_DIFF(x) x
+    #define INTERNAL_ssLOG_CHECK_THREAD_DIFF(x) x
 #endif
 
 // =======================================================================
 // Macros for ssLOG_LINE and ssLOG_FUNC 
 // =======================================================================
 
-#define ssLOG_LINE( ... ) ssLOG_VA_SELECT( ssLOG_LINE, __VA_ARGS__ )
-
-#define ssLOG_LINE_B( ... ) ssLOG_VA_SELECT( ssLOG_LINE_B, __VA_ARGS__ )
-
+#define ssLOG_LINE( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ )
 
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC_ENTRY( ... ) 
@@ -193,14 +190,14 @@
 
     #define ssLOG_FUNC(expr) expr
 
-    #define ssLOG_LINE_0()\
+    #define INTERNAL_ssLOG_LINE_0()\
     {\
-        ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()));\
     }
 
-    #define ssLOG_LINE_1(debugText)\
+    #define INTERNAL_ssLOG_LINE_1(debugText)\
     {\
-        ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
     }
 #else    
     #ifdef _WIN32
@@ -208,7 +205,7 @@
     #undef max
     #undef DELETE
     #endif
-    inline std::string ssLog_TabAdder(int tabAmount, bool tree = false)
+    inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
     {
         //Yeah.... this is ugly. Can't do much because we don't really have initialization function
         #ifdef _WIN32
@@ -232,82 +229,82 @@
         return returnString;
     }
 
-    #define ssLOG_LINE_0()\
+    #define INTERNAL_ssLOG_LINE_0()\
     {\
-        ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE(), true)<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()));\
     }
 
-    #define ssLOG_LINE_1(debugText)\
+    #define INTERNAL_ssLOG_LINE_1(debugText)\
     {\
-        ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE(), true)<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
     }
     
-    #define ssLOG_Q(x) #x
+    #define INTERNAL_ssLOG_Q(x) #x
 
     #define ssLOG_FUNC(expr)\
-    ssLOG_THREAD_SAFE_OP({\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE(), true)<<ssLOG_GET_FUNCTION_NAME_1(ssLOG_Q(expr))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Entry]");\
-        ssLOG_GET_FUNC_STACK().push(ssLOG_Q(expr));\
-        ssLOG_GET_TAB_SPACE()++;\
+    INTERNAL_ssLOG_THREAD_SAFE_OP({\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(expr))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Entry]");\
+        INTERNAL_ssLOG_GET_FUNC_STACK().push(INTERNAL_ssLOG_Q(expr));\
+        INTERNAL_ssLOG_GET_TAB_SPACE()++;\
     });\
     expr;\
-    ssLOG_THREAD_SAFE_OP({\
-        if(ssLOG_GET_FUNC_STACK().empty() || ssLOG_GET_FUNC_STACK().top() != ssLOG_Q(expr))\
+    INTERNAL_ssLOG_THREAD_SAFE_OP({\
+        if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != INTERNAL_ssLOG_Q(expr))\
         {\
-            ssLOG_SIMPLE("ssLOG_FUNC_EXIT is missing somewhere. "<<ssLOG_GET_FUNC_STACK().top()<<" is expected but"<<ssLOG_Q(expr)<<" is found instead.");\
+            ssLOG_SIMPLE("ssLOG_FUNC_EXIT is missing somewhere. "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<" is expected but"<<INTERNAL_ssLOG_Q(expr)<<" is found instead.");\
             std::exit(EXIT_FAILURE);\
         }\
-        ssLOG_GET_FUNC_STACK().pop();\
-        ssLOG_GET_TAB_SPACE()--;\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE())<<ssLOG_GET_FUNCTION_NAME_1(ssLOG_Q(expr))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Exit]");\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
+        INTERNAL_ssLOG_GET_FUNC_STACK().pop();\
+        INTERNAL_ssLOG_GET_TAB_SPACE()--;\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(expr))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Exit]");\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });\
 
 
-    #define ssLOG_FUNC_ENTRY( ... ) ssLOG_VA_SELECT( ssLOG_FUNC_ENTRY, __VA_ARGS__ )
-    #define ssLOG_FUNC_EXIT( ... ) ssLOG_VA_SELECT( ssLOG_FUNC_EXIT, __VA_ARGS__ )
+    #define ssLOG_FUNC_ENTRY( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY, __VA_ARGS__ )
+    #define ssLOG_FUNC_EXIT( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_EXIT, __VA_ARGS__ )
 
-    #define ssLOG_FUNC_ENTRY_0()\
-    ssLOG_THREAD_SAFE_OP({\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE(), true)<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Entry]");\
-        ssLOG_GET_FUNC_STACK().push(__func__);\
-        ssLOG_GET_TAB_SPACE()++;\
+    #define INTERNAL_ssLOG_FUNC_ENTRY_0()\
+    INTERNAL_ssLOG_THREAD_SAFE_OP({\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Entry]");\
+        INTERNAL_ssLOG_GET_FUNC_STACK().push(__func__);\
+        INTERNAL_ssLOG_GET_TAB_SPACE()++;\
     });
 
-    #define ssLOG_FUNC_EXIT_0()\
-    ssLOG_THREAD_SAFE_OP({\
-        if(ssLOG_GET_FUNC_STACK().empty() || ssLOG_GET_FUNC_STACK().top() != __func__)\
+    #define INTERNAL_ssLOG_FUNC_EXIT_0()\
+    INTERNAL_ssLOG_THREAD_SAFE_OP({\
+        if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != __func__)\
         {\
-            ssLOG_SIMPLE("ssLOG_FUNC_EXIT is expecting "<<ssLOG_GET_FUNC_STACK().top()<<". "<<__func__<<" is found instead.");\
+            ssLOG_SIMPLE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<". "<<__func__<<" is found instead.");\
             std::exit(EXIT_FAILURE);\
         }\
-        ssLOG_GET_FUNC_STACK().pop();\
-        ssLOG_GET_TAB_SPACE()--;\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE())<<ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Exit]");\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
+        INTERNAL_ssLOG_GET_FUNC_STACK().pop();\
+        INTERNAL_ssLOG_GET_TAB_SPACE()--;\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Exit]");\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });
 
-    #define ssLOG_FUNC_ENTRY_1(customFunc)\
-    ssLOG_THREAD_SAFE_OP({\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE(), true)<<ssLOG_GET_FUNCTION_NAME_1(ssLOG_Q(customFunc))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Entry]");\
-        ssLOG_GET_FUNC_STACK().push(customFunc);\
-        ssLOG_GET_TAB_SPACE()++;\
+    #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFunc)\
+    INTERNAL_ssLOG_THREAD_SAFE_OP({\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(customFunc))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Entry]");\
+        INTERNAL_ssLOG_GET_FUNC_STACK().push(customFunc);\
+        INTERNAL_ssLOG_GET_TAB_SPACE()++;\
     });
 
-    #define ssLOG_FUNC_EXIT_1(customFunc)\
-    ssLOG_THREAD_SAFE_OP({\
-        if(ssLOG_GET_FUNC_STACK().empty() || ssLOG_GET_FUNC_STACK().top() != customFunc)\
+    #define INTERNAL_ssLOG_FUNC_EXIT_1(customFunc)\
+    INTERNAL_ssLOG_THREAD_SAFE_OP({\
+        if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != customFunc)\
         {\
-            ssLOG_SIMPLE("ssLOG_FUNC_EXIT is expecting "<<ssLOG_GET_FUNC_STACK().top()<<". "<<customFunc<<" is found instead.");\
+            ssLOG_SIMPLE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<". "<<customFunc<<" is found instead.");\
             std::exit(EXIT_FAILURE);\
         }\
-        ssLOG_GET_FUNC_STACK().pop();\
-        ssLOG_GET_TAB_SPACE()--;\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE())<<ssLOG_GET_FUNCTION_NAME_1(ssLOG_Q(customFunc))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Exit]");\
-        ssLOG_SIMPLE(ssLOG_GET_TIME()<<ssLog_TabAdder(ssLOG_GET_TAB_SPACE()));\
+        INTERNAL_ssLOG_GET_FUNC_STACK().pop();\
+        INTERNAL_ssLOG_GET_TAB_SPACE()--;\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(customFunc))<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": [Exit]");\
+        ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });
 
 
