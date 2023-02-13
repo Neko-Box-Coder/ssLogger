@@ -40,6 +40,26 @@
     #include <ctime>
     extern std::ofstream ssLogFileStream;
 
+    #define ssLOG_PREPEND(x)\
+    {\
+        if(!ssLogFileStream.is_open())\
+        {\
+            time_t ssRawtime;\
+            struct tm * ssTimeinfo;\
+            char ssBuffer [80];\
+            time(&ssRawtime);\
+            ssTimeinfo = localtime(&ssRawtime);\
+            strftime(ssBuffer, 80, "%a %b %d %H_%M_%S %Y", ssTimeinfo);\
+            std::string nowString = std::string(ssBuffer)+"_log.txt";\
+            ssLogFileStream.open( nowString, std::ofstream::out);\
+            if(!ssLogFileStream.good())\
+            {\
+                throw string("Failed to create log file!!");\
+            }\
+        }\
+        ssLogFileStream << x;\
+    }
+
     #define ssLOG_SIMPLE(x)\
     {\
         if(!ssLogFileStream.is_open())\
@@ -64,6 +84,11 @@
     #define ssLOG_SIMPLE(x)\
     {\
         std::cout<<x<<"\n";\
+    }
+    
+    #define ssLOG_PREPEND(x)\
+    {\
+        std::cout<<x;\
     }
 #endif
 
@@ -317,3 +342,22 @@
 
 
 #endif
+
+/*
+// =======================================================================
+// Objects for auto clean up 
+// =======================================================================
+
+#include <functional>
+
+class ScopeTrigger
+{
+    public:
+        ~ScopeTrigger()
+        {
+            
+        }   
+    private:
+    
+};
+*/
