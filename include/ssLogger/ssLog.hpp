@@ -80,9 +80,32 @@
         ssLogFileStream << x << "\n";\
     }
 #else
+    #ifdef _WIN32
+    #include <windows.h>
+    #undef max
+    #undef DELETE
+
+    inline void SetWinConsoleUTF()
+    {
+        //Yeah.... this is ugly. Can't do much because we don't really have initialization function
+        static bool ssCalled = false;
+        if(!ssCalled)
+        {
+            ssCalled = true;
+            SetConsoleOutputCP(CP_UTF8);
+        }
+    }
+    #define INTERNAL_SET_WIN_CONSOLE() SetWinConsoleUTF()
+    #else
+    #define INTERNAL_SET_WIN_CONSOLE()
+    #endif
+
+
+
     #include <iostream>
     #define ssLOG_SIMPLE(x)\
     {\
+        INTERNAL_SET_WIN_CONSOLE();\
         std::cout<<x<<"\n";\
     }
     
@@ -225,23 +248,8 @@
         INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_SIMPLE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<ssLOG_GET_FILE_NAME()<<ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
     }
 #else    
-    #ifdef _WIN32
-    #include <windows.h>
-    #undef max
-    #undef DELETE
-    #endif
     inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
     {
-        //Yeah.... this is ugly. Can't do much because we don't really have initialization function
-        #ifdef _WIN32
-        static bool ssCalled = false;
-        if(!ssCalled)
-        {
-            ssCalled = true;
-            SetConsoleOutputCP(CP_UTF8);
-        }
-        #endif
-
         std::string returnString = "";
         for(int tab = 0; tab < tabAmount; tab++)
         {
