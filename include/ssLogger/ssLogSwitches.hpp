@@ -4,6 +4,8 @@
 
 #define ssLOG_CALL_STACK 1
 
+#define ssLOG_ASCII 0
+
 #define ssLOG_SHOW_FILE_NAME 1
 
 #define ssLOG_SHOW_LINE_NUM 1

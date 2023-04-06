@@ -253,10 +253,17 @@
         std::string returnString = "";
         for(int tab = 0; tab < tabAmount; tab++)
         {
-            if(tab == tabAmount - 1 && tree)
-                returnString += "├─►";
-            else
-                returnString += "│  ";
+            #if ssLOG_ASCII
+                if(tab == tabAmount - 1 && tree)
+                    returnString += "|=>";
+                else
+                    returnString += "|  ";
+            #else
+                if(tab == tabAmount - 1 && tree)
+                    returnString += "├─►";
+                else
+                    returnString += "│  ";
+            #endif
         }
 
         return returnString;

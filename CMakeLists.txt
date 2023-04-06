@@ -17,6 +17,7 @@ set(ssLOG_USE_SOURCE "ON" CACHE BOOL "Use source file instead of header only fil
 set(ssLOG_BUILD_TESTS "ON" CACHE BOOL "If true, this will build tests")
 
 set(ssLOG_CALL_STACK "ON" CACHE BOOL "Show call stack for all logged functions")
+set(ssLOG_LOG_WITH_ASCII "OFF" CACHE BOOL "Call stack logging will be shown using ASCII characters")
 set(ssLOG_SHOW_FILE_NAME "ON" CACHE BOOL "Show file name for all logged functions")
 set(ssLOG_SHOW_LINE_NUM "ON" CACHE BOOL "Show line number for all logged functions")
 set(ssLOG_SHOW_FUNC_NAME "ON" CACHE BOOL "Show function name for all logged functions")
@@ -51,6 +52,12 @@ if("${ssLOG_USE_SOURCE}")
         target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=1)
     else()
         target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=0)
+    endif()
+    
+    if(ssLOG_LOG_WITH_ASCII)
+        target_compile_definitions(ssLogger PUBLIC ssLOG_ASCII=1)
+    else()
+        target_compile_definitions(ssLogger PUBLIC ssLOG_ASCII=0)
     endif()
 
     if(ssLOG_SHOW_FILE_NAME)

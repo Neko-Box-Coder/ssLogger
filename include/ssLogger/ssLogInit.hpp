@@ -11,8 +11,8 @@
     #include <thread>
     #include <mutex>
 
-    #ifndef ssTHREAD_LOG_INFO_DECL
-    #define ssTHREAD_LOG_INFO_DECL
+    #ifndef INTERNAL_ssTHREAD_LOG_INFO_DECL
+    #define INTERNAL_ssTHREAD_LOG_INFO_DECL
     struct ssLogThreadLogInfo
     {
         int TabSpace = 0;
