@@ -182,7 +182,7 @@
     {\
         ssLogMutex.lock();\
         INTERNAL_ssLOG_CHECK_THREAD_DIFF();\
-        x\
+        x;\
         ssLogMutex.unlock();\
     }\
 
