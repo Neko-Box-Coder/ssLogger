@@ -1,3 +1,4 @@
+#include <sstream>
 #include <string>
 #include <stack>
 
@@ -12,6 +13,7 @@
     {
         int TabSpace = 0;
         std::stack<std::string> FuncNameStack = std::stack<std::string>();
+        std::stringstream ssCurrentPrepend;
     };
     #endif
 
@@ -21,6 +23,7 @@
 #else
     int ssTabSpace = 0;
     std::stack<std::string> ssFuncNameStack = std::stack<std::string>();
+    std::stringstream ssCurrentPrepend;
 #endif
 
 #if ssLOG_LOG_TO_FILE
