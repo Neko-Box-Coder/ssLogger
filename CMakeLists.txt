@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 
+if(TARGET ssLogger)
+    return()
+endif()
+
 set (CMAKE_CXX_STANDARD 11)
 
 # For Clang to do parsing
