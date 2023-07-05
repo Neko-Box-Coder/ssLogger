@@ -118,6 +118,10 @@ else()
     # endforeach()
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_definitions(ssLogger PUBLIC _CRT_SECURE_NO_WARNINGS)
+endif()
+
 # DEBUGGING
 # get_target_property(DEFS ssLogger COMPILE_DEFINITIONS)
 
