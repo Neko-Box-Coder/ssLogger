@@ -1,5 +1,7 @@
+#ifndef ssLOG_USE_SOURCE
+    #include "ssLogger/ssLogInit.hpp"
+#endif
 
-#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 

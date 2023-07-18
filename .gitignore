@@ -39,6 +39,7 @@
 
 # Build folder
 build/
+Build/
 
 # Cache
 .cache/

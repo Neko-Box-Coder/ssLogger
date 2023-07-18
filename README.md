@@ -5,18 +5,18 @@ Super simple macro based Logger for call stack and quick debug logging, with min
 #### Both header only or CMake option available.
 
 #### 🗒️ Fully verbose with call stack?
-![demo](./resources/demo.gif)
+![demo](./Resources/demo.gif)
 
 #### 👟 Simple logging with just function name and line number?
-![demo2](./resources/demo2.gif)
+![demo2](./Resources/demo2.gif)
 
 #### 🧵 Thread-safety for multithreading? (Can be disabled for performance)
-![demo2](./resources/demo3.gif)
+![demo2](./Resources/demo3.gif)
 
 #### 🔧 Easy Customization:
-![cus](./resources/customization.png)
-![header](./resources/header.png)
-![cmake](./resources/cmake.png)
+![cus](./Resources/customization.png)
+![header](./Resources/header.png)
+![cmake](./Resources/cmake.png)
 
 ----
 
@@ -52,12 +52,12 @@ int B()
 int main()
 {
     // Or without space
-    ssLOG_FUNC( A() );
+    ssLOG_FUNC_CONTENT( A() );
     
-    ssLOG_FUNC( int retVal = B() );
+    ssLOG_FUNC_CONTENT( int retVal = B() );
 
     // Or you can format it like this to log more than 1 statements!
-    ssLOG_FUNC
+    ssLOG_FUNC_CONTENT
     (
          int retVal = B();
          // Some other statements...
@@ -68,48 +68,39 @@ int main()
 
 ```
 
-### Logging functions call stack (*With wrapper macros*):
+### Logging functions call stack (*With automatic macro*):
 
 ```c++
 //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
-//Wrap function with ssLOG_FUNC_ENTRY and ssLOG_FUNC_EXIT
+//Log function callstack with ssLOG_FUNC
 void B()
 {
-    ssLOG_FUNC_ENTRY();
+    ssLOG_FUNC();
 
     //...
-    
-    ssLOG_FUNC_EXIT();
 }
 
-//Remember to add ssLOG_FUNC_EXIT before return statements as well
 int C(bool b)
 {
-    ssLOG_FUNC_ENTRY();
+    ssLOG_FUNC();
     
     //...
 
     if(b)
-    {
-        ssLOG_FUNC_EXIT();
         return 42;
-    }
 
     //...
 
-    ssLOG_FUNC_EXIT();
     return 43;
 }
 
 //You can also have custom names for functions as well, which is useful for lambda functions.
 auto lambda = []()
 {
-    ssLOG_FUNC_ENTRY("My lambda function");
+    ssLOG_FUNC("My lambda function");
 
     //...
-
-    ssLOG_FUNC_EXIT("My lambda function");
 };
 ```
 
@@ -128,7 +119,7 @@ auto lambda = []()
         3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
         4. Edit properties via CMake GUI or command line
 
-> <font size="4">⚠️ **Warning:** Using ssLogger inside **static variable or  class initialization** will result undefined behaviour (as ssLogger uses global static variable).</font>
+> <font size="4">⚠️ **Warning:** Using ssLogger before main (i.e. inside static class initialization) will result undefined behaviour (as ssLogger uses global static variable).</font>
 
 ----
 
@@ -137,6 +128,7 @@ auto lambda = []()
 No external library dependencies, only standard library is used.
 
 - Common dependencies
+    - `#include <sstream>`
     - `#include <string>`
     - `#include <stack>`
 - ssLOG_THREAD_SAFE
