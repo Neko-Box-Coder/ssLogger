@@ -90,6 +90,12 @@
     } while(0)
 #endif
 
+#if ssLOG_WRAP_WITH_BRACKET
+    #define INTERNAL_ssLOG_WRAP_CONTENT(x) "[" << x << "]"
+#else
+    #define INTERNAL_ssLOG_WRAP_CONTENT(x) x
+#endif
+
 
 #if ssLOG_SHOW_FILE_NAME
     extern std::string (*Internal_ssLogGetFileName)(std::string);
@@ -201,7 +207,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
     #define INTERNAL_ssLOG_LINE_1(debugText)\
     {\
-        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": " << INTERNAL_ssLOG_WRAP_CONTENT(debugText)));\
     }
 #else    
     inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
@@ -232,7 +238,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
     #define INTERNAL_ssLOG_LINE_1(debugText)\
     {\
-        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": ["<<debugText<<"]"));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": "<<INTERNAL_ssLOG_WRAP_CONTENT(debugText)));\
     }
     
     #define INTERNAL_ssLOG_Q(x) (std::string(#x).size() > 50 ? std::string(#x).substr(0, 50) + " ..." : #x)
@@ -377,22 +383,3 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 }
 
 #endif
-
-/*
-// =======================================================================
-// Objects for auto clean up 
-// =======================================================================
-
-#include <functional>
-
-class ScopeTrigger
-{
-    public:
-        ~ScopeTrigger()
-        {
-            
-        }   
-    private:
-    
-};
-*/

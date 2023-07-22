@@ -27,6 +27,7 @@ set(ssLOG_SHOW_LINE_NUM 1 CACHE BOOL "Show line number for all logged functions"
 set(ssLOG_SHOW_FUNC_NAME 1 CACHE BOOL "Show function name for all logged functions")
 set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
 set(ssLOG_THREAD_SAFE 1 CACHE BOOL "Use std::thread and ensure thread safety for all logged functions")
+set(ssLOG_WRAP_WITH_BRACKET 1 CACHE BOOL "If true, contents will be wrapped square brackets")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
 
 set(ssLOG_INCLUDE_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Include")
@@ -60,6 +61,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_SAFE=$<BOOL:${ssLOG_THREAD_SAFE}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_WRAP_WITH_BRACKET=$<BOOL:${ssLOG_WRAP_WITH_BRACKET}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
     #message("ssLOG_CALL_STACK: ${ssLOG_CALL_STACK}")
@@ -119,6 +121,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE=$<BOOL:${ssLOG_THREAD_SAFE}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_WRAP_WITH_BRACKET=$<BOOL:${ssLOG_WRAP_WITH_BRACKET}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
 

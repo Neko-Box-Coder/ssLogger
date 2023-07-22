@@ -17,3 +17,5 @@
 #define ssLOG_THREAD_SAFE 1
 
 #define ssLOG_LOG_TO_FILE 0
+
+#define ssLOG_WRAP_WITH_BRACKET 1
