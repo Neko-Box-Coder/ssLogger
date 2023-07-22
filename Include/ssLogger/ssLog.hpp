@@ -90,6 +90,9 @@
     } while(0)
 #endif
 
+//NOTE: Legacy for ssLOG_SIMPLE --> ssLOG_BASE
+#define ssLOG_SIMPLE(x) ssLOG_BASE(x)
+
 #if ssLOG_WRAP_WITH_BRACKET
     #define INTERNAL_ssLOG_WRAP_CONTENT(x) "[" << x << "]"
 #else
