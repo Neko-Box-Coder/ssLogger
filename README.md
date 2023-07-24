@@ -1,24 +1,21 @@
 # ssLogger 📔
+![](./logo.png)
+##### Logs incoming....
 
-Super simple macro based Logger for call stack and quick debug logging, with minimum dependencies, high flexiblity and works with C++ 11 or above.
+---
+
+#### Super simple macro based Logger for call stack and quick debug logging, with minimum dependencies, high flexiblity and works with C++ 11 or above.
 
 #### Both header only or CMake option available.
 
 #### 🗒️ Fully verbose with call stack?
-![demo](./resources/demo.gif)
+![demo](./Resources/demo.gif)
 
 #### 👟 Simple logging with just function name and line number?
-![demo2](./resources/demo2.gif)
+![demo2](./Resources/demo2.gif)
 
 #### 🧵 Thread-safety for multithreading? (Can be disabled for performance)
-![demo2](./resources/demo3.gif)
-
-#### 🔧 Easy Customization:
-![cus](./resources/customization.png)
-![header](./resources/header.png)
-![cmake](./resources/cmake.png)
-
-----
+![demo2](./Resources/demo3.gif)
 
 ## 🔨 Usage:
 
@@ -32,6 +29,65 @@ ssLOG_LINE();
 // 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
 int someValue = 42;
 ssLOG_LINE("Here's some value: "<<someValue);
+```
+
+### Logging with level:
+```c++
+// 2022-08-14 16:49:53.802 [FETAL] [MethodName] in FileName.cpp on line 9: [Test fetal]
+ssLOG_FETAL("Test fetal");
+
+// 2022-08-14 16:49:53.802 [ERROR] [MethodName] in FileName.cpp on line 9: [Test error]
+ssLOG_ERROR("Test error");
+
+// 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Test warning]
+ssLOG_WARNING("Test warning");
+
+// 2022-08-14 16:49:53.802 [INFO] [MethodName] in FileName.cpp on line 9: [Test info]
+ssLOG_INFO("Test info");
+
+// 2022-08-14 16:49:53.802 [DEBUG] [MethodName] in FileName.cpp on line 9: [Test debug]
+ssLOG_DEBUG("Test debug");
+
+// Output:
+// 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
+int someValue = 42;
+ssLOG_WARNING("Here's some value: "<<someValue);
+```
+
+### Logging functions call stack (*With automatic macro*):
+
+```c++
+//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
+
+//Log function callstack with ssLOG_FUNC
+void B()
+{
+    ssLOG_FUNC();
+
+    //...
+}
+
+int C(bool b)
+{
+    ssLOG_FUNC();
+    
+    //...
+
+    if(b)
+        return 42;
+
+    //...
+
+    return 43;
+}
+
+//You can also have custom names for functions as well, which is useful for lambda functions.
+auto lambda = []()
+{
+    ssLOG_FUNC("My lambda function");
+
+    //...
+};
 ```
 
 ### Logging functions call stack (*inline macro*):
@@ -52,12 +108,12 @@ int B()
 int main()
 {
     // Or without space
-    ssLOG_FUNC( A() );
+    ssLOG_FUNC_CONTENT( A() );
     
-    ssLOG_FUNC( int retVal = B() );
+    ssLOG_FUNC_CONTENT( int retVal = B() );
 
     // Or you can format it like this to log more than 1 statements!
-    ssLOG_FUNC
+    ssLOG_FUNC_CONTENT
     (
          int retVal = B();
          // Some other statements...
@@ -67,56 +123,39 @@ int main()
 }
 
 ```
+----
 
-### Logging functions call stack (*With wrapper macros*):
+#### 🔧 Easy Customization:
 
-```c++
-//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
-
-//Wrap function with ssLOG_FUNC_ENTRY and ssLOG_FUNC_EXIT
-void B()
-{
-    ssLOG_FUNC_ENTRY();
-
-    //...
-    
-    ssLOG_FUNC_EXIT();
-}
-
-//Remember to add ssLOG_FUNC_EXIT before return statements as well
-int C(bool b)
-{
-    ssLOG_FUNC_ENTRY();
-    
-    //...
-
-    if(b)
-    {
-        ssLOG_FUNC_EXIT();
-        return 42;
-    }
-
-    //...
-
-    ssLOG_FUNC_EXIT();
-    return 43;
-}
-
-//You can also have custom names for functions as well, which is useful for lambda functions.
-auto lambda = []()
-{
-    ssLOG_FUNC_ENTRY("My lambda function");
-
-    //...
-
-    ssLOG_FUNC_EXIT("My lambda function");
-};
-```
+##### CMake / Header Defines
+| Define Macro Name | Default Value | Explaination |
+| --- | --- | --- |
+| ssLOG_CALL_STACK | 1 | Show call stack for all logged functions |
+| ssLOG_LOG_WITH_ASCII | 0 | Call stack logging will be shown using ASCII characters |
+| ssLOG_SHOW_FILE_NAME | 1 | Show file name for all logged functions |
+| | | ⚠️ **Warning:** This extracts the file name from the `__FILE__` macro in runtime, |
+| | | which contains the **full path** to the file, and will contain sensitive information |
+| | | such as **your username** or **system file structure**. |
+| | | It is recommended to turn it **off** in any production build |
+| ssLOG_SHOW_LINE_NUM | 1 | Show line number for all logged functions |
+| ssLOG_SHOW_FUNC_NAME | 1 | Show function name for all logged functions |
+| ssLOG_SHOW_TIME | 1 | Show log time for all logged functions |
+| ssLOG_THREAD_SAFE | 1 | Use std::thread and ensure thread safety for all logged functions |
+| ssLOG_WRAP_WITH_BRACKET | 1 | If true, contents will be wrapped square brackets |
+| ssLOG_LOG_TO_FILE | 0 | Log to file instead for all logged functions |
+| ssLOG_LEVEL | 3 | Log level (0: NONE, 1: FETAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG) |
+| | | Recommended usage: |
+| | | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC |
+| | | FETAL:    Indicates program will crash |
+| | | ERROR:    Indicates program might crash and **likely** to not function correctly |
+| | | WARNING:  Indicates program won't crash but **might** not function correctly |
+| | | INFO:     Prints program state which **doesn't** spam the log |
+| | | DEBUG:    Prints program state which **does** spam the log |
 
 ----
 
 ### How to use:
-1. Clone this repository
+1. Clone this repository recursively
 2. Decide if you want to use this with header-only or with source
     - Header only:
         1. Edit & include `include/ssLogSwitches.hpp` as you like
@@ -128,30 +167,45 @@ auto lambda = []()
         3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
         4. Edit properties via CMake GUI or command line
 
-> <font size="4">⚠️ **Warning:** Using ssLogger inside **static variable or  class initialization** will result undefined behaviour (as ssLogger uses global static variable).</font>
+> <font size="4">⚠️ **Warning:** Using ssLogger before main (i.e. inside static class initialization) will result undefined behaviour (as ssLogger uses global static variable).</font>
 
 ----
 
 ### Dependencies:
 
-No external library dependencies, only standard library is used.
+- [termcolor](https://github.com/ikalnytskyi/termcolor) with [license distributed](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE) 
 
 - Common dependencies
+    - `#include <sstream>`
     - `#include <string>`
     - `#include <stack>`
+    - `#include <iostream>`
 - ssLOG_THREAD_SAFE
     - `#include <unordered_map>`
     - `#include <thread>`
     - `#include <mutex>`
 - ssLOG_LOG_TO_FILE
-    - True: `#include <fstream>`, `#include <ctime>`
-    - False: `#include <iostream>`
+    - On: `#include <fstream>`, `#include <ctime>`
+    - Off: 
+        - `#include <cstdint>`
+        - POSIX
+            - `#include <unistd.h>`
+        - Windows
+            - `#include <io.h>`
+            - `#include <windows.h>`
 - ssLOG_SHOW_TIME
     - `#include <chrono>`
     - `#include <sstream>`
     - `#include <iomanip>`
     - `#include <ctime>`
-
+- ssLOG_ASCII
+    - Off:
+        - `#include <cstdint>`
+        - POSIX
+            - `#include <unistd.h>`
+        - Windows
+            - `#include <io.h>`
+            - `#include <windows.h>`
 ----
 
 ### 🔜 TODOs:
