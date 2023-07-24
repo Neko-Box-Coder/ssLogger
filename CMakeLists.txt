@@ -179,6 +179,11 @@ if(${ssLOG_BUILD_TESTS})
     #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogSwitches.hpp"
     #                        )
 
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_definitions(ssLogger_SRC PUBLIC _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(ssLogger_HEAD INTERFACE _CRT_SECURE_NO_WARNINGS)
+    endif()
+
     # ==========================================================
     # Tests
     # ==========================================================

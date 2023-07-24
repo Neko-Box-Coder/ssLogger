@@ -44,12 +44,12 @@
 
 #endif
 
+int ssLogLevel = 0;
+
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
     std::ofstream ssLogFileStream = std::ofstream();
 #else
-    //TODO(NOW): Test this
-    
     #ifdef _WIN32
         #include <windows.h>
         #undef max

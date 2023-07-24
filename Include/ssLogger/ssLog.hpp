@@ -213,6 +213,8 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
 #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
 
+#define INTERNAL_ssLOG_LINE_NOT_SAFE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE_NOT_SAFE, __VA_ARGS__ ) } while(0)
+
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... )
     #define ssLOG_FUNC_ENTRY( ... ) 
@@ -221,14 +223,25 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
     #define INTERNAL_ssLOG_LINE_0()\
     {\
-        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_0());\
     }
 
     #define INTERNAL_ssLOG_LINE_1(debugText)\
     {\
-        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": " << INTERNAL_ssLOG_WRAP_CONTENT(debugText)));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText));\
     }
-#else    
+    
+    #define INTERNAL_ssLOG_LINE_NOT_SAFE_0()\
+    {\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM());\
+    }
+    
+    #define INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText)\
+    {\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": " << INTERNAL_ssLOG_WRAP_CONTENT(debugText));\
+    }
+
+#else
     inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
     {
         std::string returnString = "";
@@ -252,12 +265,22 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
     #define INTERNAL_ssLOG_LINE_0()\
     {\
-        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_0());\
     }
 
     #define INTERNAL_ssLOG_LINE_1(debugText)\
     {\
-        INTERNAL_ssLOG_THREAD_SAFE_OP(ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": "<<INTERNAL_ssLOG_WRAP_CONTENT(debugText)));\
+        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText));\
+    }
+    
+    #define INTERNAL_ssLOG_LINE_NOT_SAFE_0()\
+    {\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM());\
+    }
+
+    #define INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText)\
+    {\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": "<<INTERNAL_ssLOG_WRAP_CONTENT(debugText));\
     }
     
     #define INTERNAL_ssLOG_Q(x) (std::string(#x).size() > 50 ? std::string(#x).substr(0, 50) + " ..." : #x)
@@ -408,52 +431,100 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_LEVEL 0
 #endif
 
-#if ssLOG_LEVEL >= INTERNAL_ssLOG_FETAL
-    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
-        #define ssLOG_FETAL(...) do{ ssLOG_LINE( "[FETAL] " << __VA_ARGS__); } while(0)
-    #else
-        #define ssLOG_FETAL(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_red << "[FETAL]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
-    #endif
+extern int ssLogLevel;
+
+#if ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1
+    template <typename CharT>
+    inline std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream)
+    {
+        switch(ssLogLevel)
+        {
+            case INTERNAL_ssLOG_FETAL:
+                stream << termcolor::colorize << termcolor::white << termcolor::on_red << "[FETAL]" << termcolor::reset << " ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_ERROR:
+                stream << termcolor::colorize << termcolor::white << termcolor::on_bright_red << "[ERROR]" << termcolor::reset << " ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_WARNING:
+                stream << termcolor::colorize << termcolor::white << termcolor::on_yellow << "[WARNING]" << termcolor::reset << " ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_INFO:
+                stream << termcolor::colorize << termcolor::white << termcolor::on_grey << "[INFO]" << termcolor::reset << " ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_DEBUG:
+                stream << termcolor::colorize << termcolor::white << termcolor::on_green << "[DEBUG]" << termcolor::reset << " ";
+                ssLogLevel = 0;
+                return stream;
+            default:
+                ssLogLevel = 0;
+                return stream;
+        }
+    }
 #else
-    #define ssLOG_FETAL(...) do{} while(0)
+    template <typename CharT>
+    inline std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream)
+    {
+        switch(ssLogLevel)
+        {
+            case INTERNAL_ssLOG_FETAL:
+                stream << "[FETAL] ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_ERROR:
+                stream << "[ERROR] ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_WARNING:
+                stream << "[WARNING] ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_INFO:
+                stream << "[INFO] ";
+                ssLogLevel = 0;
+                return stream;
+            case INTERNAL_ssLOG_DEBUG:
+                stream << "[DEBUG] ";
+                ssLogLevel = 0;
+                return stream;
+            default:
+                ssLogLevel = 0;
+                return stream;
+        }
+    }
+#endif
+
+#define INTERNAL_ssLOG_GET_LOG_LEVEL() ApplyLog
+
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_FETAL
+    #define ssLOG_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0)
+#else
+    #define ssLOG_FETAL(...) do{} while(0) 
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_ERROR
-    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
-        #define ssLOG_ERROR(...) do{ ssLOG_LINE( "[ERROR] " << __VA_ARGS__); } while(0)
-    #else
-        #define ssLOG_ERROR(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_bright_red << "[ERROR]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
-    #endif
+    #define ssLOG_ERROR(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_ERROR; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0)
 #else
     #define ssLOG_ERROR(...) do{} while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_WARNING
-    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
-        #define ssLOG_WARNING(...) do{ ssLOG_LINE( "[WARNING] " << __VA_ARGS__); } while(0)
-    #else
-        #define ssLOG_WARNING(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_yellow << "[WARNING]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
-    #endif
+    #define ssLOG_WARNING(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_WARNING; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0)
 #else
     #define ssLOG_WARNING(...) do{} while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_INFO
-    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
-        #define ssLOG_INFO(...) do{ ssLOG_LINE( "[INFO] " << __VA_ARGS__); } while(0)
-    #else
-        #define ssLOG_INFO(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_grey << "[INFO]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
-    #endif
+    #define ssLOG_INFO(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_INFO; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0)
 #else
     #define ssLOG_INFO(...) do{} while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_DEBUG
-    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
-        #define ssLOG_DEBUG(...) do{ ssLOG_LINE( "[DEBUG] " << __VA_ARGS__); } while(0)
-    #else
-        #define ssLOG_DEBUG(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_green << "[DEBUG]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
-    #endif
+    #define ssLOG_DEBUG(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_DEBUG; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0)
 #else
     #define ssLOG_DEBUG(...) do{} while(0)
 #endif
