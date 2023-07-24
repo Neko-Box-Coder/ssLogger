@@ -34,38 +34,27 @@ int someValue = 42;
 ssLOG_LINE("Here's some value: "<<someValue);
 ```
 
-### Logging functions call stack (*inline macro*):
+### Logging with level:
 ```c++
-//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
+// 2022-08-14 16:49:53.802 [FETAL] [MethodName] in FileName.cpp on line 9: [Test fetal]
+ssLOG_FETAL("Test fetal");
 
-void A()
-{
-    //...
-}
+// 2022-08-14 16:49:53.802 [ERROR] [MethodName] in FileName.cpp on line 9: [Test error]
+ssLOG_ERROR("Test error");
 
-int B()
-{
-    //...
-    return 42;
-}
+// 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Test warning]
+ssLOG_WARNING("Test warning");
 
-int main()
-{
-    // Or without space
-    ssLOG_FUNC_CONTENT( A() );
-    
-    ssLOG_FUNC_CONTENT( int retVal = B() );
+// 2022-08-14 16:49:53.802 [INFO] [MethodName] in FileName.cpp on line 9: [Test info]
+ssLOG_INFO("Test info");
 
-    // Or you can format it like this to log more than 1 statements!
-    ssLOG_FUNC_CONTENT
-    (
-         int retVal = B();
-         // Some other statements...
-    );
+// 2022-08-14 16:49:53.802 [DEBUG] [MethodName] in FileName.cpp on line 9: [Test debug]
+ssLOG_DEBUG("Test debug");
 
-    return 0;
-}
-
+// Output:
+// 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
+int someValue = 42;
+ssLOG_WARNING("Here's some value: "<<someValue);
 ```
 
 ### Logging functions call stack (*With automatic macro*):
@@ -104,10 +93,44 @@ auto lambda = []()
 };
 ```
 
+### Logging functions call stack (*inline macro*):
+```c++
+//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
+
+void A()
+{
+    //...
+}
+
+int B()
+{
+    //...
+    return 42;
+}
+
+int main()
+{
+    // Or without space
+    ssLOG_FUNC_CONTENT( A() );
+    
+    ssLOG_FUNC_CONTENT( int retVal = B() );
+
+    // Or you can format it like this to log more than 1 statements!
+    ssLOG_FUNC_CONTENT
+    (
+         int retVal = B();
+         // Some other statements...
+    );
+
+    return 0;
+}
+
+```
+
 ----
 
 ### How to use:
-1. Clone this repository
+1. Clone this repository recursively
 2. Decide if you want to use this with header-only or with source
     - Header only:
         1. Edit & include `include/ssLogSwitches.hpp` as you like
@@ -125,25 +148,39 @@ auto lambda = []()
 
 ### Dependencies:
 
-No external library dependencies, only standard library is used.
+- [termcolor](https://github.com/ikalnytskyi/termcolor) with [license distributed](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE) 
 
 - Common dependencies
     - `#include <sstream>`
     - `#include <string>`
     - `#include <stack>`
+    - `#include <iostream>`
 - ssLOG_THREAD_SAFE
     - `#include <unordered_map>`
     - `#include <thread>`
     - `#include <mutex>`
 - ssLOG_LOG_TO_FILE
-    - True: `#include <fstream>`, `#include <ctime>`
-    - False: `#include <iostream>`
+    - On: `#include <fstream>`, `#include <ctime>`
+    - Off: 
+        - `#include <cstdint>`
+        - POSIX
+            - `#include <unistd.h>`
+        - Windows
+            - `#include <io.h>`
+            - `#include <windows.h>`
 - ssLOG_SHOW_TIME
     - `#include <chrono>`
     - `#include <sstream>`
     - `#include <iomanip>`
     - `#include <ctime>`
-
+- ssLOG_ASCII
+    - Off:
+        - `#include <cstdint>`
+        - POSIX
+            - `#include <unistd.h>`
+        - Windows
+            - `#include <io.h>`
+            - `#include <windows.h>`
 ----
 
 ### 🔜 TODOs:

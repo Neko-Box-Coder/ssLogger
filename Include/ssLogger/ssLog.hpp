@@ -32,9 +32,25 @@
 #endif
 
 // =======================================================================
+// Macros for ssLOG_EXIT_PROGRAM
+// =======================================================================
+#define ssLOG_EXIT_PROGRAM( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXIT_PROGRAM, __VA_ARGS__ ) } while(0)
+
+#define INTERNAL_ssLOG_EXIT_PROGRAM_0()\
+{\
+    std::exit(1);\
+}
+
+#define INTERNAL_ssLOG_EXIT_PROGRAM_1(x)\
+{\
+    std::exit(x);\
+}
+
+// =======================================================================
 // Error codes
 // =======================================================================
 #define ssLOG_FAILED_TO_CREATE_LOG_FILE 178
+#define ssLOG_MISSING_FUNCTION_WRAPPER 179
 
 // =======================================================================
 // Helper macro functions
@@ -260,7 +276,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != INTERNAL_ssLOG_Q(expr))\
         {\
             ssLOG_BASE("ssLOG_FUNC_EXIT is missing somewhere. "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<" is expected but"<<INTERNAL_ssLOG_Q(expr)<<" is found instead.");\
-            std::exit(EXIT_FAILURE);\
+            INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);\
         }\
         INTERNAL_ssLOG_GET_FUNC_STACK().pop();\
         INTERNAL_ssLOG_GET_TAB_SPACE()--;\
@@ -296,7 +312,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                     if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != FuncName)
                     {
                         ssLOG_BASE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<". "<<FuncName<<" is found instead.");
-                        std::exit(EXIT_FAILURE);
+                        INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);
                     }
                     INTERNAL_ssLOG_GET_FUNC_STACK().pop();
                     INTERNAL_ssLOG_GET_TAB_SPACE()--;
@@ -328,7 +344,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != __func__)\
         {\
             ssLOG_BASE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<". "<<__func__<<" is found instead.");\
-            std::exit(EXIT_FAILURE);\
+            INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);\
         }\
         INTERNAL_ssLOG_GET_FUNC_STACK().pop();\
         INTERNAL_ssLOG_GET_TAB_SPACE()--;\
@@ -349,7 +365,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         if(INTERNAL_ssLOG_GET_FUNC_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_STACK().top() != customFunc)\
         {\
             ssLOG_BASE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_STACK().top()<<". "<<customFunc<<" is found instead.");\
-            std::exit(EXIT_FAILURE);\
+            INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);\
         }\
         INTERNAL_ssLOG_GET_FUNC_STACK().pop();\
         INTERNAL_ssLOG_GET_TAB_SPACE()--;\
@@ -371,18 +387,77 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #endif
 
 // =======================================================================
-// Macros for ssLOG_EXIT_PROGRAM
+// Macros for output level
 // =======================================================================
-#define ssLOG_EXIT_PROGRAM( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXIT_PROGRAM, __VA_ARGS__ ) } while(0)
 
-#define INTERNAL_ssLOG_EXIT_PROGRAM_0()\
-{\
-    std::exit(1);\
-}
+#define INTERNAL_ssLOG_DEBUG 5
+#define INTERNAL_ssLOG_INFO 4
+#define INTERNAL_ssLOG_WARNING 3
+#define INTERNAL_ssLOG_ERROR 2
+#define INTERNAL_ssLOG_FETAL 1
 
-#define INTERNAL_ssLOG_EXIT_PROGRAM_1(x)\
-{\
-    std::exit(x);\
-}
+#if ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1 && defined(ssLOG_USE_SOURCE)
+    #include <cstdint>
+    #include "termcolor/termcolor.hpp"
+#elif ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1
+    #include <cstdint>
+    #include "../../External/termcolor/include/termcolor/termcolor.hpp"
+#endif
+
+#ifndef ssLOG_LEVEL
+    #define ssLOG_LEVEL 0
+#endif
+
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_FETAL
+    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
+        #define ssLOG_FETAL(...) do{ ssLOG_LINE( "[FETAL] " << __VA_ARGS__); } while(0)
+    #else
+        #define ssLOG_FETAL(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_red << "[FETAL]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
+    #endif
+#else
+    #define ssLOG_FETAL(...) do{} while(0)
+#endif
+
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_ERROR
+    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
+        #define ssLOG_ERROR(...) do{ ssLOG_LINE( "[ERROR] " << __VA_ARGS__); } while(0)
+    #else
+        #define ssLOG_ERROR(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_bright_red << "[ERROR]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
+    #endif
+#else
+    #define ssLOG_ERROR(...) do{} while(0)
+#endif
+
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_WARNING
+    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
+        #define ssLOG_WARNING(...) do{ ssLOG_LINE( "[WARNING] " << __VA_ARGS__); } while(0)
+    #else
+        #define ssLOG_WARNING(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_yellow << "[WARNING]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
+    #endif
+#else
+    #define ssLOG_WARNING(...) do{} while(0)
+#endif
+
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_INFO
+    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
+        #define ssLOG_INFO(...) do{ ssLOG_LINE( "[INFO] " << __VA_ARGS__); } while(0)
+    #else
+        #define ssLOG_INFO(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_grey << "[INFO]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
+    #endif
+#else
+    #define ssLOG_INFO(...) do{} while(0)
+#endif
+
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_DEBUG
+    #if ssLOG_ASCII || ssLOG_LOG_TO_FILE
+        #define ssLOG_DEBUG(...) do{ ssLOG_LINE( "[DEBUG] " << __VA_ARGS__); } while(0)
+    #else
+        #define ssLOG_DEBUG(...) do{ ssLOG_PREPEND(termcolor::colorize << termcolor::white << termcolor::on_green << "[DEBUG]" << termcolor::reset << " "); ssLOG_LINE(__VA_ARGS__); } while(0)
+    #endif
+#else
+    #define ssLOG_DEBUG(...) do{} while(0)
+#endif
+
 
 #endif
+

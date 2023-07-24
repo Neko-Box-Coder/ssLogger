@@ -29,9 +29,21 @@ set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
 set(ssLOG_THREAD_SAFE 1 CACHE BOOL "Use std::thread and ensure thread safety for all logged functions")
 set(ssLOG_WRAP_WITH_BRACKET 1 CACHE BOOL "If true, contents will be wrapped square brackets")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
+set(ssLOG_LEVEL "WARNING" CACHE STRING 
+"Log level (NONE, FETAL, ERROR, WARNING, INFO, DEBUG)
+NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
+FETAL    (Program will crash)
+ERROR    (Program might crash and **likely** to not function correctly)
+WARNING  (Program won't crash but **might** not function correctly)
+INFO     (Program state which **doesn't** spam the log)
+DEBUG    (Program state which **does** spam the log)")
 
-set(ssLOG_INCLUDE_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Include")
-
+set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
+                                                "FETAL" 
+                                                "ERROR" 
+                                                "WARNING" 
+                                                "INFO" 
+                                                "DEBUG")
 
 #Find shared libraries in the same location as the executable
 # SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,$ORIGIN")
@@ -51,7 +63,9 @@ if("${ssLOG_USE_SOURCE}")
         )
     endif()
 
-    target_include_directories(ssLogger PUBLIC "${ssLOG_INCLUDE_LOCATION}")
+    target_include_directories(ssLogger PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include"
+                                                "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
+    
 
     target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=$<BOOL:${ssLOG_CALL_STACK}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_ASCII=$<BOOL:${ssLOG_LOG_WITH_ASCII}>)
@@ -64,17 +78,33 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_WRAP_WITH_BRACKET=$<BOOL:${ssLOG_WRAP_WITH_BRACKET}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
+    if(${ssLOG_LEVEL} STREQUAL "NONE")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=0)
+    elseif(${ssLOG_LEVEL} STREQUAL "FETAL")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=1)
+    elseif(${ssLOG_LEVEL} STREQUAL "ERROR")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=2)
+    elseif(${ssLOG_LEVEL} STREQUAL "WARNING")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=3)
+    elseif(${ssLOG_LEVEL} STREQUAL "INFO")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=4)
+    elseif(${ssLOG_LEVEL} STREQUAL "DEBUG")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=5)
+    endif()
+
     #message("ssLOG_CALL_STACK: ${ssLOG_CALL_STACK}")
     #message("ssLOG_SHOW_FILE_NAME: ${ssLOG_SHOW_FILE_NAME}")
 
 else()
     add_library(ssLogger INTERFACE)
-    target_include_directories(ssLogger INTERFACE "${ssLOG_INCLUDE_LOCATION}")
-    target_sources(ssLogger INTERFACE
-                            "${ssLOG_INCLUDE_LOCATION}/ssLogger/ssLog.hpp"
-                            "${ssLOG_INCLUDE_LOCATION}/ssLogger/ssLogInit.hpp"
-                            "${ssLOG_INCLUDE_LOCATION}/ssLogger/ssLogSwitches.hpp"
-                            )
+    target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include")
+    #target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include"
+    #                                                "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
+    #target_sources(ssLogger INTERFACE
+    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLog.hpp"
+    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogInit.hpp"
+    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogSwitches.hpp"
+    #                        )
     
     # DEBUGGING
     # get_target_property(MY_PROJECT_SOURCES ssLogger INTERFACE_SOURCES)
@@ -111,7 +141,8 @@ if(${ssLOG_BUILD_TESTS})
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
     )
     # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
-    target_include_directories(ssLogger_SRC PUBLIC "${ssLOG_INCLUDE_LOCATION}")
+    target_include_directories(ssLogger_SRC PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include"
+                                                    "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
 
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK=$<BOOL:${ssLOG_CALL_STACK}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_ASCII=$<BOOL:${ssLOG_LOG_WITH_ASCII}>)
@@ -124,14 +155,29 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_WRAP_WITH_BRACKET=$<BOOL:${ssLOG_WRAP_WITH_BRACKET}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
+    if(${ssLOG_LEVEL} STREQUAL "NONE")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=0)
+    elseif(${ssLOG_LEVEL} STREQUAL "FETAL")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=1)
+    elseif(${ssLOG_LEVEL} STREQUAL "ERROR")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=2)
+    elseif(${ssLOG_LEVEL} STREQUAL "WARNING")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=3)
+    elseif(${ssLOG_LEVEL} STREQUAL "INFO")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=4)
+    elseif(${ssLOG_LEVEL} STREQUAL "DEBUG")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=5)
+    endif()
+
 
     add_library(ssLogger_HEAD INTERFACE)
-    target_include_directories(ssLogger_HEAD INTERFACE "${ssLOG_INCLUDE_LOCATION}")
-    target_sources(ssLogger_HEAD INTERFACE
-                            "${ssLOG_INCLUDE_LOCATION}/ssLogger/ssLog.hpp"
-                            "${ssLOG_INCLUDE_LOCATION}/ssLogger/ssLogInit.hpp"
-                            "${ssLOG_INCLUDE_LOCATION}/ssLogger/ssLogSwitches.hpp"
-                            )
+    target_include_directories(ssLogger_HEAD INTERFACE  "${CMAKE_CURRENT_LIST_DIR}/Include"
+                                                        "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
+    #target_sources(ssLogger_HEAD INTERFACE
+    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLog.hpp"
+    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogInit.hpp"
+    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogSwitches.hpp"
+    #                        )
 
     # ==========================================================
     # Tests
