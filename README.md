@@ -1,6 +1,12 @@
-# ssLogger 📔
+<p align="center">
+    <h1>ssLogger 📔</h1>
+    <img src="./logo.png">
+    <h5>Logs incoming....</h5>
+</p>
 
-Super simple macro based Logger for call stack and quick debug logging, with minimum dependencies, high flexiblity and works with C++ 11 or above.
+---
+
+##### Super simple macro based Logger for call stack and quick debug logging, with minimum dependencies, high flexiblity and works with C++ 11 or above.
 
 #### Both header only or CMake option available.
 
@@ -14,9 +20,29 @@ Super simple macro based Logger for call stack and quick debug logging, with min
 ![demo2](./Resources/demo3.gif)
 
 #### 🔧 Easy Customization:
-![cus](./Resources/customization.png)
-![header](./Resources/header.png)
-![cmake](./Resources/cmake.png)
+
+##### CMake / Header Defines
+- ssLOG_CALL_STACK: (Default: true) Show call stack for all logged functions
+- ssLOG_LOG_WITH_ASCII: (Default: false) Call stack logging will be shown using ASCII characters
+- ssLOG_SHOW_FILE_NAME: (Default: true) Show file name for all logged functions
+    - ⚠️ **Warning:** This extracts the file name from the `__FILE__` macro in runtime, 
+        which contains the **full path** to the file, and will contain sensitive information such as
+        **your username** or **system file structure**. 
+        It is recommended to turn it **off** in any production build
+- ssLOG_SHOW_LINE_NUM: (Default: true) Show line number for all logged functions
+- ssLOG_SHOW_FUNC_NAME: (Default: true) Show function name for all logged functions
+- ssLOG_SHOW_TIME: (Default: true) Show log time for all logged functions
+- ssLOG_THREAD_SAFE: (Default: true) Use std::thread and ensure thread safety for all logged functions
+- ssLOG_WRAP_WITH_BRACKET: (Default: true) If true, contents will be wrapped square brackets
+- ssLOG_LOG_TO_FILE: (Default: false) Log to file instead for all logged functions
+- ssLOG_LEVEL: (Default: 3) Log level (0: NONE, 1: FETAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)
+    - Recommended usage:
+        - NONE:     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
+        - FETAL:    (Indicates program will crash)
+        - ERROR:    (Indicates program might crash and **likely** to not function correctly)
+        - WARNING:  (Indicates program won't crash but **might** not function correctly)
+        - INFO:     (Prints program state which **doesn't** spam the log)
+        - DEBUG:    (Prints program state which **does** spam the log)
 
 ----
 
