@@ -108,12 +108,12 @@ int B()
 int main()
 {
     // Or without space
-    ssLOG_FUNC_CONTENT( A() );
+    ssLOG_CONTENT( A() );
     
-    ssLOG_FUNC_CONTENT( int retVal = B() );
+    ssLOG_CONTENT( int retVal = B() );
 
     // Or you can format it like this to log more than 1 statements!
-    ssLOG_FUNC_CONTENT
+    ssLOG_CONTENT
     (
          int retVal = B();
          // Some other statements...

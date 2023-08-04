@@ -215,6 +215,8 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
 #define INTERNAL_ssLOG_LINE_NOT_SAFE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE_NOT_SAFE, __VA_ARGS__ ) } while(0)
 
+#define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
+
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... )
     #define ssLOG_FUNC_ENTRY( ... ) 

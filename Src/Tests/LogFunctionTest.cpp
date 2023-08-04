@@ -25,7 +25,7 @@ int C()
 {
     ssLOG_LINE("Function C content logged");
     
-    ssLOG_FUNC_CONTENT( A() );
+    ssLOG_CONTENT( A() );
 
     return 42;
 }
@@ -43,9 +43,9 @@ int main()
     
     B();
 
-    ssLOG_FUNC_CONTENT( int cValue = C(); );
+    ssLOG_CONTENT( int cValue = C(); );
 
-    ssLOG_FUNC_CONTENT
+    ssLOG_CONTENT
     (
         FunctionWithALotOfArgs
         (
