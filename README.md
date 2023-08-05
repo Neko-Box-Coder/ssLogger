@@ -216,5 +216,6 @@
 ----
 
 ### 🔜 TODOs:
+- Add script for running tests in different configurations
 - Add option for only showing time instead of both date and time
 - Add executable to merge thread logs together
