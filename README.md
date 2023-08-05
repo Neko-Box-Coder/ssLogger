@@ -21,136 +21,143 @@
 
 ### Logging a line:
 ```c++
-// Output:
-// 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9
-ssLOG_LINE();
+    // Output:
+    // 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9
+    ssLOG_LINE();
 
-// Output:
-// 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
-int someValue = 42;
-ssLOG_LINE("Here's some value: "<<someValue);
+    // Output:
+    // 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
+    int someValue = 42;
+    ssLOG_LINE("Here's some value: "<<someValue);
 ```
 
 ### Logging with level:
+![logLevel](./Resources/logLevels.png)
 ```c++
-// 2022-08-14 16:49:53.802 [FETAL] [MethodName] in FileName.cpp on line 9: [Test fetal]
-ssLOG_FETAL("Test fetal");
+    // 2022-08-14 16:49:53.802 [FETAL] [MethodName] in FileName.cpp on line 9: [Test fetal]
+    ssLOG_FETAL("Test fetal");
 
-// 2022-08-14 16:49:53.802 [ERROR] [MethodName] in FileName.cpp on line 9: [Test error]
-ssLOG_ERROR("Test error");
+    // 2022-08-14 16:49:53.802 [ERROR] [MethodName] in FileName.cpp on line 9: [Test error]
+    ssLOG_ERROR("Test error");
 
-// 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Test warning]
-ssLOG_WARNING("Test warning");
+    // 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Test warning]
+    ssLOG_WARNING("Test warning");
 
-// 2022-08-14 16:49:53.802 [INFO] [MethodName] in FileName.cpp on line 9: [Test info]
-ssLOG_INFO("Test info");
+    // 2022-08-14 16:49:53.802 [INFO] [MethodName] in FileName.cpp on line 9: [Test info]
+    ssLOG_INFO("Test info");
 
-// 2022-08-14 16:49:53.802 [DEBUG] [MethodName] in FileName.cpp on line 9: [Test debug]
-ssLOG_DEBUG("Test debug");
+    // 2022-08-14 16:49:53.802 [DEBUG] [MethodName] in FileName.cpp on line 9: [Test debug]
+    ssLOG_DEBUG("Test debug");
 
-// Output:
-// 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
-int someValue = 42;
-ssLOG_WARNING("Here's some value: "<<someValue);
+    // Output:
+    // 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
+    int someValue = 42;
+    ssLOG_WARNING("Here's some value: "<<someValue);
 ```
 
 ### Logging functions call stack (*With automatic macro*):
 
 ```c++
-//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
+    //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
-//Log function callstack with ssLOG_FUNC
-void B()
-{
-    ssLOG_FUNC();
+    //Log function callstack with ssLOG_FUNC
+    void B()
+    {
+        ssLOG_FUNC();
 
-    //...
-}
+        //...
+    }
 
-int C(bool b)
-{
-    ssLOG_FUNC();
-    
-    //...
+    int C(bool b)
+    {
+        ssLOG_FUNC();
+        
+        //...
 
-    if(b)
+        if(b)
+            return 42;
+
+        //...
+
+        return 43;
+    }
+
+    //You can also have custom names for functions as well, which is useful for lambda functions.
+    auto lambda = []()
+    {
+        ssLOG_FUNC("My lambda function");
+
+        //...
+    };
+    ```
+
+    ### Logging functions call stack (*inline macro*):
+    ```c++
+    //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
+
+    void A()
+    {
+        //...
+    }
+
+    int B()
+    {
+        //...
         return 42;
+    }
 
-    //...
+    int main()
+    {
+        // Or without space
+        ssLOG_CONTENT( A() );
+        
+        ssLOG_CONTENT( int retVal = B() );
 
-    return 43;
-}
+        // Or you can format it like this to log more than 1 statements!
+        ssLOG_CONTENT
+        (
+            int retVal = B();
+            // Some other statements...
+        );
 
-//You can also have custom names for functions as well, which is useful for lambda functions.
-auto lambda = []()
-{
-    ssLOG_FUNC("My lambda function");
+        // You can also add the log level suffix (_DEBUG, _ERROR, etc...) to any of these calls
+        ssLOG_CONTENT_DEBUG
+        (
+            A();
+        );
 
-    //...
-};
-```
-
-### Logging functions call stack (*inline macro*):
-```c++
-//***Functions call stack are only logged when ssLOG_CALL_STACK is true***
-
-void A()
-{
-    //...
-}
-
-int B()
-{
-    //...
-    return 42;
-}
-
-int main()
-{
-    // Or without space
-    ssLOG_FUNC_CONTENT( A() );
-    
-    ssLOG_FUNC_CONTENT( int retVal = B() );
-
-    // Or you can format it like this to log more than 1 statements!
-    ssLOG_FUNC_CONTENT
-    (
-         int retVal = B();
-         // Some other statements...
-    );
-
-    return 0;
-}
-
+        return 0;
+    }
 ```
 ----
 
 #### 🔧 Easy Customization:
 
 ##### CMake / Header Defines
-| Define Macro Name | Default Value | Explaination |
-| --- | --- | --- |
-| ssLOG_CALL_STACK | 1 | Show call stack for all logged functions |
-| ssLOG_LOG_WITH_ASCII | 0 | Call stack logging will be shown using ASCII characters |
-| ssLOG_SHOW_FILE_NAME | 1 | Show file name for all logged functions |
-| | | ⚠️ **Warning:** This extracts the file name from the `__FILE__` macro in runtime, |
-| | | which contains the **full path** to the file, and will contain sensitive information |
-| | | such as **your username** or **system file structure**. |
-| | | It is recommended to turn it **off** in any production build |
-| ssLOG_SHOW_LINE_NUM | 1 | Show line number for all logged functions |
-| ssLOG_SHOW_FUNC_NAME | 1 | Show function name for all logged functions |
-| ssLOG_SHOW_TIME | 1 | Show log time for all logged functions |
-| ssLOG_THREAD_SAFE | 1 | Use std::thread and ensure thread safety for all logged functions |
-| ssLOG_WRAP_WITH_BRACKET | 1 | If true, contents will be wrapped square brackets |
-| ssLOG_LOG_TO_FILE | 0 | Log to file instead for all logged functions |
-| ssLOG_LEVEL | 3 | Log level (0: NONE, 1: FETAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG) |
-| | | Recommended usage: |
-| | | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC |
-| | | FETAL:    Indicates program will crash |
-| | | ERROR:    Indicates program might crash and **likely** to not function correctly |
-| | | WARNING:  Indicates program won't crash but **might** not function correctly |
-| | | INFO:     Prints program state which **doesn't** spam the log |
-| | | DEBUG:    Prints program state which **does** spam the log |
+| Define Macro Name         | Default Value | Explaination                                                                                          |
+| ---                       | ---           | ---                                                                                                   |
+| ssLOG_CALL_STACK          | 1             | Show call stack for all logged functions                                                              |
+| ssLOG_LOG_WITH_ASCII      | 0             | Logging will only use ASCII characters,                                                               |
+|                           |               | which changes the call stack tree characters and disables log level text highlights                   |
+| ssLOG_SHOW_FILE_NAME      | 1             | Show file name for all logged functions                                                               |
+|                           |               | ⚠️ **Warning:** This extracts the file name from the `__FILE__` macro in runtime,                     |
+|                           |               | which contains the **full path** to the file, and will contain sensitive information                  |
+|                           |               | such as **your username** or **system file structure**.                                               |
+|                           |               | It is recommended to turn it **off** in any production build                                          |
+| ssLOG_SHOW_LINE_NUM       | 1             | Show line number for all logged functions                                                             |
+| ssLOG_SHOW_FUNC_NAME      | 1             | Show function name for all logged functions                                                           |
+| ssLOG_SHOW_TIME           | 1             | Show log time for all logged functions                                                                |
+| ssLOG_THREAD_SAFE         | 1             | Use std::thread and ensure thread safety for all logged functions                                     |
+| ssLOG_WRAP_WITH_BRACKET   | 1             | If true, contents will be wrapped square brackets                                                     |
+| ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
+| ssLOG_LEVEL               | 3             | Log level (0: NONE, 1: FETAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                                |
+|                           |               | Recommended usage:                                                                                    |
+|                           |               | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC    |
+|                           |               | FETAL:    Indicates program will crash                                                                |
+|                           |               | ERROR:    Indicates program might crash and **likely** to not function correctly                      |
+|                           |               | WARNING:  Indicates program won't crash but **might** not function correctly                          |
+|                           |               | INFO:     Prints program state which **doesn't** spam the log                                         |
+|                           |               | DEBUG:    Prints program state which **does** spam the log                                            |
 
 ----
 
@@ -209,5 +216,6 @@ int main()
 ----
 
 ### 🔜 TODOs:
+- Add script for running tests in different configurations
 - Add option for only showing time instead of both date and time
 - Add executable to merge thread logs together

@@ -18,10 +18,12 @@
 
     #ifndef INTERNAL_ssTHREAD_LOG_INFO_DECL
     #define INTERNAL_ssTHREAD_LOG_INFO_DECL
+        //NOTE: Any changes to this struct needs to be updated in the ssLog file as well
         struct ssLogThreadLogInfo
         {
             int TabSpace = 0;
             std::stack<std::string> FuncNameStack = std::stack<std::string>();
+            std::stack<int> LogLevelStack = std::stack<int>();
             std::stringstream CurrentPrepend;
         };
     #endif
@@ -42,6 +44,7 @@
     int ssTabSpace = 0;
     std::stack<std::string> ssFuncNameStack = std::stack<std::string>();
     std::stringstream ssCurrentPrepend;
+    std::stack<int> ssLogLevelStack = std::stack<int>();
 
     std::string(*Internal_ssLogGetPrepend)(void) = []()
     {
