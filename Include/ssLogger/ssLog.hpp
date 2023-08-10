@@ -399,10 +399,10 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
             ssLOG_BASE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top()<<". "<<customFunc<<" is found instead.");\
             INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);\
         }\
-        ssLogLevel = INTERNAL_ssLOG_GET_FUNC_NAME_STACK.top();\
+        ssLogLevel = INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().top();\
         INTERNAL_ssLOG_GET_FUNC_NAME_STACK().pop();\
         INTERNAL_ssLOG_GET_TAB_SPACE()--;\
-        INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop(ssLogLevel);\
+        INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop();\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(customFunc))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Exit]");\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });
