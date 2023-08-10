@@ -225,6 +225,8 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
 #define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
 
+#define INTERNAL_ssLOG_GET_LOG_LEVEL() ApplyLog
+
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... )
     #define ssLOG_FUNC_ENTRY( ... ) 
@@ -319,9 +321,6 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(expr))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Exit]");\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });
-
-    
-    #define INTERNAL_ssLOG_GET_LOG_LEVEL() ApplyLog
 
     template <typename CharT>
     std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
