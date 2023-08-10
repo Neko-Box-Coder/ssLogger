@@ -199,6 +199,7 @@
     extern int ssTabSpace;
     extern std::stack<std::string> ssFuncNameStack;
     extern std::stringstream ssCurrentPrepend;
+    extern std::stack<int> ssLogLevelStack;
 
     #define INTERNAL_ssLOG_THREAD_SAFE_OP(x) x
 
