@@ -296,7 +296,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_0()<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": "<<INTERNAL_ssLOG_WRAP_CONTENT(debugText));\
     }
     
-    #define INTERNAL_ssLOG_Q(x) (std::string(#x).size() > 50 ? std::string(#x).substr(0, 50) + " ..." : #x)
+    #define INTERNAL_ssLOG_LIMIT_EXPR(x) (std::string(#x).size() > 50 ? std::string(#x).substr(0, 50) + " ..." : #x)
+    
+    #define INTERNAL_ssLOG_LIMIT_STR(x) (std::string(x).size() > 50 ? std::string(x).substr(0, 50) + " ..." : x)
 
     #define ssLOG_FUNC( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC, __VA_ARGS__ )
 
@@ -304,22 +306,22 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     INTERNAL_ssLOG_THREAD_SAFE_OP({\
         INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().push(ssLogLevel);\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
-        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(expr))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Entry]");\
-        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(INTERNAL_ssLOG_Q(expr));\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_EXPR(expr))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Entry]");\
+        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(INTERNAL_ssLOG_LIMIT_EXPR(expr));\
         INTERNAL_ssLOG_GET_TAB_SPACE()++;\
     });\
     expr;\
     INTERNAL_ssLOG_THREAD_SAFE_OP({\
-        if(INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != INTERNAL_ssLOG_Q(expr))\
+        if(INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != INTERNAL_ssLOG_LIMIT_EXPR(expr))\
         {\
-            ssLOG_BASE("ssLOG_FUNC_EXIT is missing somewhere. "<<INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top()<<" is expected but"<<INTERNAL_ssLOG_Q(expr)<<" is found instead.");\
+            ssLOG_BASE("ssLOG_FUNC_EXIT is missing somewhere. "<<INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top()<<" is expected but"<<INTERNAL_ssLOG_LIMIT_EXPR(expr)<<" is found instead.");\
             INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);\
         }\
         ssLogLevel = INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().top();\
         INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop();\
         INTERNAL_ssLOG_GET_FUNC_NAME_STACK().pop();\
         INTERNAL_ssLOG_GET_TAB_SPACE()--;\
-        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(expr))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Exit]");\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_EXPR(expr))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Exit]");\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });
 
@@ -373,37 +375,42 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define INTERNAL_ssLOG_FUNC_0() Internal_ssLogFunctionScope ssLogScopeObj = Internal_ssLogFunctionScope(INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_0()), INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
                                                                                                             INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()))
     
-    #define INTERNAL_ssLOG_FUNC_1(customFunc) Internal_ssLogFunctionScope ssLogScopeObj = Internal_ssLogFunctionScope(INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(customFunc))), \
-                                                                                                                        INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()))
+    #define INTERNAL_ssLOG_FUNC_1(customFuncName)\
+        Internal_ssLogFunctionScope ssLogScopeObj = Internal_ssLogFunctionScope(INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName))), \
+                                                                                INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), INTERRNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()))
 
     #define ssLOG_FUNC_ENTRY( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY, __VA_ARGS__ ) } while(0)
     #define ssLOG_FUNC_EXIT( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_EXIT, __VA_ARGS__ ) } while(0)
 
-    #define INTERNAL_ssLOG_FUNC_ENTRY_0() INTERNAL_ssLOG_FUNC_ENTRY_1(__func__)
+    #define INTERNAL_ssLOG_FUNC_ENTRY_0() INTERNAL_ssLOG_FUNC_ENTRY_1( __func__ )
     
-    #define INTERNAL_ssLOG_FUNC_EXIT_0() INTERNAL_ssLOG_FUNC_EXIT_1(__func__)
+    #define INTERNAL_ssLOG_FUNC_EXIT_0() INTERNAL_ssLOG_FUNC_EXIT_1( __func__ )
 
-    #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFunc)\
+    #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFuncName)\
     INTERNAL_ssLOG_THREAD_SAFE_OP({\
         INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().push(ssLogLevel);\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
-        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(customFunc))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Entry]");\
-        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(customFunc);\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true)<<INTERNAL_ssLOG_GET_LOG_LEVEL()\
+                    <<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName))<<INTERNAL_ssLOG_GET_FILE_NAME()\
+                    <<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Entry]");\
+        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(customFuncName);\
         INTERNAL_ssLOG_GET_TAB_SPACE()++;\
     });
 
-    #define INTERNAL_ssLOG_FUNC_EXIT_1(customFunc)\
+    #define INTERNAL_ssLOG_FUNC_EXIT_1(customFuncName)\
     INTERNAL_ssLOG_THREAD_SAFE_OP({\
-        if(INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != customFunc)\
+        if(INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() || INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != customFuncName)\
         {\
-            ssLOG_BASE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top()<<". "<<customFunc<<" is found instead.");\
+            ssLOG_BASE("ssLOG_FUNC_EXIT is expecting "<<INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top()<<". "<<customFuncName<<" is found instead.");\
             INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_MISSING_FUNCTION_WRAPPER);\
         }\
         ssLogLevel = INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().top();\
         INTERNAL_ssLOG_GET_FUNC_NAME_STACK().pop();\
         INTERNAL_ssLOG_GET_TAB_SPACE()--;\
         INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop();\
-        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_LOG_LEVEL()<<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_Q(customFunc))<<INTERNAL_ssLOG_GET_FILE_NAME()<<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Exit]");\
+        ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())<<INTERNAL_ssLOG_GET_LOG_LEVEL()\
+                    <<INTERNAL_ssLOG_GET_PREPEND()<<INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName))<<INTERNAL_ssLOG_GET_FILE_NAME()\
+                    <<INTERNAL_ssLOG_GET_LINE_NUM()<<": [Exit]");\
         ssLOG_BASE(INTERNAL_ssLOG_GET_TIME()<<Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));\
     });
 #endif
