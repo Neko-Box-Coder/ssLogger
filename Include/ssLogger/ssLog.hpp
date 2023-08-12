@@ -229,10 +229,10 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_GET_LOG_LEVEL() ApplyLog
 
 #if !ssLOG_CALL_STACK
-    #define ssLOG_FUNC( ... )
-    #define ssLOG_FUNC_ENTRY( ... ) 
-    #define ssLOG_FUNC_EXIT( ... )
-    #define ssLOG_FUNC_CONTENT( ... )
+    #define ssLOG_FUNC( ... ) do{}while(0)
+    #define ssLOG_FUNC_ENTRY( ... ) do{}while(0)
+    #define ssLOG_FUNC_EXIT( ... ) do{}while(0)
+    #define ssLOG_FUNC_CONTENT( ... ) do{}while(0)
 
     #define INTERNAL_ssLOG_LINE_0()\
     {\
@@ -522,12 +522,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_EXIT_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
     #define ssLOG_FUNC_FETAL(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_FUNC(__VA_ARGS__);
 #else
-    #define ssLOG_FETAL(...) 
-    #define ssLOG_CONTENT_FETAL(...)
-    #define ssLOG_FUNC_CONTENT_FETAL(...)
-    #define ssLOG_FUNC_ENTRY_FETAL(...)
-    #define ssLOG_FUNC_EXIT_FETAL(...)
-    #define ssLOG_FUNC_FETAL(...)
+    #define ssLOG_FETAL(...) do{}while(0)
+    #define ssLOG_CONTENT_FETAL(...) do{}while(0)
+    #define ssLOG_FUNC_CONTENT_FETAL(...) do{}while(0)
+    #define ssLOG_FUNC_ENTRY_FETAL(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_FETAL(...) do{}while(0)
+    #define ssLOG_FUNC_FETAL(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_ERROR
@@ -538,12 +538,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_EXIT_ERROR(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_ERROR; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
     #define ssLOG_FUNC_ERROR(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_ERROR; ) ssLOG_FUNC(__VA_ARGS__);
 #else
-    #define ssLOG_ERROR(...)
-    #define ssLOG_CONTENT_ERROR(...)
-    #define ssLOG_FUNC_CONTENT_ERROR(...)
-    #define ssLOG_FUNC_ENTRY_ERROR(...)
-    #define ssLOG_FUNC_EXIT_ERROR(...)
-    #define ssLOG_FUNC_ERROR(...)
+    #define ssLOG_ERROR(...) do{}while(0)
+    #define ssLOG_CONTENT_ERROR(...) do{}while(0)
+    #define ssLOG_FUNC_CONTENT_ERROR(...) do{}while(0)
+    #define ssLOG_FUNC_ENTRY_ERROR(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_ERROR(...) do{}while(0)
+    #define ssLOG_FUNC_ERROR(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_WARNING
@@ -554,12 +554,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_EXIT_WARNING(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_WARNING; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
     #define ssLOG_FUNC_WARNING(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_WARNING; ) ssLOG_FUNC(__VA_ARGS__);
 #else
-    #define ssLOG_WARNING(...)
-    #define ssLOG_CONTENT_WARNING(...)
-    #define ssLOG_FUNC_CONTENT_WARNING(...)
-    #define ssLOG_FUNC_ENTRY_WARNING(...)
-    #define ssLOG_FUNC_EXIT_WARNING(...)
-    #define ssLOG_FUNC_WARNING(...)
+    #define ssLOG_WARNING(...) do{}while(0)
+    #define ssLOG_CONTENT_WARNING(...) do{}while(0)
+    #define ssLOG_FUNC_CONTENT_WARNING(...) do{}while(0)
+    #define ssLOG_FUNC_ENTRY_WARNING(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_WARNING(...) do{}while(0)
+    #define ssLOG_FUNC_WARNING(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_INFO
@@ -570,12 +570,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_EXIT_INFO(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_INFO; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
     #define ssLOG_FUNC_INFO(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_INFO; ) ssLOG_FUNC(__VA_ARGS__);
 #else
-    #define ssLOG_INFO(...)
-    #define ssLOG_CONTENT_INFO(...)
-    #define ssLOG_FUNC_CONTENT_INFO(...)
-    #define ssLOG_FUNC_ENTRY_INFO(...)
-    #define ssLOG_FUNC_EXIT_INFO(...)
-    #define ssLOG_FUNC_INFO(...)
+    #define ssLOG_INFO(...) do{}while(0)
+    #define ssLOG_CONTENT_INFO(...) do{}while(0)
+    #define ssLOG_FUNC_CONTENT_INFO(...) do{}while(0)
+    #define ssLOG_FUNC_ENTRY_INFO(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_INFO(...) do{}while(0)
+    #define ssLOG_FUNC_INFO(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_DEBUG
@@ -586,12 +586,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_EXIT_DEBUG(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_DEBUG; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
     #define ssLOG_FUNC_DEBUG(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_DEBUG; ) ssLOG_FUNC(__VA_ARGS__);
 #else
-    #define ssLOG_DEBUG(...)
-    #define ssLOG_CONTENT_DEBUG(...)
-    #define ssLOG_FUNC_CONTENT_DEBUG(...)
-    #define ssLOG_FUNC_ENTRY_DEBUG(...)
-    #define ssLOG_FUNC_EXIT_DEBUG(...)
-    #define ssLOG_FUNC_DEBUG(...)
+    #define ssLOG_DEBUG(...) do{}while(0)
+    #define ssLOG_CONTENT_DEBUG(...) do{}while(0)
+    #define ssLOG_FUNC_CONTENT_DEBUG(...) do{}while(0)
+    #define ssLOG_FUNC_ENTRY_DEBUG(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_DEBUG(...) do{}while(0)
+    #define ssLOG_FUNC_DEBUG(...) do{}while(0)
 #endif
 
 
