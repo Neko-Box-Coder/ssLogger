@@ -77,7 +77,7 @@
                 INTERNAL_ssLOG_EXIT_PROGRAM_1(ssLOG_FAILED_TO_CREATE_LOG_FILE);\
             }\
         }\
-        ssLogFileStream << x << "\n";\
+        ssLogFileStream << x << std::endl;\
     } while(0)
 #else
     //#ifdef _WIN32
@@ -102,7 +102,7 @@
     #include <iostream>
     #define ssLOG_BASE(x)\
     do{\
-        std::cout<<x<<"\n";\
+        std::cout<<x<<std::endl;\
     } while(0)
 #endif
 

@@ -95,9 +95,18 @@ if("${ssLOG_USE_SOURCE}")
     #message("ssLOG_CALL_STACK: ${ssLOG_CALL_STACK}")
     #message("ssLOG_SHOW_FILE_NAME: ${ssLOG_SHOW_FILE_NAME}")
 
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_definitions(ssLogger PUBLIC _CRT_SECURE_NO_WARNINGS)
+    endif()
+
 else()
     add_library(ssLogger INTERFACE)
     target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include")
+    
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_definitions(ssLogger INTERFACE _CRT_SECURE_NO_WARNINGS)
+    endif()
+    
     #target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include"
     #                                                "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
     #target_sources(ssLogger INTERFACE
@@ -112,10 +121,6 @@ else()
     # foreach(src ${MY_PROJECT_SOURCES})
     #     message(STATUS "src='${src}'")
     # endforeach()
-endif()
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_definitions(ssLogger PUBLIC _CRT_SECURE_NO_WARNINGS)
 endif()
 
 # DEBUGGING
