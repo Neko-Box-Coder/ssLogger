@@ -58,7 +58,7 @@ if("${ssLOG_USE_SOURCE}")
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     else()
-        add_library(ssLogger SHARED
+        add_library(ssLogger OBJECT
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     endif()
@@ -142,9 +142,16 @@ if(${ssLOG_BUILD_TESTS})
     # ==========================================================
 
     # Build the library for testing
-    add_library(ssLogger_SRC STATIC 
-        "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
-    )
+    if("${ssLOG_OUTPUT_STATIC}")
+        add_library(ssLogger_SRC STATIC 
+            "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
+        )
+    else()
+        add_library(ssLogger_SRC OBJECT
+            "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
+        )
+    endif()
+    
     # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
     target_include_directories(ssLogger_SRC PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include"
                                                     "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
