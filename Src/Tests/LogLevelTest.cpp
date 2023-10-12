@@ -4,14 +4,18 @@
 
 #include "ssLogger/ssLog.hpp"
 
+int CheckCounter = 0;
+
 void TestLogLevels()
 {
-    ssLOG_LINE("Test");
-    ssLOG_FETAL("Test fetal");
-    ssLOG_ERROR("Test error");
-    ssLOG_WARNING("Test warning");
-    ssLOG_INFO("Test info");
-    ssLOG_DEBUG("Test debug");
+    CheckCounter++;
+
+    ssLOG_LINE("Test: " << CheckCounter);
+    ssLOG_FETAL("Test fetal: " << CheckCounter);
+    ssLOG_ERROR("Test error: " << CheckCounter);
+    ssLOG_WARNING("Test warning: " << CheckCounter);
+    ssLOG_INFO("Test info: " << CheckCounter);
+    ssLOG_DEBUG("Test debug: " << CheckCounter);
 }
 
 void TestFuncFetal()
@@ -60,5 +64,13 @@ int main()
     TestFuncInfo();
     TestFuncDebug();
     
+    if(CheckCounter != 6)
+    {
+        ssLOG_LINE("CheckCounter failed, 6 expected, got " << CheckCounter);
+        return 1;
+    }
+    
+    ssLOG_LINE("Test passed");
+
     return 0;
 }

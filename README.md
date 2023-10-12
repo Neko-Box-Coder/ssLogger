@@ -162,7 +162,9 @@
 ----
 
 ### How to use:
-1. Clone this repository recursively
+1. Clone this repository **recursively**
+    - `git submodule add https://github.com/Neko-Box-Coder/ssLogger.git <folder name>` and `git submodule update --init --recursive`
+    - Or `git clone --recursive https://github.com/Neko-Box-Coder/ssLogger.git`
 2. Decide if you want to use this with header-only or with source
     - Header only:
         1. Edit & include `include/ssLogSwitches.hpp` as you like
