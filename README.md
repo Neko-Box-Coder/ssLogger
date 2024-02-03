@@ -89,10 +89,11 @@
 
         //...
     };
-    ```
+```
 
-    ### Logging functions call stack (*inline macro*):
-    ```c++
+### Logging functions call stack (*inline macro*):
+
+```c++
     //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
     void A()
