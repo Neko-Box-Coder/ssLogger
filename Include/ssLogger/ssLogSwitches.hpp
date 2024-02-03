@@ -26,7 +26,7 @@
     //4 is INFO     (Program state which **doesn't** spam the log)
     //3 is WARNING  (Program won't crash but **might** not function correctly)
     //2 is ERROR    (Program might crash and **likely** to not function correctly)
-    //1 is FETAL    (Program will crash)
+    //1 is FATAL    (Program will crash)
     //0 is NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
     #define ssLOG_LEVEL 3
 

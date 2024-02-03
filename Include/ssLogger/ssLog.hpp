@@ -433,7 +433,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_INFO 4
 #define INTERNAL_ssLOG_WARNING 3
 #define INTERNAL_ssLOG_ERROR 2
-#define INTERNAL_ssLOG_FETAL 1
+#define INTERNAL_ssLOG_FATAL 1
 
 #if ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1 && defined(ssLOG_USE_SOURCE)
     #include <cstdint>
@@ -453,8 +453,8 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     {
         switch(ssLogLevel)
         {
-            case INTERNAL_ssLOG_FETAL:
-                stream << termcolor::colorize << termcolor::white << termcolor::on_red << "[FETAL]" << termcolor::reset << " ";
+            case INTERNAL_ssLOG_FATAL:
+                stream << termcolor::colorize << termcolor::white << termcolor::on_red << "[FATAL]" << termcolor::reset << " ";
                 ssLogLevel = 0;
                 return stream;
             case INTERNAL_ssLOG_ERROR:
@@ -484,8 +484,8 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     {
         switch(ssLogLevel)
         {
-            case INTERNAL_ssLOG_FETAL:
-                stream << "[FETAL] ";
+            case INTERNAL_ssLOG_FATAL:
+                stream << "[FATAL] ";
                 ssLogLevel = 0;
                 return stream;
             case INTERNAL_ssLOG_ERROR:
@@ -518,20 +518,20 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_EXECUTE_COMMAND_2(a, command) command
 
 
-#if ssLOG_LEVEL >= INTERNAL_ssLOG_FETAL
-    #define ssLOG_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0) 
-    #define ssLOG_CONTENT_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
-    #define ssLOG_FUNC_CONTENT_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_FUNC_CONTENT(__VA_ARGS__); } while(0)
-    #define ssLOG_FUNC_ENTRY_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
-    #define ssLOG_FUNC_EXIT_FETAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
-    #define ssLOG_FUNC_FETAL(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FETAL; ) ssLOG_FUNC(__VA_ARGS__);
+#if ssLOG_LEVEL >= INTERNAL_ssLOG_FATAL
+    #define ssLOG_FATAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FATAL; INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); )} while(0) 
+    #define ssLOG_CONTENT_FATAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FATAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
+    #define ssLOG_FUNC_CONTENT_FATAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FATAL; ) ssLOG_FUNC_CONTENT(__VA_ARGS__); } while(0)
+    #define ssLOG_FUNC_ENTRY_FATAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FATAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
+    #define ssLOG_FUNC_EXIT_FATAL(...) do{ INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FATAL; ) ssLOG_CONTENT(__VA_ARGS__); } while(0)
+    #define ssLOG_FUNC_FATAL(...) INTERNAL_ssLOG_THREAD_SAFE_OP( ssLogLevel = INTERNAL_ssLOG_FATAL; ) ssLOG_FUNC(__VA_ARGS__);
 #else
-    #define ssLOG_FETAL(...) do{}while(0)
-    #define ssLOG_CONTENT_FETAL(...) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
-    #define ssLOG_FUNC_CONTENT_FETAL(...) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
-    #define ssLOG_FUNC_ENTRY_FETAL(...) do{}while(0)
-    #define ssLOG_FUNC_EXIT_FETAL(...) do{}while(0)
-    #define ssLOG_FUNC_FETAL(...) do{}while(0)
+    #define ssLOG_FATAL(...) do{}while(0)
+    #define ssLOG_CONTENT_FATAL(...) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
+    #define ssLOG_FUNC_CONTENT_FATAL(...) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
+    #define ssLOG_FUNC_ENTRY_FATAL(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_FATAL(...) do{}while(0)
+    #define ssLOG_FUNC_FATAL(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_ERROR

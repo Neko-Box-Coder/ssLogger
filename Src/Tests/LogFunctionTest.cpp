@@ -43,7 +43,7 @@ int main()
     
     B();
 
-    ssLOG_CONTENT( int cValue = C(); );
+    ssLOG_CONTENT( int cValue = C(); (void)cValue;);
 
     ssLOG_CONTENT
     (

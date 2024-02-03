@@ -11,18 +11,18 @@ void TestLogLevels()
     CheckCounter++;
 
     ssLOG_LINE("Test: " << CheckCounter);
-    ssLOG_FETAL("Test fetal: " << CheckCounter);
+    ssLOG_FATAL("Test fatal: " << CheckCounter);
     ssLOG_ERROR("Test error: " << CheckCounter);
     ssLOG_WARNING("Test warning: " << CheckCounter);
     ssLOG_INFO("Test info: " << CheckCounter);
     ssLOG_DEBUG("Test debug: " << CheckCounter);
 }
 
-void TestFuncFetal()
+void TestFuncFatal()
 {
-    ssLOG_FUNC_FETAL();
-    ssLOG_LINE("TestFuncFetal");
-    ssLOG_FUNC_CONTENT_FETAL( TestLogLevels(); );
+    ssLOG_FUNC_FATAL();
+    ssLOG_LINE("TestFuncFatal");
+    ssLOG_FUNC_CONTENT_FATAL( TestLogLevels(); );
 }
 
 void TestFuncError()
@@ -58,7 +58,7 @@ int main()
 {
     TestLogLevels();
     
-    TestFuncFetal();
+    TestFuncFatal();
     TestFuncError();
     TestFuncWarning();
     TestFuncInfo();

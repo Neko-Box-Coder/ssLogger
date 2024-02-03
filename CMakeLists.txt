@@ -30,16 +30,16 @@ set(ssLOG_THREAD_SAFE 1 CACHE BOOL "Use std::thread and ensure thread safety for
 set(ssLOG_WRAP_WITH_BRACKET 1 CACHE BOOL "If true, contents will be wrapped square brackets")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
 set(ssLOG_LEVEL "WARNING" CACHE STRING 
-"Log level (NONE, FETAL, ERROR, WARNING, INFO, DEBUG)
+"Log level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG)
 NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
-FETAL    (Program will crash)
+FATAL    (Program will crash)
 ERROR    (Program might crash and **likely** to not function correctly)
 WARNING  (Program won't crash but **might** not function correctly)
 INFO     (Program state which **doesn't** spam the log)
 DEBUG    (Program state which **does** spam the log)")
 
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
-                                                "FETAL" 
+                                                "FATAL" 
                                                 "ERROR" 
                                                 "WARNING" 
                                                 "INFO" 
@@ -80,7 +80,7 @@ if("${ssLOG_USE_SOURCE}")
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=0)
-    elseif(${ssLOG_LEVEL} STREQUAL "FETAL")
+    elseif(${ssLOG_LEVEL} STREQUAL "FATAL")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=1)
     elseif(${ssLOG_LEVEL} STREQUAL "ERROR")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=2)
@@ -97,6 +97,8 @@ if("${ssLOG_USE_SOURCE}")
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_definitions(ssLogger PUBLIC _CRT_SECURE_NO_WARNINGS)
+    else()
+        target_compile_options(ssLogger PRIVATE -Wall -Wpedantic -Werror)
     endif()
 
 else()
@@ -105,6 +107,8 @@ else()
     
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_definitions(ssLogger INTERFACE _CRT_SECURE_NO_WARNINGS)
+    else()
+        #target_compile_options(ssLogger INTERFACE -Wall -Wpedantic -Werror)
     endif()
     
     #target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include"
@@ -169,7 +173,7 @@ if(${ssLOG_BUILD_TESTS})
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
         target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=0)
-    elseif(${ssLOG_LEVEL} STREQUAL "FETAL")
+    elseif(${ssLOG_LEVEL} STREQUAL "FATAL")
         target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=1)
     elseif(${ssLOG_LEVEL} STREQUAL "ERROR")
         target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=2)
@@ -194,6 +198,8 @@ if(${ssLOG_BUILD_TESTS})
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_definitions(ssLogger_SRC PUBLIC _CRT_SECURE_NO_WARNINGS)
         target_compile_definitions(ssLogger_HEAD INTERFACE _CRT_SECURE_NO_WARNINGS)
+    else()
+        target_compile_options(ssLogger_SRC PRIVATE -Wall -Wpedantic -Werror)
     endif()
 
     # ==========================================================
@@ -220,6 +226,12 @@ if(${ssLOG_BUILD_TESTS})
 
             # Sub-directory for build
             set_target_properties("${EXECUTABLE_NAME}${exeSuffix}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${binSubFolder})
+
+            if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+                #TODO
+            else()
+                target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE -Wall -Wpedantic -Werror)
+            endif()
 
         endforeach(CUR_SOURCE_PATH "${TEST_CPP_FILES}")
     

@@ -34,8 +34,8 @@
 ### Logging with level:
 ![logLevel](./Resources/logLevels.png)
 ```c++
-    // 2022-08-14 16:49:53.802 [FETAL] [MethodName] in FileName.cpp on line 9: [Test fetal]
-    ssLOG_FETAL("Test fetal");
+    // 2022-08-14 16:49:53.802 [FATAL] [MethodName] in FileName.cpp on line 9: [Test fatal]
+    ssLOG_FATAL("Test fatal");
 
     // 2022-08-14 16:49:53.802 [ERROR] [MethodName] in FileName.cpp on line 9: [Test error]
     ssLOG_ERROR("Test error");
@@ -150,10 +150,10 @@
 | ssLOG_THREAD_SAFE         | 1             | Use std::thread and ensure thread safety for all logged functions                                     |
 | ssLOG_WRAP_WITH_BRACKET   | 1             | If true, contents will be wrapped square brackets                                                     |
 | ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
-| ssLOG_LEVEL               | 3             | Log level (0: NONE, 1: FETAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                                |
+| ssLOG_LEVEL               | 3             | Log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                                |
 |                           |               | Recommended usage:                                                                                    |
 |                           |               | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC    |
-|                           |               | FETAL:    Indicates program will crash                                                                |
+|                           |               | FATAL:    Indicates program will crash                                                                |
 |                           |               | ERROR:    Indicates program might crash and **likely** to not function correctly                      |
 |                           |               | WARNING:  Indicates program won't crash but **might** not function correctly                          |
 |                           |               | INFO:     Prints program state which **doesn't** spam the log                                         |
