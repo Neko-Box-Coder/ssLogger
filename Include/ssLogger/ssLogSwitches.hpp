@@ -17,6 +17,8 @@
 
     #define ssLOG_SHOW_FUNC_NAME 1
 
+    #define ssLOG_SHOW_DATE 1
+
     #define ssLOG_SHOW_TIME 1
 
     #define ssLOG_THREAD_SAFE 1

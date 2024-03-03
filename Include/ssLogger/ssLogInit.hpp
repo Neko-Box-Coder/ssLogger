@@ -1,7 +1,7 @@
 #ifndef ssLOG_INIT_HPP
 #define ssLOG_INIT_HPP
 
-#include "ssLogger/ssLogSwitches.hpp"
+#include "./ssLogSwitches.hpp"
 
 #include <sstream>
 #include <string>
@@ -12,21 +12,13 @@
     #include <thread>
     #include <mutex>
 
-    #ifndef INTERNAL_ssTHREAD_LOG_INFO_DECL
-    #define INTERNAL_ssTHREAD_LOG_INFO_DECL
-        //NOTE: Any changes to this struct needs to be updated in the ssLog file as well
-        struct ssLogThreadLogInfo
-        {
-            int TabSpace = 0;
-            std::stack<std::string> FuncNameStack = std::stack<std::string>();
-            std::stack<int> LogLevelStack = std::stack<int>();
-            std::stringstream CurrentPrepend;
-        };
-    #endif
+    #include "./ssLogThreadInfo.hpp"
 
-    std::unordered_map<std::thread::id, ssLogThreadLogInfo> ssLogInfoMap = 
-        std::unordered_map<std::thread::id, ssLogThreadLogInfo>();
+    std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap = 
+        std::unordered_map<std::thread::id, ssLogThreadInfo>();
     
+    int ssNewThreadID = 0;
+    int ssCurrentThreadID = 0;
     std::thread::id ssLastThreadID = std::thread::id();
     std::mutex ssLogMutex;
     
@@ -54,7 +46,7 @@
 
 #endif
 
-int ssLogLevel = 0;
+int ssCurrentLogLevel = 0;
 
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
@@ -72,23 +64,31 @@ int ssLogLevel = 0;
     
 #endif
 
-#if ssLOG_SHOW_TIME
+#if ssLOG_SHOW_TIME || ssLOG_SHOW_DATE
     #include <chrono>
     #include <sstream>
     #include <iomanip>
     #include <ctime>
 
-    std::string(*Internal_ssLogGetTime)(void) = []()
+    std::string (*Internal_ssLogGetDateTime)(void) = []()
     {
-        std::chrono::system_clock::time_point ssLog_tp = std::chrono::system_clock::now();
-        std::stringstream ssLog_ss;
-        auto ssLog_time_t = std::chrono::system_clock::to_time_t(ssLog_tp);
+        using namespace std::chrono;
         
-        ssLog_ss    << std::put_time(std::localtime(&ssLog_time_t), "%Y-%m-%d %T")
-                    << "." << std::setfill('0') << std::setw(3)
-                    << (std::chrono::duration_cast<std::chrono::milliseconds>(ssLog_tp.time_since_epoch()).count() % 1000);
-        ssLog_ss    << " ";
-        return ssLog_ss.str();
+        system_clock::time_point ssLogTimePoint = system_clock::now();
+        std::stringstream ssLogStringStream;
+        std::time_t ssLogDateTime = system_clock::to_time_t(ssLogTimePoint);
+        
+        ssLogStringStream << "" <<
+            #if ssLOG_SHOW_DATE
+                std::put_time(std::localtime(&ssLogDateTime), "%Y-%m-%d ") <<
+            #endif
+            #if ssLOG_SHOW_TIME
+                std::put_time(std::localtime(&ssLogDateTime), "%T") <<
+                "." << std::setfill('0') << std::setw(3) << 
+                duration_cast<milliseconds>(ssLogTimePoint.time_since_epoch()).count() % 1000 << " ";
+            #endif
+        
+        return ssLogStringStream.str();
     };
 #endif
 

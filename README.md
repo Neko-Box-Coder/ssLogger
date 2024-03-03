@@ -17,114 +17,125 @@
 #### 🧵 Thread-safety for multithreading? (Can be disabled for performance)
 ![demo2](./Resources/demo3.gif)
 
+#### 🐞 Logging with different levels?
+![logLevel](./Resources/logLevels.png)
+
 ## 🔨 Usage:
 
 ### Logging a line:
 ```c++
-    // Output:
-    // 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9
     ssLOG_LINE();
 
-    // Output:
-    // 2022-08-14 16:49:53.802 [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
     int someValue = 42;
-    ssLOG_LINE("Here's some value: "<<someValue);
+    ssLOG_LINE("Here's some value: " << someValue);
+    
+    //[Thread 0] 2022-08-14 16:49:53.802 MethodName() in FileName.cpp on line 9
+    //[Thread 0] 2022-08-14 16:49:53.802 MethodName() in FileName.cpp on line 9: Here's some value: 42
 ```
 
 ### Logging with level:
-![logLevel](./Resources/logLevels.png)
 ```c++
-    // 2022-08-14 16:49:53.802 [FATAL] [MethodName] in FileName.cpp on line 9: [Test fatal]
     ssLOG_FATAL("Test fatal");
-
-    // 2022-08-14 16:49:53.802 [ERROR] [MethodName] in FileName.cpp on line 9: [Test error]
     ssLOG_ERROR("Test error");
-
-    // 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Test warning]
     ssLOG_WARNING("Test warning");
-
-    // 2022-08-14 16:49:53.802 [INFO] [MethodName] in FileName.cpp on line 9: [Test info]
     ssLOG_INFO("Test info");
-
-    // 2022-08-14 16:49:53.802 [DEBUG] [MethodName] in FileName.cpp on line 9: [Test debug]
     ssLOG_DEBUG("Test debug");
 
-    // Output:
-    // 2022-08-14 16:49:53.802 [WARNING] [MethodName] in FileName.cpp on line 9: [Here's some value: 42]
     int someValue = 42;
     ssLOG_WARNING("Here's some value: "<<someValue);
+    
+    //[Thread 0] 2022-08-14 16:49:53.802 [FATAL] MethodName() in FileName.cpp on line 9: Test fatal
+    //[Thread 0] 2022-08-14 16:49:53.802 [ERROR] MethodName() in FileName.cpp on line 9: Test error
+    //[Thread 0] 2022-08-14 16:49:53.802 [WARNING] MethodName() in FileName.cpp on line 9: Test warning
+    //[Thread 0] 2022-08-14 16:49:53.802 [INFO] MethodName() in FileName.cpp on line 9: Test info
+    //[Thread 0] 2022-08-14 16:49:53.802 [DEBUG] MethodName() in FileName.cpp on line 9: Test debug
+    //[Thread 0] 2022-08-14 16:49:53.802 [WARNING] MethodName() in FileName.cpp on line 9: Here's some value: 42
 ```
 
-### Logging functions call stack (*With automatic macro*):
+### Logging functions call stack:
 
 ```c++
     //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
     //Log function callstack with ssLOG_FUNC
-    void B()
+    void InitializeApp()
     {
         ssLOG_FUNC();
-
-        //...
+        ssLOG_LINE("Initializing MyApp...");
     }
 
-    int C(bool b)
+    void SanitizeData()
     {
         ssLOG_FUNC();
-        
-        //...
+        ssLOG_LINE("Sanitizing data...");
+    }
 
-        if(b)
-            return 42;
-
-        //...
-
-        return 43;
+    void ProcessData()
+    {
+        ssLOG_FUNC();
+        ssLOG_LINE("Processing data...");
+        SanitizeData();
     }
 
     //You can also have custom names for functions as well, which is useful for lambda functions.
-    auto lambda = []()
+    auto userDataHandler = []()
     {
-        ssLOG_FUNC("My lambda function");
-
-        //...
+        ssLOG_FUNC("userDataHandler");
+        ssLOG_LINE("Handling user data...");
     };
+    
+    int main()
+    {
+        ssLOG_FUNC();
+        InitializeApp();
+        ProcessData();
+        
+        auto userDataHandler = []()
+        {
+            ssLOG_FUNC("userDataHandler");
+            ssLOG_LINE("Handling user data...");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        };
+
+        userDataHandler();
+        CleanupApp();
+        return 0;
+    }
 ```
 
-### Logging functions call stack (*inline macro*):
+### Logging multiple lines as content:
 
 ```c++
     //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
 
-    void A()
+    int ProcessLotsOfData(  int userID,
+                            std::string username, 
+                            std::string password, 
+                            int health,
+                            int mana)
     {
-        //...
-    }
-
-    int B()
-    {
-        //...
+        (void)userID;
+        (void)username;
+        (void)password;
+        (void)health;
+        (void)mana;
+        
+        ssLOG_LINE("Processing data...");
         return 42;
     }
 
     int main()
     {
-        // Or without space
-        ssLOG_CONTENT( A() );
-        
-        ssLOG_CONTENT( int retVal = B() );
-
-        // Or you can format it like this to log more than 1 statements!
         ssLOG_CONTENT
         (
-            int retVal = B();
-            // Some other statements...
-        );
-
-        // You can also add the log level suffix (_DEBUG, _ERROR, etc...) to any of these calls
-        ssLOG_CONTENT_DEBUG
-        (
-            A();
+            ProcessLotsOfData
+            (
+                69, 
+                "Bob", 
+                "Very Secure Password", 
+                9000, 
+                9000
+            );
         );
 
         return 0;
@@ -147,9 +158,9 @@
 |                           |               | It is recommended to turn it **off** in any production build                                          |
 | ssLOG_SHOW_LINE_NUM       | 1             | Show line number for all logged functions                                                             |
 | ssLOG_SHOW_FUNC_NAME      | 1             | Show function name for all logged functions                                                           |
+| ssLOG_SHOW_DATE           | 1             | Show log date for all logged functions                                                                |
 | ssLOG_SHOW_TIME           | 1             | Show log time for all logged functions                                                                |
 | ssLOG_THREAD_SAFE         | 1             | Use std::thread and ensure thread safety for all logged functions                                     |
-| ssLOG_WRAP_WITH_BRACKET   | 1             | If true, contents will be wrapped square brackets                                                     |
 | ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
 | ssLOG_LEVEL               | 3             | Log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                                |
 |                           |               | Recommended usage:                                                                                    |
@@ -166,11 +177,11 @@
 1. Clone this repository **recursively**
     - `git submodule add https://github.com/Neko-Box-Coder/ssLogger.git <folder name>` and `git submodule update --init --recursive`
     - Or `git clone --recursive https://github.com/Neko-Box-Coder/ssLogger.git`
-2. Decide if you want to use this with header-only or with source
+2. There are two ways to use ssLogger:
     - Header only:
-        1. Edit & include `include/ssLogSwitches.hpp` as you like
-        2. Include `include/ssLogger/ssLog.hpp` to your header(s) below `ssLogSwitches.hpp`
-        3. Include `include/ssLogger/ssLogInit.hpp` to your entry point **ONCE**
+        1. Edit (or redefine macros) specified in `include/ssLogSwitches.hpp` as you like
+        2. Include `include/ssLogger/ssLog.hpp`
+        3. Include `include/ssLogger/ssLogInit.hpp` to your entry point **ONCE** (above `include/ssLogger/ssLog.hpp`)
     - Source with CMake:
         1. Add `add_subdirectory(<path to ssLogger> <optional binary directory>)` to your `CMakeLists.txt`
         2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
@@ -220,5 +231,3 @@
 
 ### 🔜 TODOs:
 - Add script for running tests in different configurations
-- Add option for only showing time instead of both date and time
-- Add executable to merge thread logs together

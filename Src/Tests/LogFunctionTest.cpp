@@ -4,73 +4,95 @@
 
 #include "ssLogger/ssLog.hpp"
 
+#include <chrono>
+#include <thread>
 
-void A()
-{
-    ssLOG_LINE("Function A content logged");
-}
 
-void B()
+void InitializeApp()
 {
-    //ssLOG_FUNC_ENTRY();
-    
     ssLOG_FUNC();
-
-    ssLOG_LINE("Function B content logged");
     
-    //ssLOG_FUNC_EXIT();
+    // Initialize the application
+    ssLOG_LINE("Initializing MyApp...");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
-int C()
+void SanitizeData()
 {
-    ssLOG_LINE("Function C content logged");
+    ssLOG_FUNC();
     
-    ssLOG_CONTENT( A() );
+    ssLOG_LINE("Sanitizing data...");
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
 
+void ProcessData()
+{
+    ssLOG_FUNC();
+    
+    // Process data
+    ssLOG_LINE("Processing data...");
+    SanitizeData();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+int ProcessLotsOfData(  int userID,
+                        std::string username, 
+                        std::string password, 
+                        int health,
+                        int mana)
+{
+    (void)userID;
+    (void)username;
+    (void)password;
+    (void)health;
+    (void)mana;
+    
+    // Process data
+    ssLOG_LINE("Processing data...");
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
     return 42;
 }
 
-void FunctionWithALotOfArgs(int arg, int arg2, int arg3, int arg4, int arg5, int arg6)
+void CleanupApp()
 {
+    ssLOG_FUNC();
+    
+    // Cleanup the application
+    ssLOG_LINE("Cleaning up MyApp...");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
-
 
 int main()
 {
-    //ssLOG_FUNC_ENTRY();
-    
     ssLOG_FUNC();
     
-    B();
+    InitializeApp();
 
-    ssLOG_CONTENT( int cValue = C(); (void)cValue;);
-
+    ProcessData();
+    
     ssLOG_CONTENT
     (
-        FunctionWithALotOfArgs
+        ProcessLotsOfData
         (
-            12312321, 
-            1321514521, 
-            21321, 
-            2321321, 
-            12321, 
-            21321
+            69, 
+            "Bob", 
+            "Very Secure Password", 
+            9000, 
+            9000
         );
     );
-
-    auto someLambda = []()
+    
+    auto userDataHandler = []()
     {
-        //ssLOG_FUNC_ENTRY("Custom Lambda Function");
-        
-        ssLOG_FUNC();
-        
-        ssLOG_LINE("Custom Lambda Function content logged");
-        
-        //ssLOG_FUNC_EXIT("Custom Lambda Function");
+        ssLOG_FUNC("userDataHandler");
+        ssLOG_LINE("Handling user data...");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     };
 
-    someLambda();
+    userDataHandler();
 
-    //ssLOG_FUNC_EXIT();
+    CleanupApp();
+
     return 0;
 }
