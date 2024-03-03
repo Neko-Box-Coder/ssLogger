@@ -45,9 +45,21 @@ set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE"
                                                 "INFO" 
                                                 "DEBUG")
 
-#Find shared libraries in the same location as the executable
-# SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,$ORIGIN")
-# set(CMAKE_CXX_FLAGS "-fpermissive -std=c++0x")  #For surpressing goto warning
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;_CRT_SECURE_NO_WARNINGS")
+else()
+    set(STANDARD_COMPILE_FLAGS  "-Wall"
+                                "-Wno-return-local-addr"
+                                "-Wno-sign-compare"
+                                #"-Wno-unused-variable"
+                                #"-Wno-unused-but-set-variable"
+                                "-Wno-unused-parameter"
+                                "-Wno-switch"
+                                "-Wno-gnu-zero-variadic-macro-arguments"
+                                "-Wextra"
+                                "-pedantic"
+                                "-Werror")
+endif()
 
 # ==========================================================
 # ssLogger for external use
@@ -96,48 +108,21 @@ if("${ssLOG_USE_SOURCE}")
     #message("ssLOG_SHOW_FILE_NAME: ${ssLOG_SHOW_FILE_NAME}")
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_definitions(ssLogger PUBLIC _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(ssLogger PUBLIC ${_CRT_SECURE_NO_WARNINGS})
     else()
-        target_compile_options(ssLogger PRIVATE -Wall -Wpedantic -Werror)
+        target_compile_options(ssLogger PRIVATE ${STANDARD_COMPILE_FLAGS})
     endif()
 
 else()
     add_library(ssLogger INTERFACE)
-    target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include")
+    target_include_directories(ssLogger INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Include")
     
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_definitions(ssLogger INTERFACE _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
     else()
-        #target_compile_options(ssLogger INTERFACE -Wall -Wpedantic -Werror)
+        target_compile_options(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
     endif()
-    
-    #target_include_directories(ssLogger INTERFACE   "${CMAKE_CURRENT_LIST_DIR}/Include"
-    #                                                "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
-    #target_sources(ssLogger INTERFACE
-    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLog.hpp"
-    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogInit.hpp"
-    #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogSwitches.hpp"
-    #                        )
-    
-    # DEBUGGING
-    # get_target_property(MY_PROJECT_SOURCES ssLogger INTERFACE_SOURCES)
-
-    # foreach(src ${MY_PROJECT_SOURCES})
-    #     message(STATUS "src='${src}'")
-    # endforeach()
 endif()
-
-# DEBUGGING
-# get_target_property(DEFS ssLogger COMPILE_DEFINITIONS)
-
-# foreach(src ${DEFS})
-#     message(STATUS "def='${src}'")
-# endforeach()
-
-# If you are on 32 bit linux, uncomment this
-# set (CMAKE_CXX_FLAGS "-m32")
-# set (CMAKE_C_FLAGS "-m32")
-
 
 if(${ssLOG_BUILD_TESTS})
 
@@ -196,10 +181,10 @@ if(${ssLOG_BUILD_TESTS})
     #                        )
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_definitions(ssLogger_SRC PUBLIC _CRT_SECURE_NO_WARNINGS)
-        target_compile_definitions(ssLogger_HEAD INTERFACE _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(ssLogger_SRC PUBLIC ${STANDARD_COMPILE_FLAGS})
+        target_compile_definitions(ssLogger_HEAD INTERFACE ${STANDARD_COMPILE_FLAGS})
     else()
-        target_compile_options(ssLogger_SRC PRIVATE -Wall -Wpedantic -Werror)
+        target_compile_options(ssLogger_SRC PRIVATE ${STANDARD_COMPILE_FLAGS})
     endif()
 
     # ==========================================================

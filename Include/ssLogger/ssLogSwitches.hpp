@@ -2,7 +2,10 @@
 // Macros switches (if you don't wnat to use Cmake)
 // =======================================================================
 
-#ifndef ssLOG_USE_SOURCE 
+#ifndef ssLOG_SWITCHES_HPP
+#define ssLOG_SWITCHES_HPP
+
+#if !ssLOG_USE_SOURCE 
 
     #define ssLOG_CALL_STACK 1
 
@@ -20,8 +23,6 @@
 
     #define ssLOG_LOG_TO_FILE 0
 
-    #define ssLOG_WRAP_WITH_BRACKET 1
-    
     //5 is DEBUG    (Program state which **does** spam the log)
     //4 is INFO     (Program state which **doesn't** spam the log)
     //3 is WARNING  (Program won't crash but **might** not function correctly)
@@ -29,5 +30,7 @@
     //1 is FATAL    (Program will crash)
     //0 is NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
     #define ssLOG_LEVEL 3
+
+#endif
 
 #endif

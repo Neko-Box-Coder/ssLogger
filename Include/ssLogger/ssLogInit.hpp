@@ -1,11 +1,7 @@
-#ifndef ssLOG_DEBUG_INIT
-#define ssLOG_DEBUG_INIT
+#ifndef ssLOG_INIT_HPP
+#define ssLOG_INIT_HPP
 
 #include "ssLogger/ssLogSwitches.hpp"
-
-//======================================================================================================
-//ssLogInit.cpp
-//======================================================================================================
 
 #include <sstream>
 #include <string>
@@ -28,7 +24,9 @@
         };
     #endif
 
-    std::unordered_map<std::thread::id, ssLogThreadLogInfo> ssLogInfoMap = std::unordered_map<std::thread::id, ssLogThreadLogInfo>();
+    std::unordered_map<std::thread::id, ssLogThreadLogInfo> ssLogInfoMap = 
+        std::unordered_map<std::thread::id, ssLogThreadLogInfo>();
+    
     std::thread::id ssLastThreadID = std::thread::id();
     std::mutex ssLogMutex;
     
@@ -93,17 +91,5 @@ int ssLogLevel = 0;
         return ssLog_ss.str();
     };
 #endif
-
-#if ssLOG_SHOW_FILE_NAME
-    std::string (*Internal_ssLogGetFileName)(std::string) = [](std::string fileName)
-    {
-        std::size_t ssLogfound = fileName.find_last_of("/\\");\
-        return " in "+fileName.substr(ssLogfound+1);\
-    };
-#endif
-
-//======================================================================================================
-//ssLogInit.cpp ENDS
-//======================================================================================================
 
 #endif
