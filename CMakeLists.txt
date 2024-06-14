@@ -70,7 +70,7 @@ if("${ssLOG_USE_SOURCE}")
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     else()
-        add_library(ssLogger OBJECT
+        add_library(ssLogger SHARED
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     endif()
@@ -136,7 +136,7 @@ if(${ssLOG_BUILD_TESTS})
             "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     else()
-        add_library(ssLogger_SRC OBJECT
+        add_library(ssLogger_SRC SHARED
             "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     endif()
