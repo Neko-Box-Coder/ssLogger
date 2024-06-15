@@ -46,7 +46,7 @@ set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE"
                                                 "DEBUG")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;_CRT_SECURE_NO_WARNINGS")
+    set(STANDARD_COMPILE_FLAGS "/utf-8;/W4;")
 else()
     set(STANDARD_COMPILE_FLAGS  "-Wall"
                                 "-Wno-return-local-addr"
@@ -108,20 +108,20 @@ if("${ssLOG_USE_SOURCE}")
     #message("ssLOG_SHOW_FILE_NAME: ${ssLOG_SHOW_FILE_NAME}")
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_definitions(ssLogger PUBLIC ${_CRT_SECURE_NO_WARNINGS})
-    else()
-        target_compile_options(ssLogger PRIVATE ${STANDARD_COMPILE_FLAGS})
+        target_compile_definitions(ssLogger PUBLIC _CRT_SECURE_NO_WARNINGS)
     endif()
+    
+    target_compile_options(ssLogger PRIVATE ${STANDARD_COMPILE_FLAGS})
 
 else()
     add_library(ssLogger INTERFACE)
     target_include_directories(ssLogger INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Include")
     
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_definitions(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
-    else()
-        target_compile_options(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
+        target_compile_definitions(ssLogger INTERFACE _CRT_SECURE_NO_WARNINGS)
     endif()
+    
+    target_compile_options(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
 endif()
 
 if(${ssLOG_BUILD_TESTS})
@@ -181,11 +181,12 @@ if(${ssLOG_BUILD_TESTS})
     #                        )
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_definitions(ssLogger_SRC PUBLIC ${STANDARD_COMPILE_FLAGS})
-        target_compile_definitions(ssLogger_HEAD INTERFACE ${STANDARD_COMPILE_FLAGS})
-    else()
-        target_compile_options(ssLogger_SRC PRIVATE ${STANDARD_COMPILE_FLAGS})
+        target_compile_definitions(ssLogger_HEAD INTERFACE _CRT_SECURE_NO_WARNINGS)
+        target_compile_definitions(ssLogger_SRC PUBLIC _CRT_SECURE_NO_WARNINGS)
     endif()
+    
+    target_compile_options(ssLogger_HEAD INTERFACE ${STANDARD_COMPILE_FLAGS})
+    target_compile_options(ssLogger_SRC PUBLIC ${STANDARD_COMPILE_FLAGS})
 
     # ==========================================================
     # Tests
@@ -197,7 +198,7 @@ if(${ssLOG_BUILD_TESTS})
         
         foreach(CUR_SOURCE_PATH ${TEST_CPP_FILES})
             # Get the file name without path and extension
-            get_filename_component(EXECUTABLE_NAME "${CUR_SOURCE_PATH}" NAME_WE)    
+            get_filename_component(EXECUTABLE_NAME "${CUR_SOURCE_PATH}" NAME_WE)
 
             #message("EXECUTABLE_NAME: ${EXECUTABLE_NAME}")
             #message("exeSuffix: ${exeSuffix}")
@@ -212,11 +213,12 @@ if(${ssLOG_BUILD_TESTS})
             # Sub-directory for build
             set_target_properties("${EXECUTABLE_NAME}${exeSuffix}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${binSubFolder})
 
-            if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-                #TODO
-            else()
-                target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE -Wall -Wpedantic -Werror)
-            endif()
+            # if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+            #     target_compile_definitions("${EXECUTABLE_NAME}${exeSuffix}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+            #     target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE "/utf-8;/W4;")
+            # else()
+            #     target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE -Wall -Wpedantic -Werror)
+            # endif()
 
         endforeach(CUR_SOURCE_PATH "${TEST_CPP_FILES}")
     

@@ -1,9 +1,7 @@
 #ifndef ssLOG_HPP
 #define ssLOG_HPP
 
-#ifndef ssLOG_USE_SOURCE
-    #include "./ssLogSwitches.hpp"
-#endif
+#include "./ssLogSwitches.hpp"
 
 #include <sstream>
 #include <string>
