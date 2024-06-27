@@ -146,7 +146,7 @@
 #### 🔧 Easy Customization:
 
 ##### CMake / Header Defines
-| Define Macro Name         | Default Value | Explaination                                                                                          |
+| Define Macro Name         | Default Value | Explanation                                                                                          |
 | ---                       | ---           | ---                                                                                                   |
 | ssLOG_CALL_STACK          | 1             | Show call stack for all logged functions                                                              |
 | ssLOG_LOG_WITH_ASCII      | 0             | Logging will only use ASCII characters,                                                               |
@@ -194,7 +194,7 @@
 
 ### Dependencies:
 
-- [termcolor](https://github.com/ikalnytskyi/termcolor) with [license distributed](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE) 
+- [termcolor (as submodule)](https://github.com/ikalnytskyi/termcolor) with [license distributed](https://github.com/ikalnytskyi/termcolor/blob/master/LICENSE) 
 
 - Common dependencies
     - `#include <sstream>`
@@ -227,7 +227,54 @@
         - Windows
             - `#include <io.h>`
             - `#include <windows.h>`
+
 ----
+
+### 📔 Documentations:
+```c++
+
+//Directly output a message without any decorator or checks
+ssLOG_BASE(message);
+
+//Logs at a line with an optional message
+ssLOG_LINE([message]);
+
+//Logs can be output as different level, for example.
+ssLOG_FATAL([message])
+ssLOG_ERROR([message])
+ssLOG_WARNING([message])
+ssLOG_INFO([message])
+ssLOG_DEBUG([message])
+
+//Below are the functions that can be output as different level as well...
+
+//Logs before and after the statements passed as parameter
+ssLOG_CONTENT(c++ statements);
+ssLOG_CONTENT_FETAL(c++ statements);
+ssLOG_CONTENT_ERROR(c++ statements);
+//...
+
+//Logs when the current function begins and ends
+ssLOG_FUNC([Optional custom function name])
+ssLOG_FUNC_FETAL([Optional custom function name])
+ssLOG_FUNC_ERROR([Optional custom function name])
+//...
+
+//Logs as the function begins (Needs to be placed manually)
+ssLOG_FUNC_ENTRY([Optional custom function name])
+ssLOG_FUNC_ENTRY_FETAL([Optional custom function name])
+ssLOG_FUNC_ENTRY_ERROR([Optional custom function name])
+//...
+
+//Logs as the function exit (Needs to be placed manually)
+ssLOG_FUNC_EXIT([Optional custom function name])
+ssLOG_FUNC_EXIT_FETAL([Optional custom function name])
+ssLOG_FUNC_EXIT_ERROR([Optional custom function name])
+//...
+
+```
+
+
 
 ### 🔜 TODOs:
 - Add script for running tests in different configurations

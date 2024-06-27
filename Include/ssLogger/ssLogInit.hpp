@@ -85,7 +85,7 @@ int ssCurrentLogLevel = 0;
             #if ssLOG_SHOW_TIME
                 std::put_time(std::localtime(&ssLogDateTime), "%T") <<
                 "." << std::setfill('0') << std::setw(3) << 
-                duration_cast<milliseconds>(ssLogTimePoint.time_since_epoch()).count() % 1000 << " ";
+                (duration_cast<microseconds>(ssLogTimePoint.time_since_epoch()).count() / 1000) % 1000 << " ";
             #endif
         
         return ssLogStringStream.str();

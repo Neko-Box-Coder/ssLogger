@@ -10,11 +10,13 @@
 
 void InitializeApp()
 {
-    ssLOG_FUNC();
+    ssLOG_FUNC_ENTRY();
     
-    // Initialize the application
+    //Initialize the application
     ssLOG_LINE("Initializing MyApp...");
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    
+    ssLOG_FUNC_EXIT();
 }
 
 void SanitizeData()
@@ -29,7 +31,7 @@ void ProcessData()
 {
     ssLOG_FUNC();
     
-    // Process data
+    //Process data
     ssLOG_LINE("Processing data...");
     SanitizeData();
     std::this_thread::sleep_for(std::chrono::seconds(1));

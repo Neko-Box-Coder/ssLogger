@@ -16,7 +16,11 @@ project(ssLoggerProject)
 # Variables 
 # ==========================================================
 #set(CMAKE_FIND_DEBUG_MODE 1)
-set(ssLOG_OUTPUT_STATIC 1 CACHE BOOL "Use and create static library instead")
+set(ssLOG_BUILD_TYPE "STATIC" CACHE STRING "Build type for ssLogger (STATIC, SHARED, OBJECT)")
+set_property(CACHE ssLOG_BUILD_TYPE PROPERTY STRINGS    "STATIC" 
+                                                        "SHARED" 
+                                                        "OBJECT")
+
 set(ssLOG_USE_SOURCE 1 CACHE BOOL "Use source file instead of header only files")
 set(ssLOG_BUILD_TESTS 1 CACHE BOOL "If true, this will build tests")
 
@@ -65,12 +69,16 @@ endif()
 # ssLogger for external use
 # ==========================================================
 if("${ssLOG_USE_SOURCE}")
-    if("${ssLOG_OUTPUT_STATIC}")
+    if("${ssLOG_BUILD_TYPE}" STREQUAL "STATIC")
         add_library(ssLogger STATIC 
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
-    else()
+    elseif("${ssLOG_BUILD_TYPE}" STREQUAL "SHARED")
         add_library(ssLogger SHARED
+        "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
+        )
+    elseif("${ssLOG_BUILD_TYPE}" STREQUAL "OBJECT")
+        add_library(ssLogger OBJECT
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     endif()
@@ -131,13 +139,17 @@ if(${ssLOG_BUILD_TESTS})
     # ==========================================================
 
     # Build the library for testing
-    if("${ssLOG_OUTPUT_STATIC}")
+    if("${ssLOG_BUILD_TYPE}" STREQUAL "STATIC")
         add_library(ssLogger_SRC STATIC 
-            "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
-    else()
+    elseif("${ssLOG_BUILD_TYPE}" STREQUAL "SHARED")
         add_library(ssLogger_SRC SHARED
-            "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
+        )
+    elseif("${ssLOG_BUILD_TYPE}" STREQUAL "OBJECT")
+        add_library(ssLogger_SRC OBJECT
+        "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
     endif()
     

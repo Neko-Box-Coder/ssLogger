@@ -165,7 +165,7 @@
                 ssNewThreadID++; \
             } \
             \
-            ssCurrentThreadID = ssLogInfoMap[ssLastThreadID].ID; \
+            ssCurrentThreadID = ssNewThreadID - 1; \
         }\
     }
 
@@ -185,7 +185,7 @@
         ssLogInfoMap[std::this_thread::get_id()].FuncNameStack
     
     #define INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK() \
-        ssLogInfoMap[std::this_thread::get_id()].LogLevelStack    
+        ssLogInfoMap[std::this_thread::get_id()].LogLevelStack
 #else
     extern int ssTabSpace;
     extern std::stack<std::string> ssFuncNameStack;
@@ -562,6 +562,10 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_FATAL 1
 
 #include <cstdint>
+#ifdef _WIN32
+    #define NOMINMAX
+#endif
+
 #include "../../External/termcolor/include/termcolor/termcolor.hpp"
 
 #ifndef ssLOG_LEVEL
@@ -576,7 +580,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         {
             case INTERNAL_ssLOG_FATAL:
                 stream <<   termcolor::colorize << 
-                            termcolor::white << 
+                            termcolor::grey << 
                             termcolor::on_red << 
                             "[FATAL]" << 
                             termcolor::reset << " ";
@@ -585,7 +589,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                 return stream;
             case INTERNAL_ssLOG_ERROR:
                 stream <<   termcolor::colorize << 
-                            termcolor::white << 
+                            termcolor::grey << 
                             termcolor::on_bright_red << 
                             "[ERROR]" << 
                             termcolor::reset << " ";
@@ -594,7 +598,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                 return stream;
             case INTERNAL_ssLOG_WARNING:
                 stream <<   termcolor::colorize << 
-                            termcolor::white << 
+                            termcolor::grey << 
                             termcolor::on_yellow << 
                             "[WARNING]" << 
                             termcolor::reset << " ";
@@ -612,7 +616,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                 return stream;
             case INTERNAL_ssLOG_DEBUG:
                 stream <<   termcolor::colorize << 
-                            termcolor::white << 
+                            termcolor::grey << 
                             termcolor::on_green << 
                             "[DEBUG]" << 
                             termcolor::reset << " ";
@@ -689,13 +693,13 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_ENTRY_FATAL(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_FATAL;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_FATAL(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_FATAL;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_FATAL(...) \
@@ -738,13 +742,13 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_ENTRY_ERROR(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_ERROR;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_ERROR(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_ERROR;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ERROR(...) \
@@ -785,13 +789,13 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_ENTRY_WARNING(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_WARNING;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_WARNING(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_WARNING;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_WARNING(...) \
@@ -830,13 +834,13 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_ENTRY_INFO(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_INFO;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_INFO(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_INFO;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_INFO(...) \
@@ -879,13 +883,13 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_ENTRY_DEBUG(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_DEBUG(...) \
         do{ \
             INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_DEBUG(...) \
