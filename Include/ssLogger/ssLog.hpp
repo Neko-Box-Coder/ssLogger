@@ -11,6 +11,8 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <chrono>
+#include <utility>
 
 // =======================================================================
 // Macros for allowing overloadable Macro functions
@@ -552,6 +554,98 @@ class Internal_ssLogCacheScope
         ssLogCV.notify_all(); \
     } while(0)
 
+// =======================================================================
+// Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
+// =======================================================================
+
+#define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
+
+#define ssLOG_BENCH_END( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
+
+#define INTERNAL_ssLOG_BENCH_START_0() \
+    INTERNAL_ssLOG_BENCH_START_1("")
+
+#define INTERNAL_ssLOG_BENCH_START_1(benchName) \
+    std::make_pair(std::string(benchName), std::chrono::high_resolution_clock::now()); \
+    do \
+    { \
+        if(std::string(benchName).empty()) \
+        { \
+            INTERNAL_ssLOG_LINE_1("Starting benchmark"); \
+        } \
+        else \
+        { \
+            INTERNAL_ssLOG_LINE_1("Starting benchmark \"" << benchName << "\""); \
+        } \
+    } while(0)
+
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH_0() \
+    INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH_1("")
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH_1(benchName) \
+    std::make_pair(std::string(benchName), std::chrono::high_resolution_clock::now())
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_0() \
+    INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_1("")
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_1(benchName) \
+    do \
+    { \
+        if(std::string(benchName).empty()) \
+        { \
+            INTERNAL_ssLOG_LINE_1("Starting benchmark"); \
+        } \
+        else \
+        { \
+            INTERNAL_ssLOG_LINE_1("Starting benchmark \"" << benchName << "\""); \
+        } \
+    } while(0)
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH( ... ) \
+    INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH, __VA_ARGS__ )
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH( ... ) \
+    INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH, __VA_ARGS__ )
+
+#define INTERNAL_ssLOG_BENCH_END_0() \
+    static_assert(false, "ssLOG_BENCH_END must accept 1 argument")
+
+#define INTERNAL_ssLOG_BENCH_END_1(startVar) \
+    do \
+    { \
+        double ssLogBenchUs = static_cast<double> \
+        ( \
+            std::chrono::duration_cast<std::chrono::microseconds> \
+            ( \
+                std::chrono::high_resolution_clock::now() - startVar.second \
+            ).count() \
+        ); \
+        \
+        if(!startVar.first.empty()) \
+        { \
+            if(ssLogBenchUs > 1000000000) \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000000000.0 << " minutes") } while(0); \
+            else if(ssLogBenchUs > 1000000) \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000000.0 << " seconds") } while(0); \
+            else if(ssLogBenchUs > 1000) \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000.0 << " milliseconds") } while(0); \
+            else \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs << " nanoseconds") } while(0); \
+        } \
+        else \
+        { \
+            if(ssLogBenchUs > 1000000000) \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000000000.0 << " minutes") } while(0); \
+            else if(ssLogBenchUs > 1000000) \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000000.0 << " seconds") } while(0); \
+            else if(ssLogBenchUs > 1000) \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000.0 << " milliseconds") } while(0); \
+            else \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs << " nanoseconds") } while(0); \
+        } \
+    } while(0)
+
 
 // =======================================================================
 // Macros for output level
@@ -722,6 +816,18 @@ class Internal_ssLogCacheScope
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
         ssLOG_FUNC(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_START_FATAL(...) \
+        INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
+        INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_END_FATAL(...) \
+        do{ \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
+            ssLOG_BENCH_END(__VA_ARGS__); \
+        } while(0)
 #else
     #define ssLOG_FATAL(...) do{}while(0)
     #define ssLOG_CONTENT_FATAL(...) \
@@ -730,9 +836,11 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_CONTENT_FATAL(...) \
         INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
     
-    #define ssLOG_FUNC_ENTRY_FATAL(...) do{}while(0)
+    #define ssLOG_FUNC_ENTRY_FATAL(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
     #define ssLOG_FUNC_EXIT_FATAL(...) do{}while(0)
     #define ssLOG_FUNC_FATAL(...) do{}while(0)
+    #define ssLOG_BENCH_START_FATAL(...) do{}while(0)
+    #define ssLOG_FUNC_EXIT_FATAL(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_ERROR
@@ -774,6 +882,18 @@ class Internal_ssLogCacheScope
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
         ssLOG_FUNC(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_START_ERROR(...) \
+        INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
+        INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_END_ERROR(...) \
+        do{ \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
+            ssLOG_BENCH_END(__VA_ARGS__); \
+        } while(0)
 #else
     #define ssLOG_ERROR(...) do{}while(0)
     #define ssLOG_CONTENT_ERROR(...) \
@@ -784,6 +904,8 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_ENTRY_ERROR(...) do{}while(0)
     #define ssLOG_FUNC_EXIT_ERROR(...) do{}while(0)
     #define ssLOG_FUNC_ERROR(...) do{}while(0)
+    #define ssLOG_BENCH_START_ERROR(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_FUNC_EXIT_ERROR(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_WARNING
@@ -825,6 +947,18 @@ class Internal_ssLogCacheScope
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
         ssLOG_FUNC(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_START_WARNING(...) \
+        INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
+        INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_END_WARNING(...) \
+        do{ \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
+            ssLOG_BENCH_END(__VA_ARGS__); \
+        } while(0)
 #else
     #define ssLOG_WARNING(...) do{}while(0)
     #define ssLOG_CONTENT_WARNING(...) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
@@ -832,6 +966,8 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_ENTRY_WARNING(...) do{}while(0)
     #define ssLOG_FUNC_EXIT_WARNING(...) do{}while(0)
     #define ssLOG_FUNC_WARNING(...) do{}while(0)
+    #define ssLOG_BENCH_START_WARNING(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_FUNC_EXIT_WARNING(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_INFO
@@ -873,6 +1009,18 @@ class Internal_ssLogCacheScope
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
         ssLOG_FUNC(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_START_INFO(...) \
+        INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
+        INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_END_INFO(...) \
+        do{ \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
+            ssLOG_BENCH_END(__VA_ARGS__); \
+        } while(0)
 #else
     #define ssLOG_INFO(...) do{}while(0)
     #define ssLOG_CONTENT_INFO(...) \
@@ -884,6 +1032,8 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_ENTRY_INFO(...) do{}while(0)
     #define ssLOG_FUNC_EXIT_INFO(...) do{}while(0)
     #define ssLOG_FUNC_INFO(...) do{}while(0)
+    #define ssLOG_BENCH_START_INFO(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_FUNC_EXIT_INFO(...) do{}while(0)
 #endif
 
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_DEBUG
@@ -926,6 +1076,18 @@ class Internal_ssLogCacheScope
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
         ssLOG_FUNC(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_START_DEBUG(...) \
+        INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
+        INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
+    
+    #define ssLOG_BENCH_END_DEBUG(...) \
+        do{ \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
+            ssLOG_BENCH_END(__VA_ARGS__); \
+        } while(0)
 #else
     #define ssLOG_DEBUG(...) do{}while(0)
     #define ssLOG_CONTENT_DEBUG(...) \
@@ -937,6 +1099,8 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_ENTRY_DEBUG(...) do{}while(0)
     #define ssLOG_FUNC_EXIT_DEBUG(...) do{}while(0)
     #define ssLOG_FUNC_DEBUG(...) do{}while(0)
+    #define ssLOG_BENCH_START_DEBUG(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_FUNC_EXIT_DEBUG(...) do{}while(0)
 #endif
 
 

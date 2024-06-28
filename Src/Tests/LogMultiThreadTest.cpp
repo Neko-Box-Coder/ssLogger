@@ -36,6 +36,10 @@ int main()
 {
     ssLOG_FUNC();
     
+    auto benchStart = ssLOG_BENCH_START();
+    auto namedBenchStart = ssLOG_BENCH_START("custom benchmark");
+    auto benchLevelStart = ssLOG_BENCH_START_ERROR();
+    
     std::thread a = std::thread(Thread_Worker, 0, 20, 10);
     std::thread b = std::thread(Thread_Worker, 1, 20, 100);
 
@@ -44,6 +48,7 @@ int main()
 
     a.join();
     b.join();
+
 
     #if ssLOG_THREAD_SAFE_OUTPUT
         ssLOG_LINE("ssLOG_THREAD_SAFE_OUTPUT");
@@ -59,6 +64,11 @@ int main()
 
     ssLOG_OUTPUT_ALL_CACHE();
     ssLOG_LINE("ssLOG_OUTPUT_ALL_CACHE");
+
+    ssLOG_BENCH_END_ERROR(benchLevelStart);
+    ssLOG_BENCH_END(namedBenchStart);
+    ssLOG_BENCH_END(benchStart);
+
 
     return 0;
 }
