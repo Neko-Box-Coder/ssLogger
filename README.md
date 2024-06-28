@@ -227,7 +227,12 @@ ssLOG_WARNING([message]);
 ssLOG_INFO([message]);
 ssLOG_DEBUG([message]);
 
-//Below are the functions that can be output as different level as well...
+//Logs with levels are discarded at compile time depending on the value of ssLOG_LEVEL
+//It then can be furthered restricted at runtime per thread with one of
+//ssLOG_LEVEL_DEBUG, ssLOG_LEVEL_INFO, ssLOG_LEVEL_WARNING, ssLOG_LEVEL_ERROR, ssLOG_LEVEL_FATAL
+ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+
+//Below are the functions that can be output as different level...
 
 //Logs before and after the statements passed as parameter
 ssLOG_CONTENT(c++ statements);

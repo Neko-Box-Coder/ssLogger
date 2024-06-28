@@ -70,7 +70,18 @@ int main()
         return 1;
     }
     
-    ssLOG_LINE("Test passed");
+    ssLOG_LINE("Test passed" << std::endl << std::endl);
+    
+    ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+    
+    TestLogLevels();
+        
+    TestFuncFatal();
+    TestFuncError();
+    TestFuncWarning();
+    TestFuncInfo();
+    TestFuncDebug();
+    ssLOG_LINE("Only error level or above should be shown");
 
     return 0;
 }

@@ -15,6 +15,11 @@ struct ssLogThreadInfo
     std::stringstream CurrentCachedOutput;
     int ID;
     int ssCurrentLogLevel = 0;
+    #ifdef ssLOG_LEVEL
+        int ssTargetLogLevel = ssLOG_LEVEL;
+    #else
+        int ssTargetLogLevel = 3;
+    #endif
 };
 
 
