@@ -11,6 +11,8 @@ struct ssLogThreadInfo
     std::stack<std::string> FuncNameStack = std::stack<std::string>();
     std::stack<int> LogLevelStack = std::stack<int>();
     std::stringstream CurrentPrepend;
+    bool CacheOutput = false;
+    std::stringstream CurrentCachedOutput;
     int ID;
     int ssCurrentLogLevel = 0;
 };

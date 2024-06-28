@@ -162,7 +162,8 @@ Powered by [termcolor (as submodule)](https://github.com/ikalnytskyi/termcolor) 
 | ssLOG_SHOW_FUNC_NAME      | 1             | Show function name for all logged functions                                                           |
 | ssLOG_SHOW_DATE           | 1             | Show log date for all logged functions                                                                |
 | ssLOG_SHOW_TIME           | 1             | Show log time for all logged functions                                                                |
-| ssLOG_THREAD_SAFE_OUTPUT  | 1             | Use locks to ensure outputs are atomic                                                                |
+| ssLOG_THREAD_SAFE_OUTPUT  | 1             | Use locks to ensure outputs are atomic.                                                               |
+|                           |               | Can be turned off if only running in single thread for performance.                                   |
 | ssLOG_SHOW_THREADS        | 1             | Shows the thread ID for the output                                                                    |
 | ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
 | ssLOG_LEVEL               | 3             | Log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                                |
@@ -207,6 +208,17 @@ ssLOG_LINE([message]);
 
 //Prepend a text for only the next log function
 ssLOG_PREPEND(prepend text);
+
+//Cache all the logs in current thread after this macro for the current scope to be output at a later time
+//This has minimum thread synchronization which is great for logging multi-threaded applications
+ssLOG_CACHE_OUTPUT_IN_SCOPE();
+
+//Enable/Disable cache in current thread for all the logs after this macro to be output at a later time
+ssLOG_ENABLE_CACHE_OUTPUT();
+ssLOG_DISABLE_CACHE_OUTPUT();
+
+//Output all the logs that are stored in cache for other threads
+ssLOG_OUTPUT_ALL_CACHE();
 
 //Logs can be output as different level, for example.
 ssLOG_FATAL([message])

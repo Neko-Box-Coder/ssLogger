@@ -16,7 +16,17 @@ void Thread_Inner_Work(int threadIndex, int x)
 void Thread_Worker(int threadIndex, int len, int freq)
 {
     ssLOG_FUNC();
+
+    for(int i = 0; i < len; i++)
+        Thread_Inner_Work(threadIndex, freq);
+}
+
+void Thread_Worker_cached(int threadIndex, int len, int freq)
+{
+    ssLOG_CACHE_OUTPUT_IN_SCOPE();
     
+    ssLOG_FUNC_WARNING();
+        
     for(int i = 0; i < len; i++)
         Thread_Inner_Work(threadIndex, freq);
 }
@@ -40,6 +50,15 @@ int main()
     #else
         ssLOG_LINE("NO ssLOG_THREAD_SAFE_OUTPUT");
     #endif
+    
+    a = std::thread(Thread_Worker_cached, 0, 20, 10);
+    b = std::thread(Thread_Worker_cached, 1, 20, 100);
+
+    a.join();
+    b.join();
+
+    ssLOG_OUTPUT_ALL_CACHE();
+    ssLOG_LINE("ssLOG_OUTPUT_ALL_CACHE");
 
     return 0;
 }

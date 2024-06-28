@@ -31,7 +31,7 @@ set(ssLOG_SHOW_LINE_NUM 1 CACHE BOOL "Show line number for all logged functions"
 set(ssLOG_SHOW_FUNC_NAME 1 CACHE BOOL "Show function name for all logged functions")
 set(ssLOG_SHOW_DATE 1 CACHE BOOL "Show log date for all logged functions")
 set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
-set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomic")
+set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomic. Can be turned off if only running in single thread for performance.")
 set(ssLOG_SHOW_THREADS 1 CACHE BOOL "Shows the thread ID for the output")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
 set(ssLOG_LEVEL "WARNING" CACHE STRING 
@@ -213,6 +213,10 @@ if(${ssLOG_BUILD_TESTS})
             # Get the file name without path and extension
             get_filename_component(EXECUTABLE_NAME "${CUR_SOURCE_PATH}" NAME_WE)
 
+            # if(NOT "${EXECUTABLE_NAME}" STREQUAL "LogMultiThreadTest")
+            #     continue()
+            # endif()
+
             #message("EXECUTABLE_NAME: ${EXECUTABLE_NAME}")
             #message("exeSuffix: ${exeSuffix}")
             #message("CUR_SOURCE_PATH: ${CUR_SOURCE_PATH}")
@@ -225,6 +229,8 @@ if(${ssLOG_BUILD_TESTS})
 
             # Sub-directory for build
             set_target_properties("${EXECUTABLE_NAME}${exeSuffix}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${binSubFolder})
+            
+            # target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE "-E")
 
             # if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
             #     target_compile_definitions("${EXECUTABLE_NAME}${exeSuffix}" PUBLIC _CRT_SECURE_NO_WARNINGS)
