@@ -35,7 +35,7 @@ set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomi
 set(ssLOG_SHOW_THREADS 1 CACHE BOOL "Shows the thread ID for the output")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
 set(ssLOG_LEVEL "WARNING" CACHE STRING 
-"Log level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG)
+"Compile time log level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG)
 NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
 FATAL    (Program will crash)
 ERROR    (Program might crash and **likely** to not function correctly)

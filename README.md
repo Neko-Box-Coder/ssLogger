@@ -22,7 +22,86 @@
 
 Powered by [termcolor (as submodule)](https://github.com/ikalnytskyi/termcolor) with [license distributed](./External/termcolor LICENSE)
 
-## 🔨 Usage:
+### 📔 Documentations:
+```c++
+
+//Directly output a message without any decorator or checks
+ssLOG_BASE("message");
+
+//Logs at a line with an optional message
+ssLOG_LINE(["message"]);
+
+//Prepend a text for only the next log function
+ssLOG_PREPEND("prepend text");
+
+//Cache all the logs in current thread after this macro for 
+//  the current scope to be output at a later time
+//This has minimum thread synchronization which is great for 
+//  logging multi-threaded applications
+ssLOG_CACHE_OUTPUT_IN_SCOPE();
+
+//Enable/Disable cache in current thread for all the logs after 
+//  this macro to be output at a later time
+ssLOG_ENABLE_CACHE_OUTPUT();
+ssLOG_DISABLE_CACHE_OUTPUT();
+
+//Output all the logs that are stored in cache for other threads
+ssLOG_OUTPUT_ALL_CACHE();
+
+//Logs can be output as different level, for example.
+ssLOG_FATAL(["message"]);
+ssLOG_ERROR(["message"]);
+ssLOG_WARNING(["message"]);
+ssLOG_INFO(["message"]);
+ssLOG_DEBUG(["message"]);
+
+//Logs with levels are discarded at compile time depending 
+//  on the value of ssLOG_LEVEL
+//It then can be furthered restricted at runtime per thread with one of
+//ssLOG_LEVEL_DEBUG, ssLOG_LEVEL_INFO, ssLOG_LEVEL_WARNING, 
+//  ssLOG_LEVEL_ERROR, ssLOG_LEVEL_FATAL
+ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+
+//Below are the functions that can be output as different level...
+
+//Logs before and after the statements passed as parameter
+ssLOG_CONTENT(c++ statements);
+ssLOG_CONTENT_FATAL(c++ statements);
+ssLOG_CONTENT_ERROR(c++ statements);
+//...
+
+//Logs when the current function begins and ends
+ssLOG_FUNC(["Optional custom function name"]);
+ssLOG_FUNC_FATAL(["Optional custom function name"]);
+ssLOG_FUNC_ERROR(["Optional custom function name"]);
+//...
+
+//Logs as the function begins (Needs to be placed manually)
+ssLOG_FUNC_ENTRY(["Optional custom function name"]);
+ssLOG_FUNC_ENTRY_FATAL(["Optional custom function name"]);
+ssLOG_FUNC_ENTRY_ERROR(["Optional custom function name"]);
+//...
+
+//Logs as the function exit (Needs to be placed manually)
+ssLOG_FUNC_EXIT(["Optional custom function name"]);
+ssLOG_FUNC_EXIT_FATAL(["Optional custom function name"]);
+ssLOG_FUNC_EXIT_ERROR(["Optional custom function name"]);
+//...
+
+//Starting a benchmark
+auto benchmark = ssLOG_BENCH_START(["Optional benchmark name"]);
+auto benchmarkFatal = ssLOG_BENCH_FATAL(["Optional benchmark name"]);
+auto benchmarkError = ssLOG_BENCH_ERROR(["Optional benchmark name"]);
+//...
+
+//Ending a benchmark
+ssLOG_BENCH_END(benchmark);
+ssLOG_BENCH_END_FATAL(benchmarkFatal);
+ssLOG_BENCH_END_ERROR(benchmarkError);
+//...
+```
+
+## 🔨 Examples:
 
 ### Logging a line:
 ```c++
@@ -166,7 +245,7 @@ Powered by [termcolor (as submodule)](https://github.com/ikalnytskyi/termcolor) 
 |                           |               | Can be turned off if only running in single thread for performance.                                   |
 | ssLOG_SHOW_THREADS        | 1             | Shows the thread ID for the output                                                                    |
 | ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
-| ssLOG_LEVEL               | 3             | Log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                                |
+| ssLOG_LEVEL               | 3             | Compile time log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                   |
 |                           |               | Recommended usage:                                                                                    |
 |                           |               | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC    |
 |                           |               | FATAL:    Indicates program will crash                                                                |
@@ -196,81 +275,6 @@ Powered by [termcolor (as submodule)](https://github.com/ikalnytskyi/termcolor) 
 > <font size="4">⚠️ **Warning:** Using ssLogger before main (i.e. inside static class initialization) will result undefined behaviour (as ssLogger uses global static variable).</font>
 
 ----
-
-### 📔 Documentations:
-```c++
-
-//Directly output a message without any decorator or checks
-ssLOG_BASE(message);
-
-//Logs at a line with an optional message
-ssLOG_LINE([message]);
-
-//Prepend a text for only the next log function
-ssLOG_PREPEND(prepend text);
-
-//Cache all the logs in current thread after this macro for the current scope to be output at a later time
-//This has minimum thread synchronization which is great for logging multi-threaded applications
-ssLOG_CACHE_OUTPUT_IN_SCOPE();
-
-//Enable/Disable cache in current thread for all the logs after this macro to be output at a later time
-ssLOG_ENABLE_CACHE_OUTPUT();
-ssLOG_DISABLE_CACHE_OUTPUT();
-
-//Output all the logs that are stored in cache for other threads
-ssLOG_OUTPUT_ALL_CACHE();
-
-//Logs can be output as different level, for example.
-ssLOG_FATAL([message]);
-ssLOG_ERROR([message]);
-ssLOG_WARNING([message]);
-ssLOG_INFO([message]);
-ssLOG_DEBUG([message]);
-
-//Logs with levels are discarded at compile time depending on the value of ssLOG_LEVEL
-//It then can be furthered restricted at runtime per thread with one of
-//ssLOG_LEVEL_DEBUG, ssLOG_LEVEL_INFO, ssLOG_LEVEL_WARNING, ssLOG_LEVEL_ERROR, ssLOG_LEVEL_FATAL
-ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
-
-//Below are the functions that can be output as different level...
-
-//Logs before and after the statements passed as parameter
-ssLOG_CONTENT(c++ statements);
-ssLOG_CONTENT_FATAL(c++ statements);
-ssLOG_CONTENT_ERROR(c++ statements);
-//...
-
-//Logs when the current function begins and ends
-ssLOG_FUNC([Optional custom function name]);
-ssLOG_FUNC_FATAL([Optional custom function name]);
-ssLOG_FUNC_ERROR([Optional custom function name]);
-//...
-
-//Logs as the function begins (Needs to be placed manually)
-ssLOG_FUNC_ENTRY([Optional custom function name]);
-ssLOG_FUNC_ENTRY_FATAL([Optional custom function name]);
-ssLOG_FUNC_ENTRY_ERROR([Optional custom function name]);
-//...
-
-//Logs as the function exit (Needs to be placed manually)
-ssLOG_FUNC_EXIT([Optional custom function name]);
-ssLOG_FUNC_EXIT_FATAL([Optional custom function name]);
-ssLOG_FUNC_EXIT_ERROR([Optional custom function name]);
-//...
-
-//Starting a benchmark
-auto benchmark = ssLOG_BENCH_START([Optional benchmark name]);
-auto benchmarkFatal = ssLOG_BENCH_FATAL([Optional benchmark name]);
-auto benchmarkError = ssLOG_BENCH_ERROR([Optional benchmark name]);
-//...
-
-//Ending a benchmark
-ssLOG_BENCH_END(benchmark);
-ssLOG_BENCH_END_FATAL(benchmarkFatal);
-ssLOG_BENCH_END_ERROR(benchmarkError);
-//...
-```
-
 
 ### 🔜 TODOs:
 - Add script for running tests in different configurations
