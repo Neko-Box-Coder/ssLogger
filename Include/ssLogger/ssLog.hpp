@@ -788,7 +788,7 @@ class Internal_ssLogCacheScope
         do{ \
             INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
-            ssLOG_LINE(__VA_ARGS__); \
+            ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_FATAL(...) \
