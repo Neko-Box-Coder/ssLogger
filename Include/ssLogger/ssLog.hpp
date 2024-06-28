@@ -533,6 +533,9 @@ class Internal_ssLogCacheScope
 #define ssLOG_OUTPUT_ALL_CACHE() \
     do \
     { \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLogMapMutex.lock(); \
+        ssLogMapBeingWritten.store(true); \
         for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
         { \
             if( it->first == std::this_thread::get_id() || \
@@ -545,6 +548,8 @@ class Internal_ssLogCacheScope
             it->second.CurrentCachedOutput.str(""); \
             it->second.CurrentCachedOutput.clear(); \
         } \
+        ssLogMapMutex.unlock(); \
+        ssLogCV.notify_all(); \
     } while(0)
 
 
