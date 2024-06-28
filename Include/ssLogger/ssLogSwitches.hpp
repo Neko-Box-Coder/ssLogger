@@ -33,8 +33,8 @@
         #define ssLOG_SHOW_TIME 1
     #endif
 
-    #ifndef ssLOG_THREAD_SAFE
-        #define ssLOG_THREAD_SAFE 1
+    #ifndef ssLOG_THREAD_SAFE_OUTPUT
+        #define ssLOG_THREAD_SAFE_OUTPUT 1
     #endif
 
     #ifndef ssLOG_LOG_TO_FILE
@@ -49,6 +49,10 @@
     //0 is NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
     #ifndef ssLOG_LEVEL
         #define ssLOG_LEVEL 3
+    #endif
+
+    #ifndef ssLOG_SHOW_THREADS
+        #define ssLOG_SHOW_THREADS 1
     #endif
 
 #endif

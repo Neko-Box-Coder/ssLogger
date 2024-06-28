@@ -12,6 +12,7 @@ struct ssLogThreadInfo
     std::stack<int> LogLevelStack = std::stack<int>();
     std::stringstream CurrentPrepend;
     int ID;
+    int ssCurrentLogLevel = 0;
 };
 
 

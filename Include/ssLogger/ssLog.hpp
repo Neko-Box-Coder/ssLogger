@@ -6,6 +6,11 @@
 #include <sstream>
 #include <string>
 #include <stack>
+#include <unordered_map>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
 
 // =======================================================================
 // Macros for allowing overloadable Macro functions
@@ -43,6 +48,15 @@
 // =======================================================================
 // Helper macro functions
 // =======================================================================
+#if ssLOG_THREAD_SAFE_OUTPUT
+    extern std::mutex ssLogOutputMutex;
+    #define INTERNAL_ssLOG_LOCK_OUTPUT() ssLogOutputMutex.lock()
+    #define INTERNAL_ssLOG_UNLOCK_OUTPUT() ssLogOutputMutex.unlock()
+#else
+    #define INTERNAL_ssLOG_LOCK_OUTPUT()
+    #define INTERNAL_ssLOG_UNLOCK_OUTPUT()
+#endif
+
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
     #include <ctime>
@@ -50,8 +64,13 @@
 
     #define ssLOG_BASE(x) \
     do { \
+        INTERNAL_ssLOG_LOCK_OUTPUT();
+        \
         if(!ssLogFileStream.good()) \
+        { \
+            INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
             break; \
+        } \
         \
         if(!ssLogFileStream.is_open()) \
         { \
@@ -65,35 +84,23 @@
             ssLogFileStream.open(nowString, std::ofstream::out); \
             \
             if(!ssLogFileStream.good()) \
+            { \
+                INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
                 break; \
+            } \
         }\
         ssLogFileStream << x << std::endl; \
+        \
+        INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
     } while(0)
     
 #else
-    //#ifdef _WIN32
-    //    #include <windows.h>
-    //    #undef max
-    //    #undef DELETE
-
-    //    inline void ssLOG_SetWinConsoleUTF()
-    //    {
-    //        static bool ssCalled = false;
-    //        if(!ssCalled)
-    //        {
-    //            ssCalled = true;
-    //            SetConsoleOutputCP(CP_UTF8);
-    //        }
-    //    }
-    //    #define INTERNAL_SET_WIN_CONSOLE() ssLOG_SetWinConsoleUTF()
-    //#else
-    //    #define INTERNAL_SET_WIN_CONSOLE()
-    //#endif
-
     #include <iostream>
     #define ssLOG_BASE(x) \
     do{ \
-        std::cout<<x<<std::endl; \
+        INTERNAL_ssLOG_LOCK_OUTPUT(); \
+        std::cout << x << std::endl; \
+        INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
     } while(0)
 #endif
 
@@ -140,72 +147,42 @@
     #define INTERNAL_ssLOG_GET_DATE_TIME() ""
 #endif
 
-#if ssLOG_THREAD_SAFE
-    #include <unordered_map>
-    #include <thread>
-    #include <mutex>
+#include "./ssLogThreadInfo.hpp"
 
-    #include "./ssLogThreadInfo.hpp"
+extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
 
-    extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
-    extern int ssNewThreadID;
-    extern int ssCurrentThreadID;
-    extern std::thread::id ssLastThreadID;
-    extern std::mutex ssLogMutex;
-    extern std::stack<int> ssLogLevelStack;
+extern std::condition_variable ssLogCV;
+extern std::atomic<bool> ssLogMapBeingWritten;
+extern int ssLogNewThreadID;
+extern std::mutex ssLogMapMutex;
 
-    #define INTERNAL_ssLOG_CHECK_THREAD_DIFF() \
+#define INTERNAL_ssLOG_CHECK_NEW_THREAD() \
+    if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end()) \
     { \
-        if(ssLastThreadID != std::this_thread::get_id()) \
-        {\
-            ssLastThreadID = std::this_thread::get_id(); \
-            if(ssLogInfoMap.find(ssLastThreadID) == ssLogInfoMap.end()) \
-            { \
-                ssLogInfoMap[ssLastThreadID].ID = ssNewThreadID; \
-                ssNewThreadID++; \
-            } \
-            \
-            ssCurrentThreadID = ssNewThreadID - 1; \
-        }\
+        ssLogMapMutex.lock(); \
+        ssLogMapBeingWritten.store(true); \
+        ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++; \
+        ssLogMapMutex.unlock(); \
+        ssLogCV.notify_all(); \
     }
 
-    #define INTERNAL_ssLOG_GET_THREAD_ID() "[Thread " << ssCurrentThreadID << "] "
-
-    #define INTERNAL_ssLOG_THREAD_SAFE_OP(x) \
-    { \
-        ssLogMutex.lock(); \
-        INTERNAL_ssLOG_CHECK_THREAD_DIFF(); \
-        x; \
-        ssLogMutex.unlock(); \
-    }
-
-    #define INTERNAL_ssLOG_GET_TAB_SPACE() ssLogInfoMap[std::this_thread::get_id()].TabSpace
-
-    #define INTERNAL_ssLOG_GET_FUNC_NAME_STACK() \
-        ssLogInfoMap[std::this_thread::get_id()].FuncNameStack
-    
-    #define INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK() \
-        ssLogInfoMap[std::this_thread::get_id()].LogLevelStack
+#if ssLOG_SHOW_THREADS
+    #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << ssLogInfoMap[std::this_thread::get_id()].ID << "] "
 #else
-    extern int ssTabSpace;
-    extern std::stack<std::string> ssFuncNameStack;
-    extern std::stringstream ssCurrentPrepend;
-    extern std::stack<int> ssLogLevelStack;
-
-    #define INTERNAL_ssLOG_CHECK_THREAD_DIFF(x) x
-
-    #define INTERNAL_ssLOG_GET_THREAD_ID() ""
-
-    #define INTERNAL_ssLOG_THREAD_SAFE_OP(x) x
-
-    #define INTERNAL_ssLOG_GET_TAB_SPACE() ssTabSpace
-
-    #define INTERNAL_ssLOG_GET_FUNC_NAME_STACK() ssFuncNameStack
-    
-    #define INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK() ssLogLevelStack
+    #define INTERNAL_ssLOG_PRINT_THREAD_ID()
 #endif
 
-extern int ssCurrentLogLevel;
+#define INTERNAL_ssLOG_TAB_SPACE() ssLogInfoMap[std::this_thread::get_id()].TabSpace
+
+#define INTERNAL_ssLOG_FUNC_NAME_STACK() \
+    ssLogInfoMap[std::this_thread::get_id()].FuncNameStack
+
+#define INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK() \
+    ssLogInfoMap[std::this_thread::get_id()].LogLevelStack
+
+#define INTERNAL_ssLOG_CURRENT_LOG_LEVEL() \
+    ssLogInfoMap[std::this_thread::get_id()].ssCurrentLogLevel
+
 extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_GET_PREPEND() Internal_ssLogGetPrepend()
 
@@ -214,9 +191,6 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 // =======================================================================
 
 #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
-
-#define INTERNAL_ssLOG_LINE_NOT_SAFE( ... ) \
-    do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE_NOT_SAFE, __VA_ARGS__ ) } while(0)
 
 //NOTE: ssLOG_CONTENT replaces ssLOG_FUNC_CONTENT
 #define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
@@ -230,37 +204,25 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_CONTENT( ... ) do{}while(0)
 
     #define INTERNAL_ssLOG_LINE_0() \
-    { \
-        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_0()); \
-    }
-
-    #define INTERNAL_ssLOG_LINE_1(debugText) \
-    { \
-        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText)); \
-    }
-    
-    #define INTERNAL_ssLOG_LINE_NOT_SAFE_0() \
-    { \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+       INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+       ssLOG_BASE(  INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                     INTERNAL_ssLOG_GET_PREPEND() << \
                     INTERNAL_ssLOG_GET_FUNCTION_NAME_0() << \
                     INTERNAL_ssLOG_GET_FILE_NAME() << \
-                    INTERNAL_ssLOG_GET_LINE_NUM()); \
-    }
-    
-    #define INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText) \
-    { \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+                    INTERNAL_ssLOG_GET_LINE_NUM());
+
+    #define INTERNAL_ssLOG_LINE_1(debugText) \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                     INTERNAL_ssLOG_GET_PREPEND() << \
                     INTERNAL_ssLOG_GET_FUNCTION_NAME_0() << \
                     INTERNAL_ssLOG_GET_FILE_NAME() << \
                     INTERNAL_ssLOG_GET_LINE_NUM() << ": " << \
-                    debugText); \
-    }
+                    debugText);
 #else
     inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
     {
@@ -284,39 +246,27 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     }
 
     #define INTERNAL_ssLOG_LINE_0() \
-    { \
-        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_0()); \
-    }
-
-    #define INTERNAL_ssLOG_LINE_1(debugText) \
-    { \
-        INTERNAL_ssLOG_THREAD_SAFE_OP(INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText)); \
-    }
-    
-    #define INTERNAL_ssLOG_LINE_NOT_SAFE_0() \
-    { \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
-                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true) << \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << \
                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                     INTERNAL_ssLOG_GET_PREPEND() << \
                     INTERNAL_ssLOG_GET_FUNCTION_NAME_0() << \
                     INTERNAL_ssLOG_GET_FILE_NAME() << \
-                    INTERNAL_ssLOG_GET_LINE_NUM()); \
-    }
+                    INTERNAL_ssLOG_GET_LINE_NUM());
 
-    #define INTERNAL_ssLOG_LINE_NOT_SAFE_1(debugText) \
-    { \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+    #define INTERNAL_ssLOG_LINE_1(debugText) \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
-                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true) << \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << \
                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                     INTERNAL_ssLOG_GET_PREPEND() << \
                     INTERNAL_ssLOG_GET_FUNCTION_NAME_0() << \
                     INTERNAL_ssLOG_GET_FILE_NAME() << \
                     INTERNAL_ssLOG_GET_LINE_NUM() << ": " << \
-                    debugText); \
-    }
+                    debugText);
     
     //INTERNAL_ssLOG_LIMIT_EXPR turns any expression into string limiting it to 50 characters
     #define INTERNAL_ssLOG_LIMIT_EXPR(x) \
@@ -328,16 +278,15 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC, __VA_ARGS__ )
 
     #define ssLOG_FUNC_CONTENT(expr) \
-    INTERNAL_ssLOG_THREAD_SAFE_OP \
-    ( \
-        INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().push(ssCurrentLogLevel); \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(INTERNAL_ssLOG_CURRENT_LOG_LEVEL()); \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
-                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())); \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE())); \
         \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
-                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true) << \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << \
                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                     INTERNAL_ssLOG_GET_PREPEND() << \
                     INTERNAL_ssLOG_GET_CONTENT_NAME("[" << INTERNAL_ssLOG_LIMIT_EXPR(expr) << "]") << \
@@ -345,29 +294,28 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                     INTERNAL_ssLOG_GET_FILE_NAME() << \
                     INTERNAL_ssLOG_GET_LINE_NUM()); \
         \
-        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(INTERNAL_ssLOG_LIMIT_EXPR(expr)); \
-        INTERNAL_ssLOG_GET_TAB_SPACE()++; \
-    ); \
-    expr; \
-    INTERNAL_ssLOG_THREAD_SAFE_OP \
-    ( \
+        INTERNAL_ssLOG_FUNC_NAME_STACK().push(INTERNAL_ssLOG_LIMIT_EXPR(expr)); \
+        INTERNAL_ssLOG_TAB_SPACE()++; \
+        \
+        expr; \
+        \
         do \
         { \
-            if( INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() || \
-                INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != INTERNAL_ssLOG_LIMIT_EXPR(expr)) \
+            if( INTERNAL_ssLOG_FUNC_NAME_STACK().empty() || \
+                INTERNAL_ssLOG_FUNC_NAME_STACK().top() != INTERNAL_ssLOG_LIMIT_EXPR(expr)) \
             { \
                 ssLOG_BASE( "ssLOG_FUNC_EXIT is missing somewhere. " << \
-                            INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() << \
+                            INTERNAL_ssLOG_FUNC_NAME_STACK().top() << \
                             " is expected but" << INTERNAL_ssLOG_LIMIT_EXPR(expr) << " is found instead."); \
                 break; \
             }\
-            ssCurrentLogLevel = INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().top(); \
-            INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop(); \
-            INTERNAL_ssLOG_GET_FUNC_NAME_STACK().pop(); \
-            INTERNAL_ssLOG_GET_TAB_SPACE()--; \
-            ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().top(); \
+            INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().pop(); \
+            INTERNAL_ssLOG_FUNC_NAME_STACK().pop(); \
+            INTERNAL_ssLOG_TAB_SPACE()--; \
+            ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                         INTERNAL_ssLOG_GET_DATE_TIME() << \
-                        Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()) << \
+                        Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()) << \
                         INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                         INTERNAL_ssLOG_GET_PREPEND() << \
                         INTERNAL_ssLOG_GET_CONTENT_NAME("[" << INTERNAL_ssLOG_LIMIT_EXPR(expr) << "]") << \
@@ -375,12 +323,11 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                         INTERNAL_ssLOG_GET_FILE_NAME() << \
                         INTERNAL_ssLOG_GET_LINE_NUM()); \
             \
-            ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+            ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                         INTERNAL_ssLOG_GET_DATE_TIME() << \
-                        Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())); \
+                        Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE())); \
         } \
-        while(0) \
-    );
+        while(0)
 
     template <typename CharT>
     std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
@@ -396,68 +343,61 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                                                 std::string fileName, 
                                                 std::string lineNum)
             {
-                INTERNAL_ssLOG_THREAD_SAFE_OP
-                (
-                    INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().push(ssCurrentLogLevel);
-                    ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() <<
-                                INTERNAL_ssLOG_GET_DATE_TIME() << 
-                                Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));
-                    
-                    ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() <<
-                                INTERNAL_ssLOG_GET_DATE_TIME() << 
-                                Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true) << 
-                                INTERNAL_ssLOG_GET_LOG_LEVEL() << 
-                                INTERNAL_ssLOG_GET_PREPEND() << 
-                                funcName << " BEGINS" <<
-                                fileName << lineNum);
-                    
-                    INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(funcName);
-                    INTERNAL_ssLOG_GET_TAB_SPACE()++;
-                    
-                    FuncName = funcName;
-                    FileName = fileName;
-                );
+                INTERNAL_ssLOG_CHECK_NEW_THREAD();
+                INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(INTERNAL_ssLOG_CURRENT_LOG_LEVEL());
+                ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() <<
+                            INTERNAL_ssLOG_GET_DATE_TIME() << 
+                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()));
+                
+                ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() <<
+                            INTERNAL_ssLOG_GET_DATE_TIME() << 
+                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << 
+                            INTERNAL_ssLOG_GET_LOG_LEVEL() << 
+                            INTERNAL_ssLOG_GET_PREPEND() << 
+                            funcName << " BEGINS" <<
+                            fileName << lineNum);
+                
+                INTERNAL_ssLOG_FUNC_NAME_STACK().push(funcName);
+                INTERNAL_ssLOG_TAB_SPACE()++;
+                
+                FuncName = funcName;
+                FileName = fileName;
             }
 
             inline ~Internal_ssLogFunctionScope()
             {
-                INTERNAL_ssLOG_THREAD_SAFE_OP
-                (
-                    do
-                    {
-                        if( INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() ||
-                            INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != FuncName)
-                        {
-                            ssLOG_BASE( "ssLOG_FUNC_EXIT is expecting " << 
-                                        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() << ". " << 
-                                        FuncName << " is found instead.");
-
-                            break;
-                        }
-                        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().pop();
-                        INTERNAL_ssLOG_GET_TAB_SPACE()--;
-                        
-                        ssCurrentLogLevel = INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().top();
-                        INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop();
-                        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() <<
-                                    INTERNAL_ssLOG_GET_DATE_TIME() << 
-                                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()) << 
-                                    INTERNAL_ssLOG_GET_LOG_LEVEL() << 
-                                    INTERNAL_ssLOG_GET_PREPEND() << 
-                                    FuncName << " ENDS" << FileName);
-                        
-                        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() <<
-                                    INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()));
-                    } \
-                    while(0) \
-                );
+                if( INTERNAL_ssLOG_FUNC_NAME_STACK().empty() ||
+                    INTERNAL_ssLOG_FUNC_NAME_STACK().top() != FuncName)
+                {
+                    ssLOG_BASE( "ssLOG_FUNC_EXIT is expecting " << 
+                                INTERNAL_ssLOG_FUNC_NAME_STACK().top() << ". " << 
+                                FuncName << " is found instead.");
+                    
+                    return;
+                }
+                INTERNAL_ssLOG_FUNC_NAME_STACK().pop();
+                INTERNAL_ssLOG_TAB_SPACE()--;
+                
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().top();
+                INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().pop();
+                ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() <<
+                            INTERNAL_ssLOG_GET_DATE_TIME() << 
+                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()) << 
+                            INTERNAL_ssLOG_GET_LOG_LEVEL() << 
+                            INTERNAL_ssLOG_GET_PREPEND() << 
+                            FuncName << " ENDS" << FileName);
+                
+                ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() <<
+                            INTERNAL_ssLOG_GET_DATE_TIME() <<
+                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()));
             }
     };
     
     #define INTERNAL_ssLOG_TO_STRING(x) (std::stringstream() << x).str()
     
-    #define INTERNAL_ssLOG_FUNC_0() Internal_ssLogFunctionScope ssLogScopeObj = \
+    #define INTERNAL_ssLOG_FUNC_0() \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogFunctionScope ssLogScopeObj = \
         Internal_ssLogFunctionScope(INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_0()), \
                                     INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
                                     INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()))
@@ -465,7 +405,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName) \
         INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName)))
     
-    #define INTERNAL_ssLOG_FUNC_1(customFuncName) Internal_ssLogFunctionScope ssLogScopeObj = \
+    #define INTERNAL_ssLOG_FUNC_1(customFuncName) \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogFunctionScope ssLogScopeObj = \
         Internal_ssLogFunctionScope(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName), \
                                     INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
                                     INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()))
@@ -481,16 +423,15 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define INTERNAL_ssLOG_FUNC_EXIT_0() INTERNAL_ssLOG_FUNC_EXIT_1( __func__ )
 
     #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFuncName) \
-    INTERNAL_ssLOG_THREAD_SAFE_OP \
-    ( \
-        INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().push(ssCurrentLogLevel); \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(INTERNAL_ssLOG_CURRENT_LOG_LEVEL()); \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
-                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())); \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE())); \
         \
-        ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                     INTERNAL_ssLOG_GET_DATE_TIME() << \
-                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE(), true) << \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << \
                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                     INTERNAL_ssLOG_GET_PREPEND() << \
                     INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName) << \
@@ -498,58 +439,48 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                     INTERNAL_ssLOG_GET_FILE_NAME() << \
                     INTERNAL_ssLOG_GET_LINE_NUM()); \
         \
-        INTERNAL_ssLOG_GET_FUNC_NAME_STACK().push(customFuncName); \
-        INTERNAL_ssLOG_GET_TAB_SPACE()++; \
-    );
+        INTERNAL_ssLOG_FUNC_NAME_STACK().push(customFuncName); \
+        INTERNAL_ssLOG_TAB_SPACE()++;
 
     #define INTERNAL_ssLOG_FUNC_EXIT_1(customFuncName) \
-    INTERNAL_ssLOG_THREAD_SAFE_OP \
-    ( \
-        do \
+        if( INTERNAL_ssLOG_FUNC_NAME_STACK().empty() || \
+            INTERNAL_ssLOG_FUNC_NAME_STACK().top() != customFuncName) \
         { \
-            if( INTERNAL_ssLOG_GET_FUNC_NAME_STACK().empty() || \
-                INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() != customFuncName) \
-            { \
-                ssLOG_BASE( "ssLOG_FUNC_EXIT is expecting " << \
-                            INTERNAL_ssLOG_GET_FUNC_NAME_STACK().top() << ". "<< \
-                            customFuncName << " is found instead."); \
-                \
-                break; \
-            }\
-            ssCurrentLogLevel = INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().top(); \
-            INTERNAL_ssLOG_GET_FUNC_NAME_STACK().pop(); \
-            INTERNAL_ssLOG_GET_TAB_SPACE()--; \
-            INTERNAL_ssLOG_GET_FUNC_LOG_LEVEL_STACK().pop(); \
-            ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
-                        INTERNAL_ssLOG_GET_DATE_TIME() << \
-                        Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE()) << \
-                        INTERNAL_ssLOG_GET_LOG_LEVEL() << \
-                        INTERNAL_ssLOG_GET_PREPEND() << \
-                        INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName) << \
-                        " EXITS" << \
-                        INTERNAL_ssLOG_GET_FILE_NAME() << \
-                        INTERNAL_ssLOG_GET_LINE_NUM()); \
+            ssLOG_BASE( "ssLOG_FUNC_EXIT is expecting " << \
+                        INTERNAL_ssLOG_FUNC_NAME_STACK().top() << ". "<< \
+                        customFuncName << " is found instead."); \
             \
-            ssLOG_BASE( INTERNAL_ssLOG_GET_THREAD_ID() << \
-                        INTERNAL_ssLOG_GET_DATE_TIME() << \
-                        Internal_ssLog_TabAdder(INTERNAL_ssLOG_GET_TAB_SPACE())); \
-        } \
-        while(0) \
-    );
+            break; \
+        }\
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().top(); \
+        INTERNAL_ssLOG_FUNC_NAME_STACK().pop(); \
+        INTERNAL_ssLOG_TAB_SPACE()--; \
+        INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().pop(); \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
+                    INTERNAL_ssLOG_GET_DATE_TIME() << \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()) << \
+                    INTERNAL_ssLOG_GET_LOG_LEVEL() << \
+                    INTERNAL_ssLOG_GET_PREPEND() << \
+                    INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName) << \
+                    " EXITS" << \
+                    INTERNAL_ssLOG_GET_FILE_NAME() << \
+                    INTERNAL_ssLOG_GET_LINE_NUM()); \
+        \
+        ssLOG_BASE( INTERNAL_ssLOG_PRINT_THREAD_ID() << \
+                    INTERNAL_ssLOG_GET_DATE_TIME() << \
+                    Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()));
+
 #endif
 
 // =======================================================================
 // Macros for ssLOG_PREPEND
 // =======================================================================
 
-#if ssLOG_THREAD_SAFE
-    #define ssLOG_PREPEND(x) \
-        do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssLogInfoMap[std::this_thread::get_id()].CurrentPrepend << x;) \
-        } while(0)
-#else
-    #define ssLOG_PREPEND(x) do{ INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentPrepend << x;) } while(0)
-#endif
+#define ssLOG_PREPEND(x) \
+    do{ \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLogInfoMap[std::this_thread::get_id()].CurrentPrepend << x; \
+    } while(0)
 
 // =======================================================================
 // Macros for output level
@@ -563,10 +494,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
 #include <cstdint>
 #ifdef _WIN32
-    #define NOMINMAX
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
 #endif
 
-#include "../../External/termcolor/include/termcolor/termcolor.hpp"
+#include "./termcolor.hpp"
 
 #ifndef ssLOG_LEVEL
     #define ssLOG_LEVEL 0
@@ -576,7 +509,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     template <typename CharT>
     inline std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream)
     {
-        switch(ssCurrentLogLevel)
+        switch(INTERNAL_ssLOG_CURRENT_LOG_LEVEL())
         {
             case INTERNAL_ssLOG_FATAL:
                 stream <<   termcolor::colorize << 
@@ -585,8 +518,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                             "[FATAL]" << 
                             termcolor::reset << " ";
                 
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_ERROR:
                 stream <<   termcolor::colorize << 
                             termcolor::grey << 
@@ -594,8 +528,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                             "[ERROR]" << 
                             termcolor::reset << " ";
                 
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_WARNING:
                 stream <<   termcolor::colorize << 
                             termcolor::grey << 
@@ -603,8 +538,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                             "[WARNING]" << 
                             termcolor::reset << " ";
                 
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_INFO:
                 stream <<   termcolor::colorize << 
                             termcolor::white << 
@@ -612,8 +548,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                             "[INFO]" << 
                             termcolor::reset << " ";
                 
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_DEBUG:
                 stream <<   termcolor::colorize << 
                             termcolor::grey << 
@@ -621,10 +558,11 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                             "[DEBUG]" << 
                             termcolor::reset << " ";
                 
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             default:
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
         }
     }
@@ -632,30 +570,35 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     template <typename CharT>
     inline std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream)
     {
-        switch(ssCurrentLogLevel)
+        switch(INTERNAL_ssLOG_CURRENT_LOG_LEVEL())
         {
             case INTERNAL_ssLOG_FATAL:
                 stream << "[FATAL] ";
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_ERROR:
                 stream << "[ERROR] ";
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_WARNING:
                 stream << "[WARNING] ";
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_INFO:
                 stream << "[INFO] ";
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             case INTERNAL_ssLOG_DEBUG:
                 stream << "[DEBUG] ";
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
+            
             default:
-                ssCurrentLogLevel = 0;
+                INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
                 return stream;
         }
     }
@@ -671,40 +614,43 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_FATAL
     #define ssLOG_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP \
-            ( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_FATAL; \
-                INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); \
-            ) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
+            ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_FATAL;) \
-            ssLOG_CONTENT(__VA_ARGS__); \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
+            ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_FATAL;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ENTRY_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_FATAL;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_FATAL;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_FATAL(...) \
-        INTERNAL_ssLOG_THREAD_SAFE_OP( ssCurrentLogLevel = INTERNAL_ssLOG_FATAL; ) \
-        ssLOG_FUNC(__VA_ARGS__);
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_FATAL; \
+        ssLOG_FUNC(__VA_ARGS__)
 #else
     #define ssLOG_FATAL(...) do{}while(0)
     #define ssLOG_CONTENT_FATAL(...) \
@@ -721,38 +667,42 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_ERROR
     #define ssLOG_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP \
-            ( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_ERROR; \
-                INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); \
-            ) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
+            ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_ERROR;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_ERROR; \
-                ) ssLOG_FUNC_CONTENT(__VA_ARGS__); } while(0)
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
+            ssLOG_FUNC_CONTENT(__VA_ARGS__); \
+        } while(0)
     #define ssLOG_FUNC_ENTRY_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_ERROR;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_ERROR;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ERROR(...) \
-        INTERNAL_ssLOG_THREAD_SAFE_OP( ssCurrentLogLevel = INTERNAL_ssLOG_ERROR; ) ssLOG_FUNC(__VA_ARGS__);
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_ERROR; \
+        ssLOG_FUNC(__VA_ARGS__)
 #else
     #define ssLOG_ERROR(...) do{}while(0)
     #define ssLOG_CONTENT_ERROR(...) \
@@ -768,39 +718,42 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_WARNING
     #define ssLOG_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP \
-            ( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_WARNING; \
-                INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); \
-            ) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
+            ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_WARNING;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_WARNING; \
-                ) ssLOG_FUNC_CONTENT(__VA_ARGS__); } while(0)
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
+            ssLOG_FUNC_CONTENT(__VA_ARGS__); \
+        } while(0)
     #define ssLOG_FUNC_ENTRY_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_WARNING;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_WARNING;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_WARNING(...) \
-        INTERNAL_ssLOG_THREAD_SAFE_OP( ssCurrentLogLevel = INTERNAL_ssLOG_WARNING; ) \
-        ssLOG_FUNC(__VA_ARGS__);
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_WARNING; \
+        ssLOG_FUNC(__VA_ARGS__)
 #else
     #define ssLOG_WARNING(...) do{}while(0)
     #define ssLOG_CONTENT_WARNING(...) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
@@ -813,38 +766,42 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_INFO
     #define ssLOG_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP \
-            ( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_INFO; \
-                INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); \
-            ) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
+            ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_INFO;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_INFO; \
-                ) ssLOG_FUNC_CONTENT(__VA_ARGS__); } while(0)
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
+            ssLOG_FUNC_CONTENT(__VA_ARGS__); \
+        } while(0)
     #define ssLOG_FUNC_ENTRY_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_INFO;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_INFO;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_INFO(...) \
-        INTERNAL_ssLOG_THREAD_SAFE_OP( ssCurrentLogLevel = INTERNAL_ssLOG_INFO; ) ssLOG_FUNC(__VA_ARGS__);
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_INFO; \
+        ssLOG_FUNC(__VA_ARGS__)
 #else
     #define ssLOG_INFO(...) do{}while(0)
     #define ssLOG_CONTENT_INFO(...) \
@@ -861,39 +818,43 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #if ssLOG_LEVEL >= INTERNAL_ssLOG_DEBUG
     #define ssLOG_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP \
-            ( \
-                ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG; \
-                INTERNAL_ssLOG_LINE_NOT_SAFE(__VA_ARGS__); \
-            ) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
+            ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ENTRY_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_THREAD_SAFE_OP(ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG;) \
+            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_DEBUG(...) \
-        INTERNAL_ssLOG_THREAD_SAFE_OP( ssCurrentLogLevel = INTERNAL_ssLOG_DEBUG; ) ssLOG_FUNC(__VA_ARGS__);
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = INTERNAL_ssLOG_DEBUG; \
+        ssLOG_FUNC(__VA_ARGS__)
 #else
     #define ssLOG_DEBUG(...) do{}while(0)
     #define ssLOG_CONTENT_DEBUG(...) \

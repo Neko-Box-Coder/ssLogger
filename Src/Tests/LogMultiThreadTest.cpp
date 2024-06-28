@@ -29,8 +29,17 @@ int main()
     std::thread a = std::thread(Thread_Worker, 0, 20, 10);
     std::thread b = std::thread(Thread_Worker, 1, 20, 100);
 
+    // std::thread a = std::thread(Thread_Worker, 0, 1000000, 0);
+    // std::thread b = std::thread(Thread_Worker, 1, 1000000, 0);
+
     a.join();
     b.join();
+
+    #if ssLOG_THREAD_SAFE_OUTPUT
+        ssLOG_LINE("ssLOG_THREAD_SAFE_OUTPUT");
+    #else
+        ssLOG_LINE("NO ssLOG_THREAD_SAFE_OUTPUT");
+    #endif
 
     return 0;
 }

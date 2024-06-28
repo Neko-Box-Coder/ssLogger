@@ -31,7 +31,8 @@ set(ssLOG_SHOW_LINE_NUM 1 CACHE BOOL "Show line number for all logged functions"
 set(ssLOG_SHOW_FUNC_NAME 1 CACHE BOOL "Show function name for all logged functions")
 set(ssLOG_SHOW_DATE 1 CACHE BOOL "Show log date for all logged functions")
 set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
-set(ssLOG_THREAD_SAFE 1 CACHE BOOL "Use std::thread and ensure thread safety for all logged functions")
+set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomic")
+set(ssLOG_SHOW_THREADS 1 CACHE BOOL "Shows the thread ID for the output")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
 set(ssLOG_LEVEL "WARNING" CACHE STRING 
 "Log level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG)
@@ -83,8 +84,8 @@ if("${ssLOG_USE_SOURCE}")
         )
     endif()
 
-    target_include_directories(ssLogger PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include"
-                                                "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
+    target_include_directories(ssLogger PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include")
+                                                # "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
     
 
     target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=$<BOOL:${ssLOG_CALL_STACK}>)
@@ -94,7 +95,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_SHOW_FUNC_NAME=$<BOOL:${ssLOG_SHOW_FUNC_NAME}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_SHOW_DATE=$<BOOL:${ssLOG_SHOW_DATE}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
-    target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_SAFE=$<BOOL:${ssLOG_THREAD_SAFE}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
@@ -164,7 +165,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FUNC_NAME=$<BOOL:${ssLOG_SHOW_FUNC_NAME}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_DATE=$<BOOL:${ssLOG_SHOW_DAT}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE=$<BOOL:${ssLOG_THREAD_SAFE}>)
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 

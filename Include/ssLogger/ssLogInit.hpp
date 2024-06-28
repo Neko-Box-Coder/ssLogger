@@ -6,55 +6,52 @@
 #include <sstream>
 #include <string>
 #include <stack>
+#include <unordered_map>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
 
-#if ssLOG_THREAD_SAFE
-    #include <unordered_map>
-    #include <thread>
-    #include <mutex>
+#include "./ssLogThreadInfo.hpp"
 
-    #include "./ssLogThreadInfo.hpp"
+std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap = 
+    std::unordered_map<std::thread::id, ssLogThreadInfo>();
 
-    std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap = 
-        std::unordered_map<std::thread::id, ssLogThreadInfo>();
-    
-    int ssNewThreadID = 0;
-    int ssCurrentThreadID = 0;
-    std::thread::id ssLastThreadID = std::thread::id();
-    std::mutex ssLogMutex;
-    
-    std::string(*Internal_ssLogGetPrepend)(void) = []()
+std::condition_variable ssLogCV;
+std::atomic<bool> ssLogMapBeingWritten(false);
+int ssLogNewThreadID = 0;
+std::mutex ssLogMapMutex;
+
+std::string(*Internal_ssLogGetPrepend)(void) = []()
+{
+    if(ssLogMapBeingWritten.load())
     {
-        auto& currentSS = ssLogInfoMap[std::this_thread::get_id()].CurrentPrepend;
-        std::string s = currentSS.str();
-        currentSS.str("");
-        currentSS.clear();
-        return s;
-    };
-#else
-    int ssTabSpace = 0;
-    std::stack<std::string> ssFuncNameStack = std::stack<std::string>();
-    std::stringstream ssCurrentPrepend;
-    std::stack<int> ssLogLevelStack = std::stack<int>();
+        std::unique_lock<std::mutex> lk(ssLogMapMutex);
+        ssLogCV.wait(lk, []{ return ssLogMapBeingWritten.load(); });
+    }
 
-    std::string(*Internal_ssLogGetPrepend)(void) = []()
-    {
-        std::string s = ssCurrentPrepend.str();
-        ssCurrentPrepend.str("");
-        ssCurrentPrepend.clear();
-        return s;
-    };
+    auto& currentSS = ssLogInfoMap[std::this_thread::get_id()].CurrentPrepend;
+    
+    std::string s = currentSS.str();
+    currentSS.str("");
+    currentSS.clear();
+    return s;
+};
 
+#if ssLOG_THREAD_SAFE_OUTPUT
+    std::mutex ssLogOutputMutex;
 #endif
-
-int ssCurrentLogLevel = 0;
 
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
     std::ofstream ssLogFileStream = std::ofstream();
 #else
     #ifdef _WIN32
+        #ifndef NOMINMAX
+            #define NOMINMAX
+        #endif
+        
         #include <windows.h>
-        #undef max
         #undef DELETE
         bool ssLogInitLambdaStatus = []()
         {
