@@ -43,6 +43,8 @@ WARNING  (Program won't crash but **might** not function correctly)
 INFO     (Program state which **doesn't** spam the log)
 DEBUG    (Program state which **does** spam the log)")
 
+set(ssLOG_USE_ESCAPE_SEQUENCES 0 CACHE BOOL "Use escape sequences regardless of it being supported or not")
+
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
                                                 "FATAL" 
                                                 "ERROR" 
@@ -97,6 +99,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_USE_ESCAPE_SEQUENCES=$<BOOL:${ssLOG_USE_ESCAPE_SEQUENCES}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
@@ -167,6 +170,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_ESCAPE_SEQUENCES=$<BOOL:${ssLOG_USE_ESCAPE_SEQUENCES}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")

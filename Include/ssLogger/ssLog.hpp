@@ -721,6 +721,10 @@ class Internal_ssLogCacheScope
     #endif
 #endif
 
+#if ssLOG_USE_ESCAPE_SEQUENCES
+    #define TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES
+#endif
+
 #include "./termcolor.hpp"
 
 #if ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1

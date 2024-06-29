@@ -245,6 +245,7 @@ ssLOG_BENCH_END_ERROR(benchmarkError);
 |                           |               | Can be turned off if only running in single thread for performance.                                   |
 | ssLOG_SHOW_THREADS        | 1             | Shows the thread ID for the output                                                                    |
 | ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
+| ssLOG_USE_ESCAPE_SEQUENCES| 0             | Use escape sequences regardless of it being supported or not                                          |
 | ssLOG_LEVEL               | 3             | Compile time log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                   |
 |                           |               | Recommended usage:                                                                                    |
 |                           |               | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC    |

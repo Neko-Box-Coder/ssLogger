@@ -55,4 +55,8 @@
         #define ssLOG_SHOW_THREADS 1
     #endif
 
+    #ifndef ssLOG_USE_ESCAPE_SEQUENCES
+        #define ssLOG_USE_ESCAPE_SEQUENCES 0
+    #endif
+
 #endif
