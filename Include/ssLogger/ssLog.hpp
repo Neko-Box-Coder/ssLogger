@@ -676,7 +676,7 @@ class Internal_ssLogCacheScope
             else if(ssLogBenchUs > 1000) \
                 do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000.0 << " milliseconds") } while(0); \
             else \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs << " nanoseconds") } while(0); \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs << " microseconds") } while(0); \
         } \
         else \
         { \
@@ -687,7 +687,7 @@ class Internal_ssLogCacheScope
             else if(ssLogBenchUs > 1000) \
                 do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000.0 << " milliseconds") } while(0); \
             else \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs << " nanoseconds") } while(0); \
+                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs << " microseconds") } while(0); \
         } \
     } while(0)
 
