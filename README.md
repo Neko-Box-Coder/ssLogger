@@ -34,14 +34,15 @@ ssLOG_LINE(["message"]);
 //Prepend a text for only the next log function
 ssLOG_PREPEND("prepend text");
 
-//Cache all the logs in current thread after this macro for 
-//  the current scope to be output at a later time
+//Cache all the logs in the current thread after this macro  
+//  that are in the current scope, which can be output at a later time
+//
 //This has minimum thread synchronization which is great for 
 //  logging multi-threaded applications
 ssLOG_CACHE_OUTPUT_IN_SCOPE();
 
 //Enable/Disable cache in current thread for all the logs after 
-//  this macro to be output at a later time
+//  this macro, which can be output at a later time
 ssLOG_ENABLE_CACHE_OUTPUT();
 ssLOG_DISABLE_CACHE_OUTPUT();
 
@@ -56,13 +57,17 @@ ssLOG_INFO(["message"]);
 ssLOG_DEBUG(["message"]);
 
 //Logs with levels are discarded at compile time depending 
-//  on the value of ssLOG_LEVEL
+//  on the value of `#define ssLOG_LEVEL`
+//
 //It then can be furthered restricted at runtime per thread with one of
-//ssLOG_LEVEL_DEBUG, ssLOG_LEVEL_INFO, ssLOG_LEVEL_WARNING, 
-//  ssLOG_LEVEL_ERROR, ssLOG_LEVEL_FATAL
+//
+//`ssLOG_LEVEL_DEBUG`, `ssLOG_LEVEL_INFO`, `ssLOG_LEVEL_WARNING`, 
+//  `ssLOG_LEVEL_ERROR`, `ssLOG_LEVEL_FATAL`
+//
+//For example:
 ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
 
-//Below are the functions that can be output as different level...
+//Below are the macro functions that can be output with different levels...
 
 //Logs before and after the statements passed as parameter
 ssLOG_CONTENT(c++ statements);
