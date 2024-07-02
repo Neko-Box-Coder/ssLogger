@@ -893,11 +893,11 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_CONTENT_FATAL(...) \
         INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
     
-    #define ssLOG_FUNC_ENTRY_FATAL(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_FUNC_ENTRY_FATAL(...) do{}while(0)
     #define ssLOG_FUNC_EXIT_FATAL(...) do{}while(0)
     #define ssLOG_FUNC_FATAL(...) do{}while(0)
-    #define ssLOG_BENCH_START_FATAL(...) do{}while(0)
-    #define ssLOG_FUNC_EXIT_FATAL(...) do{}while(0)
+    #define ssLOG_BENCH_START_FATAL(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_BENCH_END_FATAL(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
@@ -962,7 +962,7 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_EXIT_ERROR(...) do{}while(0)
     #define ssLOG_FUNC_ERROR(...) do{}while(0)
     #define ssLOG_BENCH_START_ERROR(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_FUNC_EXIT_ERROR(...) do{}while(0)
+    #define ssLOG_BENCH_END_ERROR(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
@@ -1024,7 +1024,7 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_EXIT_WARNING(...) do{}while(0)
     #define ssLOG_FUNC_WARNING(...) do{}while(0)
     #define ssLOG_BENCH_START_WARNING(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_FUNC_EXIT_WARNING(...) do{}while(0)
+    #define ssLOG_BENCH_END_WARNING(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_INFO
@@ -1090,7 +1090,7 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_EXIT_INFO(...) do{}while(0)
     #define ssLOG_FUNC_INFO(...) do{}while(0)
     #define ssLOG_BENCH_START_INFO(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_FUNC_EXIT_INFO(...) do{}while(0)
+    #define ssLOG_BENCH_END_WARNING(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_INFO
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
@@ -1157,7 +1157,7 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_EXIT_DEBUG(...) do{}while(0)
     #define ssLOG_FUNC_DEBUG(...) do{}while(0)
     #define ssLOG_BENCH_START_DEBUG(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_FUNC_EXIT_DEBUG(...) do{}while(0)
+    #define ssLOG_BENCH_END_WARNING(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
 
 
