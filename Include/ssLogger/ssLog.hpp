@@ -10,7 +10,6 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include <condition_variable>
 #include <chrono>
 #include <utility>
 
@@ -156,53 +155,46 @@
 #include "./ssLogThreadInfo.hpp"
 
 extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
-
-extern std::condition_variable ssLogCV;
-extern std::atomic<bool> ssLogMapBeingWritten;
 extern int ssLogNewThreadID;
 extern std::mutex ssLogMapMutex;
 
 #define INTERNAL_ssLOG_CHECK_NEW_THREAD() \
     do \
     { \
+        std::unique_lock<std::mutex> lk(ssLogMapMutex, std::defer_lock); \
+        while(!lk.try_lock()){} \
         if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end()) \
-        { \
-            ssLogMapMutex.lock(); \
-            ssLogMapBeingWritten.store(true); \
             ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++; \
-            ssLogMapMutex.unlock(); \
-            ssLogCV.notify_all(); \
-        } \
     } while(0)
 
 #if ssLOG_SHOW_THREADS
-    #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << ssLogInfoMap[std::this_thread::get_id()].ID << "] "
+    #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << ssLogInfoMap.at(std::this_thread::get_id()).ID << "] "
 #else
     #define INTERNAL_ssLOG_PRINT_THREAD_ID()
 #endif
 
-#define INTERNAL_ssLOG_TAB_SPACE() ssLogInfoMap[std::this_thread::get_id()].TabSpace
+#define INTERNAL_ssLOG_TAB_SPACE() ssLogInfoMap.at(std::this_thread::get_id()).TabSpace
 
 #define INTERNAL_ssLOG_FUNC_NAME_STACK() \
-    ssLogInfoMap[std::this_thread::get_id()].FuncNameStack
+    ssLogInfoMap.at(std::this_thread::get_id()).FuncNameStack
 
 #define INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK() \
-    ssLogInfoMap[std::this_thread::get_id()].LogLevelStack
+    ssLogInfoMap.at(std::this_thread::get_id()).LogLevelStack
 
 #define INTERNAL_ssLOG_CURRENT_LOG_LEVEL() \
-    ssLogInfoMap[std::this_thread::get_id()].ssCurrentLogLevel
+    ssLogInfoMap.at(std::this_thread::get_id()).ssCurrentLogLevel
 
 #define INTERNAL_ssLOG_IS_CACHE_OUTPUT() \
-    ssLogInfoMap[std::this_thread::get_id()].CacheOutput
+    ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput
 
 #define INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() \
-    ssLogInfoMap[std::this_thread::get_id()].CurrentCachedOutput
+    ssLogInfoMap.at(std::this_thread::get_id()).CurrentCachedOutput
 
 extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_GET_PREPEND() Internal_ssLogGetPrepend()
 
 #define INTERNAL_ssLOG_TARGET_LEVEL() \
-    ssLogInfoMap[std::this_thread::get_id()].ssTargetLogLevel
+    ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel
 
 
 // =======================================================================
@@ -539,7 +531,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 #define ssLOG_PREPEND(x) \
     do{ \
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
-        ssLogInfoMap[std::this_thread::get_id()].CurrentPrepend << x; \
+        ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << x; \
     } while(0)
 
 
@@ -581,22 +573,16 @@ class Internal_ssLogCacheScope
     do \
     { \
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
-        ssLogMapMutex.lock(); \
-        ssLogMapBeingWritten.store(true); \
+        std::unique_lock<std::mutex> lk(ssLogMapMutex); \
         for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
         { \
-            if( it->first == std::this_thread::get_id() || \
-                it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0) \
-            { \
+            if(it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0) \
                 continue; \
-            } \
             \
             INTERNAL_ssLOG_BASE(it->second.CurrentCachedOutput.str()); \
             it->second.CurrentCachedOutput.str(""); \
             it->second.CurrentCachedOutput.clear(); \
         } \
-        ssLogMapMutex.unlock(); \
-        ssLogCV.notify_all(); \
     } while(0)
 
 // =======================================================================
@@ -1090,7 +1076,7 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_EXIT_INFO(...) do{}while(0)
     #define ssLOG_FUNC_INFO(...) do{}while(0)
     #define ssLOG_BENCH_START_INFO(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_BENCH_END_WARNING(...) do{}while(0)
+    #define ssLOG_BENCH_END_INFO(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_INFO
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
@@ -1157,7 +1143,7 @@ class Internal_ssLogCacheScope
     #define ssLOG_FUNC_EXIT_DEBUG(...) do{}while(0)
     #define ssLOG_FUNC_DEBUG(...) do{}while(0)
     #define ssLOG_BENCH_START_DEBUG(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_BENCH_END_WARNING(...) do{}while(0)
+    #define ssLOG_BENCH_END_DEBUG(...) do{}while(0)
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
 
 

@@ -46,7 +46,7 @@ ssLOG_CACHE_OUTPUT_IN_SCOPE();
 ssLOG_ENABLE_CACHE_OUTPUT();
 ssLOG_DISABLE_CACHE_OUTPUT();
 
-//Output all the logs that are stored in cache for other threads
+//Output all the logs that are stored in cache
 ssLOG_OUTPUT_ALL_CACHE();
 
 //Logs can be output as different level, for example.

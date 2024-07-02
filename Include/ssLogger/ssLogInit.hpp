@@ -10,28 +10,24 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include <condition_variable>
 
 #include "./ssLogThreadInfo.hpp"
 
 std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap = 
     std::unordered_map<std::thread::id, ssLogThreadInfo>();
 
-std::condition_variable ssLogCV;
-std::atomic<bool> ssLogMapBeingWritten(false);
 int ssLogNewThreadID = 0;
 std::mutex ssLogMapMutex;
 
 std::string(*Internal_ssLogGetPrepend)(void) = []()
 {
-    if(ssLogMapBeingWritten.load())
     {
-        std::unique_lock<std::mutex> lk(ssLogMapMutex);
-        ssLogCV.wait(lk, []{ return ssLogMapBeingWritten.load(); });
+        std::unique_lock<std::mutex> lk(ssLogMapMutex, std::defer_lock);
+        if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end())
+            ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++;
     }
-
-    auto& currentSS = ssLogInfoMap[std::this_thread::get_id()].CurrentPrepend;
     
+    auto& currentSS = ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend;
     std::string s = currentSS.str();
     currentSS.str("");
     currentSS.clear();

@@ -40,8 +40,8 @@ int main()
     auto namedBenchStart = ssLOG_BENCH_START("custom benchmark");
     auto benchLevelStart = ssLOG_BENCH_START_ERROR();
     
-    std::thread a = std::thread(Thread_Worker, 0, 20, 10);
-    std::thread b = std::thread(Thread_Worker, 1, 20, 100);
+    std::thread a = std::thread(Thread_Worker, 0, 150, 10);
+    std::thread b = std::thread(Thread_Worker, 1, 150, 12);
 
     // std::thread a = std::thread(Thread_Worker, 0, 1000000, 0);
     // std::thread b = std::thread(Thread_Worker, 1, 1000000, 0);
@@ -56,8 +56,8 @@ int main()
         ssLOG_LINE("NO ssLOG_THREAD_SAFE_OUTPUT");
     #endif
     
-    a = std::thread(Thread_Worker_cached, 0, 20, 10);
-    b = std::thread(Thread_Worker_cached, 1, 20, 100);
+    a = std::thread(Thread_Worker_cached, 0, 150, 10);
+    b = std::thread(Thread_Worker_cached, 1, 150, 12);
 
     a.join();
     b.join();
