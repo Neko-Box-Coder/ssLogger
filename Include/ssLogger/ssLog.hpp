@@ -157,6 +157,7 @@
 extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
 extern int ssLogNewThreadID;
 extern std::mutex ssLogMapMutex;
+extern std::atomic<bool> ssLogNewThreadCacheByDefault;
 
 #define INTERNAL_ssLOG_CHECK_NEW_THREAD() \
     do \
@@ -164,7 +165,10 @@ extern std::mutex ssLogMapMutex;
         std::unique_lock<std::mutex> lk(ssLogMapMutex, std::defer_lock); \
         while(!lk.try_lock()){} \
         if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end()) \
+        { \
             ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++; \
+            ssLogInfoMap[std::this_thread::get_id()].CacheOutput = ssLogNewThreadCacheByDefault.load(); \
+        } \
     } while(0)
 
 #if ssLOG_SHOW_THREADS
@@ -536,33 +540,68 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
 
 
 // =======================================================================
-// Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, ssLOG_CACHE_OUTPUT_FOR_SCOPE and ssLOG_OUTPUT_ALL_CACHE
+// Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, 
+// ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, 
+// ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS, ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS, 
+// ssLOG_CACHE_OUTPUT_FOR_SCOPE and ssLOG_OUTPUT_ALL_CACHE
 // =======================================================================
 #define ssLOG_ENABLE_CACHE_OUTPUT() \
     do \
     { \
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
-        INTERNAL_ssLOG_IS_CACHE_OUTPUT() = true; \
+        std::unique_lock<std::mutex> lk(ssLogMapMutex); \
+        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
+            it->second.CacheOutput = true; \
     } while(0)
 
 #define ssLOG_DISABLE_CACHE_OUTPUT() \
     do \
     { \
         INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
+            it->second.CacheOutput = false; \
+    } while(0)
+
+#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
+    do \
+    { \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        INTERNAL_ssLOG_IS_CACHE_OUTPUT() = true; \
+    } while(0)
+
+#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
+    do \
+    { \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_IS_CACHE_OUTPUT() = false; \
     } while(0)
+
+#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() \
+    do \
+    { \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLogNewThreadCacheByDefault.store(true); \
+    } while(0)
+
+#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() \
+    do \
+    { \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        ssLogNewThreadCacheByDefault.store(false); \
+    } while(0)
+
 
 class Internal_ssLogCacheScope
 {
     public:
         inline Internal_ssLogCacheScope()
         {
-            ssLOG_ENABLE_CACHE_OUTPUT();
+            ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
         }
 
         inline ~Internal_ssLogCacheScope()
         {
-            ssLOG_DISABLE_CACHE_OUTPUT();
+            ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
         }
 };
 

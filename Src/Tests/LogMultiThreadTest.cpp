@@ -24,12 +24,27 @@ void Thread_Worker(int threadIndex, int len, int freq)
 void Thread_Worker_cached(int threadIndex, int len, int freq)
 {
     ssLOG_CACHE_OUTPUT_IN_SCOPE();
-    
-    ssLOG_FUNC_WARNING();
-        
-    for(int i = 0; i < len; i++)
-        Thread_Inner_Work(threadIndex, freq);
+    {
+        ssLOG_FUNC_WARNING();
+            
+        for(int i = 0; i < len; i++)
+            Thread_Inner_Work(threadIndex, freq);
+    }
 }
+
+void Thread_Worker_cached_2(int threadIndex, int len, int freq)
+{
+    ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
+    {
+        ssLOG_FUNC_WARNING();
+            
+        for(int i = 0; i < len; i++)
+            Thread_Inner_Work(threadIndex, freq);
+    }
+    ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
+
+}
+
 
 
 int main()
@@ -49,13 +64,26 @@ int main()
     a.join();
     b.join();
 
-
     #if ssLOG_THREAD_SAFE_OUTPUT
         ssLOG_LINE("ssLOG_THREAD_SAFE_OUTPUT");
     #else
         ssLOG_LINE("NO ssLOG_THREAD_SAFE_OUTPUT");
     #endif
     
+    ssLOG_ENABLE_CACHE_OUTPUT();
+    
+    a = std::thread(Thread_Worker, 0, 150, 10);
+    b = std::thread(Thread_Worker, 1, 150, 12);
+    
+    a.join();
+    b.join();
+    
+    ssLOG_DISABLE_CACHE_OUTPUT();
+    ssLOG_OUTPUT_ALL_CACHE();
+    ssLOG_LINE();
+    ssLOG_LINE("Tested ssLOG_ENABLE_CACHE_OUTPUT");
+    ssLOG_LINE();
+
     a = std::thread(Thread_Worker_cached, 0, 150, 10);
     b = std::thread(Thread_Worker_cached, 1, 150, 12);
 
@@ -63,7 +91,22 @@ int main()
     b.join();
 
     ssLOG_OUTPUT_ALL_CACHE();
-    ssLOG_LINE("ssLOG_OUTPUT_ALL_CACHE");
+    ssLOG_LINE();
+    ssLOG_LINE("Tested ssLOG_CACHE_OUTPUT_IN_SCOPE");
+    ssLOG_LINE();
+
+    a = std::thread(Thread_Worker_cached_2, 0, 150, 10);
+    b = std::thread(Thread_Worker_cached_2, 1, 150, 12);
+
+    a.join();
+    b.join();
+    
+    ssLOG_OUTPUT_ALL_CACHE();
+    ssLOG_LINE();
+    ssLOG_LINE("Tested ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD");
+    ssLOG_LINE();
+
+
 
     ssLOG_BENCH_END_ERROR(benchLevelStart);
     ssLOG_BENCH_END(namedBenchStart);

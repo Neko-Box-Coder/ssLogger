@@ -41,10 +41,20 @@ ssLOG_PREPEND("prepend text");
 //  logging multi-threaded applications
 ssLOG_CACHE_OUTPUT_IN_SCOPE();
 
-//Enable/Disable cache in current thread for all the logs after 
+//Enable/Disable cache in all threads for all the logs after 
 //  this macro, which can be output at a later time
 ssLOG_ENABLE_CACHE_OUTPUT();
 ssLOG_DISABLE_CACHE_OUTPUT();
+
+//Enable/Disable cache in current thread for all the logs after 
+//  this macro, which can be output at a later time
+ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
+ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
+
+//Enable/Disable cache in new threads for all the logs after 
+//  this macro, which can be output at a later time
+ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS()
+ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS()
 
 //Output all the logs that are stored in cache
 ssLOG_OUTPUT_ALL_CACHE();

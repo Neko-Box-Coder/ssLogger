@@ -17,6 +17,7 @@ std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap =
     std::unordered_map<std::thread::id, ssLogThreadInfo>();
 
 int ssLogNewThreadID = 0;
+std::atomic<bool> ssLogNewThreadCacheByDefault(false);
 std::mutex ssLogMapMutex;
 
 std::string(*Internal_ssLogGetPrepend)(void) = []()
