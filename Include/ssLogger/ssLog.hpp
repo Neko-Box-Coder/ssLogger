@@ -219,9 +219,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC_CONTENT(expr) expr; do{}while(0)
 
     #define INTERNAL_ssLOG_LINE_0() \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL()) \
         { \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
             INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                                 INTERNAL_ssLOG_GET_DATE_TIME() << \
                                 INTERNAL_ssLOG_GET_LOG_LEVEL() << \
@@ -233,9 +233,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
        INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
 
     #define INTERNAL_ssLOG_LINE_1(debugText) \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL()) \
         { \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
             INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                                 INTERNAL_ssLOG_GET_DATE_TIME() << \
                                 INTERNAL_ssLOG_GET_LOG_LEVEL() << \
@@ -269,9 +269,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
     }
 
     #define INTERNAL_ssLOG_LINE_0() \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL()) \
         { \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
             INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                                 INTERNAL_ssLOG_GET_DATE_TIME() << \
                                 Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << \
@@ -284,9 +284,9 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = 0;
 
     #define INTERNAL_ssLOG_LINE_1(debugText) \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL()) \
         { \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
             INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() << \
                                 INTERNAL_ssLOG_GET_DATE_TIME() << \
                                 Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) << \
@@ -901,6 +901,7 @@ class Internal_ssLogCacheScope
     
     #define ssLOG_BENCH_START_FATAL(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
@@ -967,6 +968,7 @@ class Internal_ssLogCacheScope
     
     #define ssLOG_BENCH_START_ERROR(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
@@ -983,6 +985,7 @@ class Internal_ssLogCacheScope
     
     #define ssLOG_FUNC_CONTENT_ERROR(...) \
         INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_EXECUTE_COMMAND, __VA_ARGS__ )
+    
     #define ssLOG_FUNC_ENTRY_ERROR(...) do{}while(0)
     #define ssLOG_FUNC_EXIT_ERROR(...) do{}while(0)
     #define ssLOG_FUNC_ERROR(...) do{}while(0)
@@ -1032,6 +1035,7 @@ class Internal_ssLogCacheScope
     
     #define ssLOG_BENCH_START_WARNING(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
@@ -1094,6 +1098,7 @@ class Internal_ssLogCacheScope
     
     #define ssLOG_BENCH_START_INFO(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
@@ -1161,6 +1166,7 @@ class Internal_ssLogCacheScope
     
     #define ssLOG_BENCH_START_DEBUG(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
+        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
