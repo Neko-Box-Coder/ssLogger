@@ -256,12 +256,12 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                 if(tab == tabAmount - 1 && tree)
                     returnString += "|=> ";
                 else
-                    returnString += "|  ";
+                    returnString += "|   ";
             #else
                 if(tab == tabAmount - 1 && tree)
                     returnString += "├─► ";
                 else
-                    returnString += "│  ";
+                    returnString += "│   ";
             #endif
         }
 
@@ -355,7 +355,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                                     INTERNAL_ssLOG_GET_LOG_LEVEL() << \
                                     INTERNAL_ssLOG_GET_PREPEND() << \
                                     INTERNAL_ssLOG_GET_CONTENT_NAME("[" << INTERNAL_ssLOG_LIMIT_EXPR(expr) << "]") << \
-                                    " ENDS" << \
+                                    " EXITS" << \
                                     INTERNAL_ssLOG_GET_FILE_NAME() << \
                                     INTERNAL_ssLOG_GET_LINE_NUM()); \
                 \
@@ -430,7 +430,7 @@ extern std::string(*Internal_ssLogGetPrepend)(void);
                                         Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE()) << 
                                         INTERNAL_ssLOG_GET_LOG_LEVEL() << 
                                         INTERNAL_ssLOG_GET_PREPEND() << 
-                                        FuncName << " ENDS" << FileName);
+                                        FuncName << " EXITS" << FileName);
                     
                     INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() <<
                                         INTERNAL_ssLOG_GET_DATE_TIME() <<
