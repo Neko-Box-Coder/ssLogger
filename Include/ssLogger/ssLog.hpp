@@ -51,8 +51,26 @@
 // =======================================================================
 #if ssLOG_THREAD_SAFE_OUTPUT
     extern std::mutex ssLogOutputMutex;
-    #define INTERNAL_ssLOG_LOCK_OUTPUT() ssLogOutputMutex.lock()
-    #define INTERNAL_ssLOG_UNLOCK_OUTPUT() ssLogOutputMutex.unlock()
+    #define INTERNAL_ssLOG_LOCK_OUTPUT() \
+        bool startOutputLocked = ssLogInfoMap.at(std::this_thread::get_id()).outputLocked; \
+        std::unique_lock<std::mutex> outputLock(ssLogOutputMutex, std::defer_lock); \
+        if(outputLock.try_lock()) \
+        { \
+            startOutputLocked = false; \
+            ssLogInfoMap.at(std::this_thread::get_id()).outputLocked = true; \
+        } \
+        else \
+        { \
+            if(!startOutputLocked) \
+            { \
+                outputLock.lock(); \
+                ssLogInfoMap.at(std::this_thread::get_id()).outputLocked = true; \
+            } \
+        }
+    
+    #define INTERNAL_ssLOG_UNLOCK_OUTPUT() \
+        if(!startOutputLocked) \
+            ssLogInfoMap.at(std::this_thread::get_id()).outputLocked = false;
 #else
     #define INTERNAL_ssLOG_LOCK_OUTPUT()
     #define INTERNAL_ssLOG_UNLOCK_OUTPUT()
@@ -93,7 +111,7 @@
     } while(0)
 #endif //ssLOG_LOG_TO_FILE
 
-
+//TODO(NOW): If INTERNAL_ssLOG_BASE is inside ssLOG_BASE(x), it will cause infinite lock
 #define INTERNAL_ssLOG_BASE(x) \
     do \
     { \

@@ -20,6 +20,7 @@ struct ssLogThreadInfo
     #else
         int ssTargetLogLevel = 3;
     #endif
+    bool outputLocked = false;
 };
 
 
