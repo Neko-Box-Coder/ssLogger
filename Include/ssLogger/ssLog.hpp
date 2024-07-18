@@ -636,7 +636,7 @@ class Internal_ssLogCacheScope
             if(it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0) \
                 continue; \
             \
-            INTERNAL_ssLOG_BASE(it->second.CurrentCachedOutput.str()); \
+            ssLOG_BASE(it->second.CurrentCachedOutput.str()); \
             it->second.CurrentCachedOutput.str(""); \
             it->second.CurrentCachedOutput.clear(); \
         } \
