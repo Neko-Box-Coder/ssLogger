@@ -1,5 +1,9 @@
 set -e
 
+if [ -e ../Build/libssLogger_SRC.so ]; then
+    cp -f ../Build/libssLogger_SRC.so ../Build/SourceTests
+fi
+
 ../Build/SourceTests/LogFunctionTestSource
 ../Build/SourceTests/LogLevelTestSource
 ../Build/SourceTests/LogLineTestSource

@@ -73,14 +73,14 @@ pipelines:
                     type: success
                     allow_only_on_success: false
                 jobs:
-                    LinuxBuildJob:
+                    LinuxStaticBuildJob:
                         timeout: 0
                         resources:
                         -   Ubuntu-22
                         artifacts:
                         -   build:
                                 source: ssLogger/*
-                                destination: ssLoggerLinuxBuild
+                                destination: ssLoggerLinuxStaticBuild
                         tasks:
                         -   fetch:
                                 is_file: false
@@ -122,7 +122,7 @@ pipelines:
                         -   exec:
                                 arguments:
                                 -   -c
-                                -   cmake ..
+                                -   cmake .. -DssLOG_BUILD_TYPE=STATIC
                                 command: sh
                                 working_directory: ssLogger/Build
                         -   exec:
@@ -148,14 +148,89 @@ pipelines:
                                 command: sh
                                 working_directory: ssLogger
                                 run_if: failed
-                    WindowsBuildJob:
+                    LinuxSharedBuildJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        artifacts:
+                        -   build:
+                                source: ssLogger/*
+                                destination: ssLoggerLinuxSharedBuild
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: ssLogger
+                                destination: ""
+                                pipeline: ssLoggerMain
+                                stage: PopulateDetailsStage
+                                job: PopulateDetailsJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./SendGithubStatus.sh
+                                command: chmod
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "pending"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   -p
+                                -   ./Build
+                                command: mkdir
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   cmake .. -DssLOG_BUILD_TYPE=SHARED
+                                command: sh
+                                working_directory: ssLogger/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   cmake --build . -j 16
+                                command: sh
+                                working_directory: ssLogger/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "success" 
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "failure"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: ssLogger
+                                run_if: failed
+                    WindowsStaticBuildJob:
                         timeout: 0
                         resources:
                         -   Windows-10
                         artifacts:
                         -   build:
                                 source: ssLogger/*
-                                destination: ssLoggerWindowsBuild
+                                destination: ssLoggerWindowsStaticBuild
                         tasks:
                         -   fetch:
                                 is_file: false
@@ -188,7 +263,81 @@ pipelines:
                                 -   /s
                                 -   /v
                                 -   /c
-                                -   cmake ..
+                                -   cmake .. -DssLOG_BUILD_TYPE=STATIC
+                                command: cmd
+                                working_directory: ssLogger\Build
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   cmake --build . -j 16
+                                command: cmd
+                                working_directory: ssLogger\Build
+                        -   exec:
+                                command: dir
+                                working_directory: ssLogger\Build
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "success"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "failure" "%GO_PIPELINE_NAME%"
+                                    "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%" "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: ssLogger
+                                run_if: failed
+                    WindowsSharedBuildJob:
+                        timeout: 0
+                        resources:
+                        -   Windows-10
+                        artifacts:
+                        -   build:
+                                source: ssLogger/*
+                                destination: ssLoggerWindowsSharedBuild
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: ssLogger
+                                destination: ""
+                                pipeline: ssLoggerMain
+                                stage: PopulateDetailsStage
+                                job: PopulateDetailsJob
+                                artifact_origin: gocd
+                        -   exec:
+                                command: dir
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "pending"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   Build
+                                command: mkdir
+                                working_directory: ssLogger
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   cmake .. -DssLOG_BUILD_TYPE=SHARED
                                 command: cmd
                                 working_directory: ssLogger\Build
                         -   exec:
@@ -230,25 +379,25 @@ pipelines:
                     type: success
                     allow_only_on_success: true
                 jobs:
-                    LinuxTestJob:
+                    LinuxStaticTestJob:
                         timeout: 0
                         resources:
                         -   Ubuntu-22
                         tasks:
                         -   fetch:
                                 is_file: false
-                                source: ssLoggerLinuxBuild
+                                source: ssLoggerLinuxStaticBuild
                                 destination: ""
                                 pipeline: ssLoggerMain
                                 stage: BuildStage
-                                job: LinuxBuildJob
+                                job: LinuxStaticBuildJob
                                 artifact_origin: gocd
                         -   exec:
                                 arguments:
                                 -   +x
                                 -   ./SendGithubStatus.sh
                                 command: chmod
-                                working_directory: ssLoggerLinuxBuild
+                                working_directory: ssLoggerLinuxStaticBuild
                         -   exec:
                                 arguments:
                                 -   -c
@@ -256,26 +405,26 @@ pipelines:
                                     "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
                                     "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
                                 command: sh
-                                working_directory: ssLoggerLinuxBuild
+                                working_directory: ssLoggerLinuxStaticBuild
                         -   exec:
                                 arguments:
                                 -   -R
                                 -   +x
                                 -   ./Build
                                 command: chmod
-                                working_directory: ssLoggerLinuxBuild
+                                working_directory: ssLoggerLinuxStaticBuild
                         -   exec:
                                 arguments:
                                 -   +x
                                 -   ./CI/RunTests.sh
                                 command: chmod
-                                working_directory: ssLoggerLinuxBuild
+                                working_directory: ssLoggerLinuxStaticBuild
                         -   exec:
                                 arguments:
                                 -   -c
                                 -   ./RunTests.sh
                                 command: sh
-                                working_directory: ssLoggerLinuxBuild/CI
+                                working_directory: ssLoggerLinuxStaticBuild/CI
                         -   exec:
                                 arguments:
                                 -   -c
@@ -283,7 +432,7 @@ pipelines:
                                     "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
                                     "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
                                 command: sh
-                                working_directory: ssLoggerLinuxBuild
+                                working_directory: ssLoggerLinuxStaticBuild
                         -   exec:
                                 arguments:
                                 -   -c
@@ -291,20 +440,83 @@ pipelines:
                                     "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
                                     "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
                                 command: sh
-                                working_directory: ssLoggerLinuxBuild
+                                working_directory: ssLoggerLinuxStaticBuild
                                 run_if: failed
-                    WindowsTestJob:
+                    LinuxSharedTestJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: ssLoggerLinuxSharedBuild
+                                destination: ""
+                                pipeline: ssLoggerMain
+                                stage: BuildStage
+                                job: LinuxSharedBuildJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./SendGithubStatus.sh
+                                command: chmod
+                                working_directory: ssLoggerLinuxSharedBuild
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "pending"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: ssLoggerLinuxSharedBuild
+                        -   exec:
+                                arguments:
+                                -   -R
+                                -   +x
+                                -   ./Build
+                                command: chmod
+                                working_directory: ssLoggerLinuxSharedBuild
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./CI/RunTests.sh
+                                command: chmod
+                                working_directory: ssLoggerLinuxSharedBuild
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./RunTests.sh
+                                command: sh
+                                working_directory: ssLoggerLinuxSharedBuild/CI
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "success"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: ssLoggerLinuxSharedBuild
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "failure"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: ssLoggerLinuxSharedBuild
+                                run_if: failed
+                    WindowsStaticTestJob:
                         timeout: 0
                         resources:
                         -   Windows-10
                         tasks:
                         -   fetch:
                                 is_file: false
-                                source: ssLoggerWindowsBuild
+                                source: ssLoggerWindowsStaticBuild
                                 destination: ""
                                 pipeline: ssLoggerMain
                                 stage: BuildStage
-                                job: WindowsBuildJob
+                                job: WindowsStaticBuildJob
                                 artifact_origin: gocd
                         -   exec:
                                 arguments:
@@ -315,7 +527,7 @@ pipelines:
                                     "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
                                     "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
                                 command: cmd
-                                working_directory: ssLoggerWindowsBuild
+                                working_directory: ssLoggerWindowsStaticBuild
                         -   exec:
                                 arguments:
                                 -   /s
@@ -323,7 +535,7 @@ pipelines:
                                 -   /c
                                 -   .\RunTests.bat
                                 command: cmd
-                                working_directory: ssLoggerWindowsBuild/CI
+                                working_directory: ssLoggerWindowsStaticBuild/CI
                         -   exec:
                                 arguments:
                                 -   /s
@@ -333,7 +545,7 @@ pipelines:
                                     "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
                                     "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
                                 command: cmd
-                                working_directory: ssLoggerWindowsBuild
+                                working_directory: ssLoggerWindowsStaticBuild
                         -   exec:
                                 arguments:
                                 -   /s
@@ -343,7 +555,59 @@ pipelines:
                                     "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
                                     "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
                                 command: cmd
-                                working_directory: ssLoggerWindowsBuild
+                                working_directory: ssLoggerWindowsStaticBuild
+                                run_if: failed
+                    WindowsSharedTestJob:
+                        timeout: 0
+                        resources:
+                        -   Windows-10
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: ssLoggerWindowsSharedBuild
+                                destination: ""
+                                pipeline: ssLoggerMain
+                                stage: BuildStage
+                                job: WindowsSharedBuildJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "pending"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: ssLoggerWindowsSharedBuild
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\RunTests.bat
+                                command: cmd
+                                working_directory: ssLoggerWindowsSharedBuild/CI
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "success"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: ssLoggerWindowsSharedBuild
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "failure"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: ssLoggerWindowsSharedBuild
                                 run_if: failed
         -   FinishStage:
                 fetch_materials: false

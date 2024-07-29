@@ -250,7 +250,12 @@ if(${ssLOG_BUILD_TESTS})
             # else()
             #     target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE -Wall -Wpedantic -Werror)
             # endif()
-
+            
+            if(NOT WIN32 AND "${ssLOG_BUILD_TYPE}" STREQUAL "SHARED")
+                set_target_properties("${EXECUTABLE_NAME}${exeSuffix}" PROPERTIES
+                        BUILD_WITH_INSTALL_RPATH FALSE
+                        LINK_FLAGS "-Wl,-rpath,$ORIGIN/")
+            endif()
         endforeach(CUR_SOURCE_PATH "${TEST_CPP_FILES}")
     
     endfunction()
