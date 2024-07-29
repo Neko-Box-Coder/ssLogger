@@ -80,6 +80,9 @@ if("${ssLOG_USE_SOURCE}")
         add_library(ssLogger SHARED
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
+        
+        target_compile_definitions(ssLogger PUBLIC ssLOG_DLL=1
+                                            PRIVATE ssLOG_SHARED_EXPORT=1)
     elseif("${ssLOG_BUILD_TYPE}" STREQUAL "OBJECT")
         add_library(ssLogger OBJECT
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
@@ -87,8 +90,6 @@ if("${ssLOG_USE_SOURCE}")
     endif()
 
     target_include_directories(ssLogger PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include")
-                                                # "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
-    
 
     target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK=$<BOOL:${ssLOG_CALL_STACK}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_ASCII=$<BOOL:${ssLOG_LOG_WITH_ASCII}>)
@@ -151,6 +152,15 @@ if(${ssLOG_BUILD_TESTS})
         add_library(ssLogger_SRC SHARED
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
+        
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_DLL=1
+                                                PRIVATE ssLOG_SHARED_EXPORT=1)
+        
+        if(WIN32)
+            set_target_properties(ssLogger_SRC PROPERTIES
+                    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests/$<CONFIG>"
+            )
+        endif()
     elseif("${ssLOG_BUILD_TYPE}" STREQUAL "OBJECT")
         add_library(ssLogger_SRC OBJECT
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
@@ -158,8 +168,7 @@ if(${ssLOG_BUILD_TESTS})
     endif()
     
     # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
-    target_include_directories(ssLogger_SRC PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include"
-                                                    "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
+    target_include_directories(ssLogger_SRC PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include")
 
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK=$<BOOL:${ssLOG_CALL_STACK}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_ASCII=$<BOOL:${ssLOG_LOG_WITH_ASCII}>)
@@ -189,8 +198,7 @@ if(${ssLOG_BUILD_TESTS})
 
 
     add_library(ssLogger_HEAD INTERFACE)
-    target_include_directories(ssLogger_HEAD INTERFACE  "${CMAKE_CURRENT_LIST_DIR}/Include"
-                                                        "${CMAKE_CURRENT_LIST_DIR}/External/termcolor/include")
+    target_include_directories(ssLogger_HEAD INTERFACE  "${CMAKE_CURRENT_LIST_DIR}/Include")
     #target_sources(ssLogger_HEAD INTERFACE
     #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLog.hpp"
     #                        "${CMAKE_CURRENT_LIST_DIR}/Include/ssLogger/ssLogInit.hpp"

@@ -2,6 +2,7 @@
 #define ssLOG_INIT_HPP
 
 #include "./ssLogSwitches.hpp"
+#include "./ssLogAPIHelper.hpp"
 
 #include <sstream>
 #include <string>
@@ -13,14 +14,14 @@
 
 #include "./ssLogThreadInfo.hpp"
 
-std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap = 
+ssLOG_API std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap = 
     std::unordered_map<std::thread::id, ssLogThreadInfo>();
 
-int ssLogNewThreadID = 0;
-std::atomic<bool> ssLogNewThreadCacheByDefault(false);
-std::mutex ssLogMapMutex;
+ssLOG_API int ssLogNewThreadID = 0;
+ssLOG_API std::atomic<bool> ssLogNewThreadCacheByDefault(false);
+ssLOG_API std::mutex ssLogMapMutex;
 
-std::string(*Internal_ssLogGetPrepend)(void) = []()
+ssLOG_API std::string(*Internal_ssLogGetPrepend)(void) = []()
 {
     {
         std::unique_lock<std::mutex> lk(ssLogMapMutex, std::defer_lock);
@@ -36,12 +37,12 @@ std::string(*Internal_ssLogGetPrepend)(void) = []()
 };
 
 #if ssLOG_THREAD_SAFE_OUTPUT
-    std::mutex ssLogOutputMutex;
+    ssLOG_API std::mutex ssLogOutputMutex;
 #endif
 
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
-    std::ofstream ssLogFileStream = std::ofstream();
+    ssLOG_API std::ofstream ssLogFileStream = std::ofstream();
 #else
     #ifdef _WIN32
         #ifndef NOMINMAX
@@ -50,7 +51,7 @@ std::string(*Internal_ssLogGetPrepend)(void) = []()
         
         #include <windows.h>
         #undef DELETE
-        bool ssLogInitLambdaStatus = []()
+        ssLOG_API bool ssLogInitLambdaStatus = []()
         {
             return static_cast<bool>(SetConsoleOutputCP(CP_UTF8));
         }();
@@ -64,7 +65,7 @@ std::string(*Internal_ssLogGetPrepend)(void) = []()
     #include <iomanip>
     #include <ctime>
 
-    std::string (*Internal_ssLogGetDateTime)(void) = []()
+    ssLOG_API std::string (*Internal_ssLogGetDateTime)(void) = []()
     {
         using namespace std::chrono;
         

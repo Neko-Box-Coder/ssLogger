@@ -2,6 +2,7 @@
 #define ssLOG_HPP
 
 #include "./ssLogSwitches.hpp"
+#include "./ssLogAPIHelper.hpp"
 
 #include <sstream>
 #include <string>
@@ -50,7 +51,7 @@
 // Helper macro functions
 // =======================================================================
 #if ssLOG_THREAD_SAFE_OUTPUT
-    extern std::mutex ssLogOutputMutex;
+    ssLOG_API extern std::mutex ssLogOutputMutex;
     #define INTERNAL_ssLOG_LOCK_OUTPUT() \
         bool startOutputLocked = ssLogInfoMap.at(std::this_thread::get_id()).outputLocked; \
         std::unique_lock<std::mutex> outputLock(ssLogOutputMutex, std::defer_lock); \
@@ -79,7 +80,7 @@
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
     #include <ctime>
-    extern std::ofstream ssLogFileStream;
+    ssLOG_API extern std::ofstream ssLogFileStream;
 
     #define ssLOG_BASE(x) \
     do { \
@@ -164,7 +165,7 @@
 #endif
 
 #if ssLOG_SHOW_TIME || ssLOG_SHOW_DATE
-    extern std::string(*Internal_ssLogGetDateTime)(void);
+    ssLOG_API extern std::string(*Internal_ssLogGetDateTime)(void);
     #define INTERNAL_ssLOG_GET_DATE_TIME() Internal_ssLogGetDateTime()
 #else
     #define INTERNAL_ssLOG_GET_DATE_TIME() ""
@@ -172,10 +173,10 @@
 
 #include "./ssLogThreadInfo.hpp"
 
-extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
-extern int ssLogNewThreadID;
-extern std::mutex ssLogMapMutex;
-extern std::atomic<bool> ssLogNewThreadCacheByDefault;
+ssLOG_API extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
+ssLOG_API extern int ssLogNewThreadID;
+ssLOG_API extern std::mutex ssLogMapMutex;
+ssLOG_API extern std::atomic<bool> ssLogNewThreadCacheByDefault;
 
 #define INTERNAL_ssLOG_CHECK_NEW_THREAD() \
     do \
@@ -212,7 +213,7 @@ extern std::atomic<bool> ssLogNewThreadCacheByDefault;
 #define INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() \
     ssLogInfoMap.at(std::this_thread::get_id()).CurrentCachedOutput
 
-extern std::string(*Internal_ssLogGetPrepend)(void);
+ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_GET_PREPEND() Internal_ssLogGetPrepend()
 
 #define INTERNAL_ssLOG_TARGET_LEVEL() \
