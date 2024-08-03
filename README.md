@@ -20,7 +20,7 @@
 #### 🐞 Logging with different levels?
 ![logLevel](./Resources/logLevels.png)
 
-Powered by [termcolor (as submodule)](https://github.com/ikalnytskyi/termcolor) with [license distributed](./External/termcolor LICENSE)
+Powered by [termcolor](https://github.com/ikalnytskyi/termcolor) with [license distributed](./External/termcolor LICENSE)
 
 ### 📔 Documentations:
 ```c++
@@ -237,6 +237,27 @@ ssLOG_BENCH_END_ERROR(benchmarkError);
         return 0;
     }
 ```
+
+----
+
+### How to use:
+1. Clone this repository
+    - `git submodule add https://github.com/Neko-Box-Coder/ssLogger.git <folder name>`
+    - Or `git clone https://github.com/Neko-Box-Coder/ssLogger.git`
+2. There are two ways to use ssLogger:
+    - Source with CMake:
+        1. Add `add_subdirectory(<path to ssLogger> <optional binary directory>)` to your `CMakeLists.txt`
+        2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
+        3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
+        4. Edit properties via CMake GUI or command line
+    - Header only:
+        1. Define the options you want (from above) that are not the defaults
+        2. Add `include/ssLogger` as to include paths
+        3. Include `include/ssLogger/ssLog.hpp`
+        4. Include `include/ssLogger/ssLogInit.hpp` to your entry point **ONCE** (above `include/ssLogger/ssLog.hpp`)
+
+> <font size="4">⚠️ **Warning:** Using ssLogger before main (i.e. inside static class initialization) will result undefined behaviour (as ssLogger uses global static variable).</font>
+
 ----
 
 #### 🔧 Easy Customization:
@@ -269,26 +290,8 @@ ssLOG_BENCH_END_ERROR(benchmarkError);
 |                           |               | WARNING:  Indicates program won't crash but **might** not function correctly                          |
 |                           |               | INFO:     Prints program state which **doesn't** spam the log                                         |
 |                           |               | DEBUG:    Prints program state which **does** spam the log                                            |
-
-----
-
-### How to use:
-1. Clone this repository
-    - `git submodule add https://github.com/Neko-Box-Coder/ssLogger.git <folder name>`
-    - Or `git clone https://github.com/Neko-Box-Coder/ssLogger.git`
-2. There are two ways to use ssLogger:
-    - Source with CMake:
-        1. Add `add_subdirectory(<path to ssLogger> <optional binary directory>)` to your `CMakeLists.txt`
-        2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
-        3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
-        4. Edit properties via CMake GUI or command line
-    - Header only:
-        1. Define the options you want (from above) that are not the defaults
-        2. Add `include/ssLogger` as to include paths
-        3. Include `include/ssLogger/ssLog.hpp`
-        4. Include `include/ssLogger/ssLogInit.hpp` to your entry point **ONCE** (above `include/ssLogger/ssLog.hpp`)
-
-> <font size="4">⚠️ **Warning:** Using ssLogger before main (i.e. inside static class initialization) will result undefined behaviour (as ssLogger uses global static variable).</font>
+| ssLOG_DLL                 | 0             | Indicates if functions/symbols need to be imported/exported. This is set automatically by CMake       |
+| ssLOG_SHARED_EXPORT       | 0             | Indicates if functions are being exported or not. This is set automatically by CMake                  |
 
 ----
 
