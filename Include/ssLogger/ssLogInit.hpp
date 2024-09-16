@@ -19,12 +19,13 @@ ssLOG_API std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap =
 
 ssLOG_API int ssLogNewThreadID = 0;
 ssLOG_API std::atomic<bool> ssLogNewThreadCacheByDefault(false);
-ssLOG_API std::mutex ssLogMapMutex;
+ssLOG_API std::atomic<int> ssLogReadCount(0);
+ssLOG_API std::mutex ssLogMapWriteMutex;
 
 ssLOG_API std::string(*Internal_ssLogGetPrepend)(void) = []()
 {
     {
-        std::unique_lock<std::mutex> lk(ssLogMapMutex, std::defer_lock);
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex, std::defer_lock);
         if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end())
             ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++;
     }

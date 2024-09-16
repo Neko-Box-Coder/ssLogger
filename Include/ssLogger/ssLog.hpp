@@ -175,20 +175,38 @@
 
 ssLOG_API extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
 ssLOG_API extern int ssLogNewThreadID;
-ssLOG_API extern std::mutex ssLogMapMutex;
+ssLOG_API extern std::mutex ssLogMapWriteMutex;
 ssLOG_API extern std::atomic<bool> ssLogNewThreadCacheByDefault;
+ssLOG_API extern std::atomic<int> ssLogReadCount;
 
-#define INTERNAL_ssLOG_CHECK_NEW_THREAD() \
-    do \
-    { \
-        std::unique_lock<std::mutex> lk(ssLogMapMutex, std::defer_lock); \
-        while(!lk.try_lock()){} \
-        if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end()) \
-        { \
-            ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++; \
-            ssLogInfoMap[std::this_thread::get_id()].CacheOutput = ssLogNewThreadCacheByDefault.load(); \
-        } \
-    } while(0)
+inline void Internal_ssLogInitiateMapRead()
+{
+    ssLogMapWriteMutex.lock();
+    ssLogReadCount++;
+    ssLogMapWriteMutex.unlock();
+}
+
+inline void Internal_ssLogCheckNewThread()
+{
+    bool needsNewEntry = false;
+    //Reading map
+    {
+        Internal_ssLogInitiateMapRead();
+        needsNewEntry = ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end();
+        ssLogReadCount--;
+    }
+    
+    //Writing map
+    if(needsNewEntry)
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        
+        ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++;
+        ssLogInfoMap[std::this_thread::get_id()].CacheOutput = ssLogNewThreadCacheByDefault.load();
+    }
+}
+
 
 #if ssLOG_SHOW_THREADS
     #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << ssLogInfoMap.at(std::this_thread::get_id()).ID << "] "
@@ -328,7 +346,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
     #define ssLOG_FUNC( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC, __VA_ARGS__ )
 
     #define ssLOG_FUNC_CONTENT(expr) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(INTERNAL_ssLOG_CURRENT_LOG_LEVEL()); \
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL()) \
         { \
@@ -400,7 +418,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
                                                 std::string fileName, 
                                                 std::string lineNum)
             {
-                INTERNAL_ssLOG_CHECK_NEW_THREAD();
+                Internal_ssLogCheckNewThread();
                 INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(INTERNAL_ssLOG_CURRENT_LOG_LEVEL());
 
                 if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL())
@@ -463,7 +481,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
     #define INTERNAL_ssLOG_TO_STRING(x) (std::stringstream() << x).str()
     
     #define INTERNAL_ssLOG_FUNC_0() \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         Internal_ssLogFunctionScope ssLogScopeObj = \
         Internal_ssLogFunctionScope(INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_0()), \
                                     INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
@@ -473,7 +491,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
         INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName)))
     
     #define INTERNAL_ssLOG_FUNC_1(customFuncName) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         Internal_ssLogFunctionScope ssLogScopeObj = \
         Internal_ssLogFunctionScope(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName), \
                                     INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
@@ -490,7 +508,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
     #define INTERNAL_ssLOG_FUNC_EXIT_0() INTERNAL_ssLOG_FUNC_EXIT_1( __func__ )
 
     #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFuncName) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(INTERNAL_ssLOG_CURRENT_LOG_LEVEL()); \
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= INTERNAL_ssLOG_CURRENT_LOG_LEVEL()) \
         { \
@@ -553,7 +571,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
 
 #define ssLOG_PREPEND(x) \
     do{ \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << x; \
     } while(0)
 
@@ -567,8 +585,8 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
 #define ssLOG_ENABLE_CACHE_OUTPUT() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
-        std::unique_lock<std::mutex> lk(ssLogMapMutex); \
+        Internal_ssLogCheckNewThread(); \
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex); \
         for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
             it->second.CacheOutput = true; \
     } while(0)
@@ -576,7 +594,7 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
 #define ssLOG_DISABLE_CACHE_OUTPUT() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
             it->second.CacheOutput = false; \
     } while(0)
@@ -584,28 +602,28 @@ ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
 #define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_IS_CACHE_OUTPUT() = true; \
     } while(0)
 
 #define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_IS_CACHE_OUTPUT() = false; \
     } while(0)
 
 #define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         ssLogNewThreadCacheByDefault.store(true); \
     } while(0)
 
 #define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         ssLogNewThreadCacheByDefault.store(false); \
     } while(0)
 
@@ -630,8 +648,8 @@ class Internal_ssLogCacheScope
 #define ssLOG_OUTPUT_ALL_CACHE() \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
-        std::unique_lock<std::mutex> lk(ssLogMapMutex); \
+        Internal_ssLogCheckNewThread(); \
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex); \
         for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
         { \
             if(it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0) \
@@ -743,7 +761,7 @@ class Internal_ssLogCacheScope
 #define ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(targetLevel) \
     do \
     { \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_TARGET_LEVEL() = targetLevel; \
     } \
     while(0)
@@ -880,53 +898,53 @@ class Internal_ssLogCacheScope
 #if ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
     #define ssLOG_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
             ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ENTRY_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_FATAL(...) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
         ssLOG_FUNC(__VA_ARGS__)
     
     #define ssLOG_BENCH_START_FATAL(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
     #define ssLOG_BENCH_END_FATAL(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_FATAL; \
             ssLOG_BENCH_END(__VA_ARGS__); \
         } while(0)
@@ -948,52 +966,52 @@ class Internal_ssLogCacheScope
 #if ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
     #define ssLOG_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
             ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     #define ssLOG_FUNC_ENTRY_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ERROR(...) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
         ssLOG_FUNC(__VA_ARGS__)
     
     #define ssLOG_BENCH_START_ERROR(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
     #define ssLOG_BENCH_END_ERROR(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_ERROR; \
             ssLOG_BENCH_END(__VA_ARGS__); \
         } while(0)
@@ -1015,52 +1033,52 @@ class Internal_ssLogCacheScope
 #if ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
     #define ssLOG_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
             ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     #define ssLOG_FUNC_ENTRY_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_WARNING(...) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
         ssLOG_FUNC(__VA_ARGS__)
     
     #define ssLOG_BENCH_START_WARNING(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
     #define ssLOG_BENCH_END_WARNING(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_WARNING; \
             ssLOG_BENCH_END(__VA_ARGS__); \
         } while(0)
@@ -1078,52 +1096,52 @@ class Internal_ssLogCacheScope
 #if ssLOG_LEVEL >= ssLOG_LEVEL_INFO
     #define ssLOG_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
             ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     #define ssLOG_FUNC_ENTRY_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_INFO(...) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
         ssLOG_FUNC(__VA_ARGS__)
     
     #define ssLOG_BENCH_START_INFO(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
     #define ssLOG_BENCH_END_INFO(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_INFO; \
             ssLOG_BENCH_END(__VA_ARGS__); \
         } while(0)
@@ -1145,53 +1163,53 @@ class Internal_ssLogCacheScope
 #if ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
     #define ssLOG_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
             ssLOG_LINE(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_CONTENT_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
             ssLOG_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_CONTENT_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
             ssLOG_FUNC_CONTENT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_ENTRY_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
             ssLOG_FUNC_ENTRY(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_EXIT_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
             ssLOG_FUNC_EXIT(__VA_ARGS__); \
         } while(0)
     
     #define ssLOG_FUNC_DEBUG(...) \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
         ssLOG_FUNC(__VA_ARGS__)
     
     #define ssLOG_BENCH_START_DEBUG(...) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__); \
-        INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+        Internal_ssLogCheckNewThread(); \
         INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH(__VA_ARGS__)
     
     #define ssLOG_BENCH_END_DEBUG(...) \
         do{ \
-            INTERNAL_ssLOG_CHECK_NEW_THREAD(); \
+            Internal_ssLogCheckNewThread(); \
             INTERNAL_ssLOG_CURRENT_LOG_LEVEL() = ssLOG_LEVEL_DEBUG; \
             ssLOG_BENCH_END(__VA_ARGS__); \
         } while(0)
