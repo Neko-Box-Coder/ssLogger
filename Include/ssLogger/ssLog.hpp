@@ -660,9 +660,11 @@ inline void Internal_ssLogOutputAllCache()
 // Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
 // =======================================================================
 
-#define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
+#define ssLOG_BENCH_START( ... ) \
+    INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
 
-#define ssLOG_BENCH_END( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
+#define ssLOG_BENCH_END( ... ) \
+    do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
 
 #define INTERNAL_ssLOG_BENCH_START_0() \
     INTERNAL_ssLOG_BENCH_START_1("")
@@ -713,41 +715,55 @@ inline void Internal_ssLogOutputAllCache()
 #define INTERNAL_ssLOG_BENCH_END_0() \
     static_assert(false, "ssLOG_BENCH_END must accept 1 argument")
 
-#define INTERNAL_ssLOG_BENCH_END_1(startVar) \
-    do \
-    { \
-        double ssLogBenchUs = static_cast<double> \
-        ( \
-            std::chrono::duration_cast<std::chrono::microseconds> \
-            ( \
-                std::chrono::high_resolution_clock::now() - startVar.second \
-            ).count() \
-        ); \
-        \
-        if(!startVar.first.empty()) \
-        { \
-            if(ssLogBenchUs > 1000000000) \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000000000.0 << " minutes") } while(0); \
-            else if(ssLogBenchUs > 1000000) \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000000.0 << " seconds") } while(0); \
-            else if(ssLogBenchUs > 1000) \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs / 1000.0 << " milliseconds") } while(0); \
-            else \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark \"" << startVar.first << "\" toke " << ssLogBenchUs << " microseconds") } while(0); \
-        } \
-        else \
-        { \
-            if(ssLogBenchUs > 1000000000) \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000000000.0 << " minutes") } while(0); \
-            else if(ssLogBenchUs > 1000000) \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000000.0 << " seconds") } while(0); \
-            else if(ssLogBenchUs > 1000) \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs / 1000.0 << " milliseconds") } while(0); \
-            else \
-                do{ INTERNAL_ssLOG_LINE_1("Benchmark toke " << ssLogBenchUs << " microseconds") } while(0); \
-        } \
-    } while(0)
+using Internal_ssLogHighResClock = std::chrono::time_point<std::chrono::high_resolution_clock>;
+inline void Interna_ssLogBenchEnd(  const std::pair<std::string, 
+                                                    Internal_ssLogHighResClock>& startVar,
+                                    std::string funcName, 
+                                    std::string fileName, 
+                                    std::string lineNum)
+{
+    double ssLogBenchUs = static_cast<double>
+    (
+        std::chrono::duration_cast<std::chrono::microseconds>
+        (
+            std::chrono::high_resolution_clock::now() - startVar.second
+        ).count()
+    );
 
+    std::string benchmarkName = startVar.first.empty() ? "" :   std::string("\"") + 
+                                                                startVar.first + "\" ";
+
+    if(ssLogBenchUs > 1000000000)
+    {
+        Internal_ssLogLine( funcName, fileName, lineNum, 
+                            std::string("Benchmark ") + benchmarkName + "toke " +
+                            std::to_string(ssLogBenchUs / 1000000000.0) + " minutes");
+    }
+    else if(ssLogBenchUs > 1000000)
+    {
+        Internal_ssLogLine( funcName, fileName, lineNum, 
+                            std::string("Benchmark ") + benchmarkName + "toke " +
+                            std::to_string(ssLogBenchUs / 1000000.0) + " seconds");
+    }
+    else if(ssLogBenchUs > 1000)
+    {
+        Internal_ssLogLine( funcName, fileName, lineNum, 
+                            std::string("Benchmark ") + benchmarkName + "toke " +
+                            std::to_string(ssLogBenchUs / 1000.0) + " milliseconds");
+    }
+    else
+    {
+        Internal_ssLogLine( funcName, fileName, lineNum, 
+                            std::string("Benchmark ") + benchmarkName + "toke " +
+                            std::to_string(ssLogBenchUs) + " microseconds");
+    }
+}
+
+#define INTERNAL_ssLOG_BENCH_END_1(startVar) \
+    Interna_ssLogBenchEnd(  startVar, \
+                            INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
+                            INTERNAL_ssLOG_GET_FILE_NAME(), \
+                            INTERNAL_ssLOG_GET_LINE_NUM())
 
 // =======================================================================
 // Macros for ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL
