@@ -578,22 +578,21 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
 // ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS, ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS, 
 // ssLOG_CACHE_OUTPUT_FOR_SCOPE and ssLOG_OUTPUT_ALL_CACHE
 // =======================================================================
-#define ssLOG_ENABLE_CACHE_OUTPUT() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex); \
-        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
-            it->second.CacheOutput = true; \
-    } while(0)
+inline void Internal_ssLogSetAllCacheOutput(bool cache)
+{
+    Internal_ssLogCheckNewThread();
+    //Editing all map entries
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it)
+            it->second.CacheOutput = cache;
+    }
+}
 
-#define ssLOG_DISABLE_CACHE_OUTPUT() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
-            it->second.CacheOutput = false; \
-    } while(0)
+#define ssLOG_ENABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(true)
+
+#define ssLOG_DISABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(false)
 
 #define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
     do \
@@ -609,20 +608,9 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
         INTERNAL_ssLOG_IS_CACHE_OUTPUT() = false; \
     } while(0)
 
-#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        ssLogNewThreadCacheByDefault.store(true); \
-    } while(0)
+#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(true)
 
-#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        ssLogNewThreadCacheByDefault.store(false); \
-    } while(0)
-
+#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(false)
 
 class Internal_ssLogCacheScope
 {
@@ -639,23 +627,34 @@ class Internal_ssLogCacheScope
 };
 
 #define ssLOG_CACHE_OUTPUT_IN_SCOPE() \
-    Internal_ssLogCacheScope INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
+    Internal_ssLogCacheScope \
+    INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
 
-#define ssLOG_OUTPUT_ALL_CACHE() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex); \
-        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it) \
-        { \
-            if(it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0) \
-                continue; \
-            \
-            ssLOG_BASE(it->second.CurrentCachedOutput.str()); \
-            it->second.CurrentCachedOutput.str(""); \
-            it->second.CurrentCachedOutput.clear(); \
-        } \
-    } while(0)
+inline void Internal_ssLogOutputAllCache()
+{
+    Internal_ssLogCheckNewThread();
+    //Reading all map entries
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        
+        INTERNAL_ssLOG_LOCK_OUTPUT();
+        
+        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it)
+        {
+            if(it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0)
+                continue;
+
+            ssLOG_BASE(it->second.CurrentCachedOutput.str());
+            it->second.CurrentCachedOutput.str("");
+            it->second.CurrentCachedOutput.clear();
+        }
+        
+        INTERNAL_ssLOG_UNLOCK_OUTPUT();
+    }
+}
+
+#define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
 
 // =======================================================================
 // Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
