@@ -22,21 +22,6 @@ ssLOG_API std::atomic<bool> ssLogNewThreadCacheByDefault(false);
 ssLOG_API std::atomic<int> ssLogReadCount(0);
 ssLOG_API std::mutex ssLogMapWriteMutex;
 
-ssLOG_API std::string(*Internal_ssLogGetPrepend)(void) = []()
-{
-    {
-        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex, std::defer_lock);
-        if(ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end())
-            ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++;
-    }
-    
-    auto& currentSS = ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend;
-    std::string s = currentSS.str();
-    currentSS.str("");
-    currentSS.clear();
-    return s;
-};
-
 #if ssLOG_THREAD_SAFE_OUTPUT
     ssLOG_API std::mutex ssLogOutputMutex;
 #endif

@@ -216,6 +216,22 @@ inline int Internal_ssLogGetThreadId()
     return threadId;
 }
 
+inline std::string Internal_ssLogGetPrepend()
+{
+    Internal_ssLogCheckNewThread();
+    
+    //Reading map
+    Internal_ssLogInitiateMapRead();
+    
+    auto& currentSS = ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend;
+    std::string s = currentSS.str();
+    currentSS.str("");
+    currentSS.clear();
+    ssLogReadCount--;
+    
+    return s;
+};
+
 
 #if ssLOG_SHOW_THREADS
     #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << Internal_ssLogGetThreadId() << "] "
@@ -240,7 +256,6 @@ inline int Internal_ssLogGetThreadId()
 #define INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() \
     ssLogInfoMap.at(std::this_thread::get_id()).CurrentCachedOutput
 
-ssLOG_API extern std::string(*Internal_ssLogGetPrepend)(void);
 #define INTERNAL_ssLOG_GET_PREPEND() Internal_ssLogGetPrepend()
 
 #define INTERNAL_ssLOG_TARGET_LEVEL() \
