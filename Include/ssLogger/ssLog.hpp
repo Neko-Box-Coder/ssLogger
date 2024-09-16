@@ -246,6 +246,17 @@ inline void Internal_ssLogAppendPrepend(std::string appendMsg)
     ssLogReadCount--;
 };
 
+inline void Internal_ssLogAppendPrepend(std::stringstream& ss)
+{
+    Internal_ssLogCheckNewThread();
+    
+    //Accessing map entry
+    Internal_ssLogInitiateMapRead();
+    {
+        ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << ss.rdbuf();
+    }
+    ssLogReadCount--;
+};
 
 #if ssLOG_SHOW_THREADS
     #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << Internal_ssLogGetThreadId() << "] "
@@ -555,8 +566,9 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
 
 #define ssLOG_PREPEND(x) \
     do{ \
-        Internal_ssLogCheckNewThread(); \
-        ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << x; \
+        std::stringstream localssLogString; \
+        localssLogString << x; \
+        Internal_ssLogAppendPrepend(localssLogString); \
     } while(0)
 
 
