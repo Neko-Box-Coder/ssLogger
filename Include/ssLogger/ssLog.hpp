@@ -82,30 +82,43 @@
     #include <ctime>
     ssLOG_API extern std::ofstream ssLogFileStream;
 
+    inline void Internal_ssLogBase(const std::stringstream& localss)
+    {
+        if(!ssLogFileStream.good())
+            break;
+
+        if(!ssLogFileStream.is_open())
+        {
+            time_t ssRawtime;
+            struct tm* ssTimeinfo;
+            char ssBuffer [80];
+            time(&ssRawtime);
+            ssTimeinfo = localtime(&ssRawtime);
+            strftime(ssBuffer, 80, "%a %b %d %H_%M_%S %Y", ssTimeinfo);
+            std::string nowString = std::string(ssBuffer)+"_log.txt";
+            ssLogFileStream.open(nowString, std::ofstream::out);
+
+            if(!ssLogFileStream.good())
+                break;
+        }
+        ssLogFileStream << localss.rdbuf() << std::endl;
+    }
+
     #define ssLOG_BASE(x) \
     do { \
-        if(!ssLogFileStream.good()) \
-            break; \
-        \
-        if(!ssLogFileStream.is_open()) \
-        { \
-            time_t ssRawtime; \
-            struct tm* ssTimeinfo; \
-            char ssBuffer [80]; \
-            time(&ssRawtime); \
-            ssTimeinfo = localtime(&ssRawtime); \
-            strftime(ssBuffer, 80, "%a %b %d %H_%M_%S %Y", ssTimeinfo); \
-            std::string nowString = std::string(ssBuffer)+"_log.txt"; \
-            ssLogFileStream.open(nowString, std::ofstream::out); \
-            \
-            if(!ssLogFileStream.good()) \
-                break; \
-        }\
-        ssLogFileStream << x << std::endl; \
+        std::stringstream localss; \
+        localss << x; \
+        Internal_ssLogBase(localss); \
     } while(0)
     
 #else
     #include <iostream>
+    
+    inline void Internal_ssLogBase(const std::stringstream& localss)
+    {
+        std::cout << localss.rdbuf() << std::endl;
+    }
+    
     #define ssLOG_BASE(x) \
     do{ \
         std::cout << x << std::endl; \
@@ -116,14 +129,16 @@
 #define INTERNAL_ssLOG_BASE(x) \
     do \
     { \
+        std::stringstream localss; \
+        localss << x; \
         if(INTERNAL_ssLOG_IS_CACHE_OUTPUT()) \
         { \
-            INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() << x << std::endl; \
+            INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() << localss.str() << std::endl; \
             break; \
         } \
         \
         INTERNAL_ssLOG_LOCK_OUTPUT(); \
-        ssLOG_BASE(x); \
+        Internal_ssLogBase(localss); \
         INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
     } while(0)
 
