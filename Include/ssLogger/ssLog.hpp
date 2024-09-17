@@ -105,11 +105,11 @@
     }
 
     #define ssLOG_BASE(x) \
-    do { \
-        std::stringstream localss; \
-        localss << x; \
-        Internal_ssLogBase(localss); \
-    } while(0)
+        do { \
+            std::stringstream localss; \
+            localss << x; \
+            Internal_ssLogBase(localss); \
+        } while(0)
     
 #else
     #include <iostream>
@@ -120,20 +120,20 @@
     }
     
     #define ssLOG_BASE(x) \
-    do{ \
-        std::cout << x << std::endl; \
-    } while(0)
+        do{ \
+            std::cout << x << std::endl; \
+        } while(0)
 #endif //ssLOG_LOG_TO_FILE
 
-//TODO(NOW): If INTERNAL_ssLOG_BASE is inside ssLOG_BASE(x), it will cause infinite lock
-#define INTERNAL_ssLOG_BASE(x) \
+#define INTERNAL_UNSAFE_ssLOG_BASE(x) \
     do \
     { \
         std::stringstream localss; \
         localss << x; \
-        if(INTERNAL_ssLOG_IS_CACHE_OUTPUT()) \
+        if(InternalUnsafe_ssLogIsCacheOutput()) \
         { \
-            INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() << localss.str() << std::endl; \
+            localss << std::endl; \
+            InternalUnsafe_ssLogAppendCurrentCacheOutput(localss); \
             break; \
         } \
         \
@@ -194,6 +194,7 @@ ssLOG_API extern std::mutex ssLogMapWriteMutex;
 ssLOG_API extern std::atomic<bool> ssLogNewThreadCacheByDefault;
 ssLOG_API extern std::atomic<int> ssLogReadCount;
 
+//TODO(NOW): Wrap this in class
 inline void Internal_ssLogInitiateMapRead()
 {
     ssLogMapWriteMutex.lock();
@@ -222,21 +223,13 @@ inline void Internal_ssLogCheckNewThread()
     }
 }
 
-inline int Internal_ssLogGetThreadId()
+inline int InternalUnsafe_ssLogGetThreadId()
 {
-    int threadId = 0;
-    Internal_ssLogInitiateMapRead();
-    threadId = ssLogInfoMap.at(std::this_thread::get_id()).ID;
-    ssLogReadCount--;
-    return threadId;
+    return ssLogInfoMap.at(std::this_thread::get_id()).ID;
 }
 
-inline std::string Internal_ssLogGetPrepend()
+inline std::string InternalUnsafe_ssLogGetPrepend()
 {
-    Internal_ssLogCheckNewThread();
-    
-    //Accessing map entry
-    Internal_ssLogInitiateMapRead();
     std::string s;
     {
         auto& currentSS = ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend;
@@ -244,22 +237,13 @@ inline std::string Internal_ssLogGetPrepend()
         currentSS.str("");
         currentSS.clear();
     }
-    ssLogReadCount--;
-    
     return s;
-};
+}
 
-inline void Internal_ssLogAppendPrepend(std::string appendMsg)
+inline void InternalUnsafe_ssLogAppendPrepend(std::string appendMsg)
 {
-    Internal_ssLogCheckNewThread();
-    
-    //Accessing map entry
-    Internal_ssLogInitiateMapRead();
-    {
-        ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << appendMsg;
-    }
-    ssLogReadCount--;
-};
+    ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << appendMsg;
+}
 
 inline void Internal_ssLogAppendPrepend(std::stringstream& ss)
 {
@@ -271,19 +255,11 @@ inline void Internal_ssLogAppendPrepend(std::stringstream& ss)
         ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << ss.rdbuf();
     }
     ssLogReadCount--;
-};
+}
 
-inline int Internal_ssLogGetCurrentLogLevel()
+inline int InternalUnsafe_ssLogGetCurrentLogLevel()
 {
-    Internal_ssLogCheckNewThread();
-    int returnLogLevel = 0;
-    //Accessing map entry
-    Internal_ssLogInitiateMapRead();
-    {
-        returnLogLevel = ssLogInfoMap.at(std::this_thread::get_id()).ssCurrentLogLevel;
-    }
-    ssLogReadCount--;
-    return returnLogLevel;
+    return ssLogInfoMap.at(std::this_thread::get_id()).ssCurrentLogLevel;
 }
 
 inline void Internal_ssLogSetCurrentLogLevel(int level)
@@ -298,31 +274,68 @@ inline void Internal_ssLogSetCurrentLogLevel(int level)
     ssLogReadCount--;
 }
 
+inline void InternalUnsafe_ssLogSetCurrentLogLevel(int level)
+{
+    ssLogInfoMap.at(std::this_thread::get_id()).ssCurrentLogLevel = level;
+}
+
+
+inline void InternalUnsafe_ssLogIncrementTabSpace()
+{
+    ssLogInfoMap.at(std::this_thread::get_id()).TabSpace++;
+}
+
+inline void InternalUnsafe_ssLogDecrementTabSpace()
+{
+    ssLogInfoMap.at(std::this_thread::get_id()).TabSpace--;
+}
+
+inline int InternalUnsafe_ssLogGetTabSpace()
+{
+    return ssLogInfoMap.at(std::this_thread::get_id()).TabSpace;
+}
+
+inline std::stack<std::string>& InternalUnsafe_ssLogGetFuncNameStack()
+{
+    return ssLogInfoMap.at(std::this_thread::get_id()).FuncNameStack;
+}
+
+inline std::stack<int>& InternalUnsafe_ssLogGetLogLevelStack()
+{
+    return ssLogInfoMap.at(std::this_thread::get_id()).LogLevelStack;
+}
+
+inline void Internal_ssLogSetCacheOutput(bool cache)
+{
+    //Accessing map entry
+    Internal_ssLogInitiateMapRead();
+    {
+        ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput = cache;
+    }
+    ssLogReadCount--;
+}
+
+inline bool InternalUnsafe_ssLogIsCacheOutput()
+{
+    return ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput;
+}
+
+inline void InternalUnsafe_ssLogAppendCurrentCacheOutput(const std::stringstream& localss)
+{
+    ssLogInfoMap.at(std::this_thread::get_id()).CurrentCachedOutput << localss.rdbuf();
+}
+
+inline int InternalUnsafe_ssLogGetTargetLogLevel()
+{
+    return ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel;
+}
+
 #if ssLOG_SHOW_THREADS
-    #define INTERNAL_ssLOG_PRINT_THREAD_ID() "[Thread " << Internal_ssLogGetThreadId() << "] "
+    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() \
+        "[Thread " << InternalUnsafe_ssLogGetThreadId() << "] "
 #else
-    #define INTERNAL_ssLOG_PRINT_THREAD_ID()
+    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
 #endif
-
-#define INTERNAL_ssLOG_TAB_SPACE() ssLogInfoMap.at(std::this_thread::get_id()).TabSpace
-
-#define INTERNAL_ssLOG_FUNC_NAME_STACK() \
-    ssLogInfoMap.at(std::this_thread::get_id()).FuncNameStack
-
-#define INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK() \
-    ssLogInfoMap.at(std::this_thread::get_id()).LogLevelStack
-
-#define INTERNAL_ssLOG_IS_CACHE_OUTPUT() \
-    ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput
-
-#define INTERNAL_ssLOG_CURRENT_CACHE_OUTPUT() \
-    ssLogInfoMap.at(std::this_thread::get_id()).CurrentCachedOutput
-
-#define INTERNAL_ssLOG_GET_PREPEND() Internal_ssLogGetPrepend()
-
-#define INTERNAL_ssLOG_TARGET_LEVEL() \
-    ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel
-
 
 // =======================================================================
 // Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
@@ -334,9 +347,9 @@ inline void Internal_ssLogSetCurrentLogLevel(int level)
 #define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
 
 template <typename CharT>
-std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
+std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
-#define INTERNAL_ssLOG_GET_LOG_LEVEL() ApplyLog
+#define INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() ApplyLogUnsafe
 
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... ) do{}while(0)
@@ -350,19 +363,25 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
                                     std::string message)
     {
         Internal_ssLogCheckNewThread();
-        if(INTERNAL_ssLOG_TARGET_LEVEL() >= Internal_ssLogGetCurrentLogLevel())
+        
+        //Accessing map entry
+        Internal_ssLogInitiateMapRead();
         {
-            INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() <<
-                                INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                INTERNAL_ssLOG_GET_LOG_LEVEL() <<
-                                INTERNAL_ssLOG_GET_PREPEND() <<
-                                funcName <<
-                                fileName <<
-                                lineNum << 
-                                message);
+            if(InternalUnsafe_ssLogGetTargetLogLevel() >= InternalUnsafe_ssLogGetCurrentLogLevel())
+            {
+                INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                                            INTERNAL_ssLOG_GET_DATE_TIME() <<
+                                            INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() <<
+                                            InternalUnsafe_ssLogGetPrepend() <<
+                                            funcName <<
+                                            fileName <<
+                                            lineNum << 
+                                            message);
+            }
         }
-       
-       Internal_ssLogSetCurrentLogLevel(0);
+        ssLogReadCount--;
+
+        Internal_ssLogSetCurrentLogLevel(0);
     }
 
     #define INTERNAL_ssLOG_LINE_0() \
@@ -400,12 +419,11 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
         return returnString;
     }
 
-    inline void Internal_ssLogEmptyLine()
+    inline void InternalUnsafe_ssLogEmptyLine()
     {
-        Internal_ssLogCheckNewThread();
-        INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() << 
-                            INTERNAL_ssLOG_GET_DATE_TIME() << 
-                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE())); 
+        INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() << 
+                                    INTERNAL_ssLOG_GET_DATE_TIME() << 
+                                    Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace())); 
     }
 
     inline void Internal_ssLogLine( std::string funcName, 
@@ -414,33 +432,41 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
                                     std::string message)
     {
         Internal_ssLogCheckNewThread();
-        if(INTERNAL_ssLOG_TARGET_LEVEL() >= Internal_ssLogGetCurrentLogLevel())
+        
+        //Accessing map entry
+        Internal_ssLogInitiateMapRead();
         {
-            INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() <<
-                                INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) <<
-                                INTERNAL_ssLOG_GET_LOG_LEVEL() <<
-                                INTERNAL_ssLOG_GET_PREPEND() <<
-                                funcName <<
-                                fileName <<
-                                lineNum << 
-                                message);
+            if(InternalUnsafe_ssLogGetTargetLogLevel() >= InternalUnsafe_ssLogGetCurrentLogLevel())
+            {
+                INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                                            INTERNAL_ssLOG_GET_DATE_TIME() <<
+                                            Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), 
+                                                                    true) <<
+                                            INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() <<
+                                            InternalUnsafe_ssLogGetPrepend() <<
+                                            funcName <<
+                                            fileName <<
+                                            lineNum << 
+                                            message);
+            }
         }
-       
-       Internal_ssLogSetCurrentLogLevel(0);
+        ssLogReadCount--;
+        
+        Internal_ssLogSetCurrentLogLevel(0);
     }
 
-    inline void Internal_ssLogFuncImpl(std::string fileName, std::string lineNum)
+    inline void InternalUnsafe_ssLogFuncImpl(std::string fileName, std::string lineNum)
     {
-        Internal_ssLogCheckNewThread();
-        INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() <<
-                            INTERNAL_ssLOG_GET_DATE_TIME() <<
-                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) <<
-                            INTERNAL_ssLOG_GET_LOG_LEVEL() <<
-                            INTERNAL_ssLOG_GET_PREPEND() <<
-                            fileName <<
-                            lineNum);
-       Internal_ssLogSetCurrentLogLevel(0);
+        INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                                    INTERNAL_ssLOG_GET_DATE_TIME() <<
+                                    Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), 
+                                                            true) <<
+                                    INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() <<
+                                    InternalUnsafe_ssLogGetPrepend() <<
+                                    fileName <<
+                                    lineNum);
+        
+       InternalUnsafe_ssLogSetCurrentLogLevel(0);
     }
 
     #define INTERNAL_ssLOG_LINE_0() \
@@ -470,19 +496,24 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
                                         std::string lineNum)
     {
         Internal_ssLogCheckNewThread();
-        int currentLogLevel = Internal_ssLogGetCurrentLogLevel();
-        INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(currentLogLevel);
         
-        if(INTERNAL_ssLOG_TARGET_LEVEL() >= currentLogLevel)
-        { 
-            Internal_ssLogEmptyLine();
-            Internal_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " BEGINS"));
-            Internal_ssLogFuncImpl(fileName, lineNum);
-        }
+        //Accessing map entry
+        Internal_ssLogInitiateMapRead();
+        {
+            int currentLogLevel = InternalUnsafe_ssLogGetCurrentLogLevel();
+            InternalUnsafe_ssLogGetLogLevelStack().push(currentLogLevel);
+            if(InternalUnsafe_ssLogGetTargetLogLevel() >= currentLogLevel)
+            { 
+                InternalUnsafe_ssLogEmptyLine();
+                InternalUnsafe_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " BEGINS"));
+                InternalUnsafe_ssLogFuncImpl(fileName, lineNum);
+            }
 
-        INTERNAL_ssLOG_FUNC_NAME_STACK().push(expr);
-        INTERNAL_ssLOG_TAB_SPACE()++;
-        Internal_ssLogSetCurrentLogLevel(0);
+            InternalUnsafe_ssLogGetFuncNameStack().push(expr);
+            InternalUnsafe_ssLogIncrementTabSpace();
+            InternalUnsafe_ssLogSetCurrentLogLevel(0);
+        }
+        ssLogReadCount--;
     }
 
     inline void Internal_ssLogFuncExit( std::string expr,
@@ -490,27 +521,35 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
                                         std::string lineNum)
     {
         Internal_ssLogCheckNewThread();
-        if( INTERNAL_ssLOG_FUNC_NAME_STACK().empty() || 
-            INTERNAL_ssLOG_FUNC_NAME_STACK().top() != expr) 
-        { 
-            INTERNAL_ssLOG_BASE("ssLOG_FUNC_EXIT is missing somewhere. " << 
-                                expr << " is expected but" << 
-                                INTERNAL_ssLOG_FUNC_NAME_STACK().top() << 
-                                " is found instead."); 
-            return;
-        }
         
-        int currentLogLevel = INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().top();
-        INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().pop();
-        INTERNAL_ssLOG_FUNC_NAME_STACK().pop();
-        INTERNAL_ssLOG_TAB_SPACE()--;
-        if(INTERNAL_ssLOG_TARGET_LEVEL() >= currentLogLevel)
+        //Accessing map entry
+        Internal_ssLogInitiateMapRead();
         {
-            Internal_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " EXITS"));
-            Internal_ssLogFuncImpl(fileName, lineNum);
-            Internal_ssLogEmptyLine();
+            if( InternalUnsafe_ssLogGetFuncNameStack().empty() || 
+                InternalUnsafe_ssLogGetFuncNameStack().top() != expr) 
+            { 
+                INTERNAL_UNSAFE_ssLOG_BASE( "ssLOG_FUNC_EXIT is missing somewhere. " << 
+                                            expr << " is expected but" << 
+                                            InternalUnsafe_ssLogGetFuncNameStack().top() << 
+                                            " is found instead."); 
+                
+                ssLogReadCount--;
+                return;
+            }
+            
+            int currentLogLevel = InternalUnsafe_ssLogGetLogLevelStack().top();
+            InternalUnsafe_ssLogGetLogLevelStack().pop();
+            InternalUnsafe_ssLogGetFuncNameStack().pop();
+            InternalUnsafe_ssLogDecrementTabSpace();
+            if(InternalUnsafe_ssLogGetTargetLogLevel() >= currentLogLevel)
+            {
+                InternalUnsafe_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " EXITS"));
+                InternalUnsafe_ssLogFuncImpl(fileName, lineNum);
+                InternalUnsafe_ssLogEmptyLine();
+            }
+            InternalUnsafe_ssLogSetCurrentLogLevel(0);
         }
-        Internal_ssLogSetCurrentLogLevel(0);
+        ssLogReadCount--;
     }
 
     #define ssLOG_FUNC_CONTENT(expr) \
@@ -623,14 +662,14 @@ inline void Internal_ssLogSetAllCacheOutput(bool cache)
     do \
     { \
         Internal_ssLogCheckNewThread(); \
-        INTERNAL_ssLOG_IS_CACHE_OUTPUT() = true; \
+        Internal_ssLogSetCacheOutput(true); \
     } while(0)
 
 #define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
     do \
     { \
         Internal_ssLogCheckNewThread(); \
-        INTERNAL_ssLOG_IS_CACHE_OUTPUT() = false; \
+        Internal_ssLogSetCacheOutput(false); \
     } while(0)
 
 #define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(true)
@@ -800,7 +839,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
     //Reading map
     {
         Internal_ssLogInitiateMapRead();
-        INTERNAL_ssLOG_TARGET_LEVEL() = targetLevel;
+        ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel = targetLevel;
         ssLogReadCount--;
     }
 }
@@ -833,9 +872,9 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 
 #if ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1
     template <typename CharT>
-    inline std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream)
+    inline std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream)
     {
-        switch(Internal_ssLogGetCurrentLogLevel())
+        switch(InternalUnsafe_ssLogGetCurrentLogLevel())
         {
             case ssLOG_LEVEL_FATAL:
                 stream <<   termcolor::colorize << 
@@ -844,7 +883,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
                             "[FATAL]" << 
                             termcolor::reset << " ";
                 
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_ERROR:
@@ -854,7 +893,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
                             "[ERROR]" << 
                             termcolor::reset << " ";
                 
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_WARNING:
@@ -864,7 +903,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
                             "[WARNING]" << 
                             termcolor::reset << " ";
                 
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_INFO:
@@ -874,7 +913,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
                             "[INFO]" << 
                             termcolor::reset << " ";
                 
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_DEBUG:
@@ -884,47 +923,47 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
                             "[DEBUG]" << 
                             termcolor::reset << " ";
                 
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             default:
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
         }
     }
 #else
     template <typename CharT>
-    inline std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream)
+    inline std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream)
     {
-        switch(Internal_ssLogGetCurrentLogLevel())
+        switch(InternalUnsafe_ssLogGetCurrentLogLevel())
         {
             case ssLOG_LEVEL_FATAL:
                 stream << "[FATAL] ";
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_ERROR:
                 stream << "[ERROR] ";
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_WARNING:
                 stream << "[WARNING] ";
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_INFO:
                 stream << "[INFO] ";
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             case ssLOG_LEVEL_DEBUG:
                 stream << "[DEBUG] ";
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
             
             default:
-                Internal_ssLogSetCurrentLogLevel(0);
+                InternalUnsafe_ssLogSetCurrentLogLevel(0);
                 return stream;
         }
     }
