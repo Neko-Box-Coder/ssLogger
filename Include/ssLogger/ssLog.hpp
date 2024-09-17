@@ -85,7 +85,7 @@
     inline void Internal_ssLogBase(const std::stringstream& localss)
     {
         if(!ssLogFileStream.good())
-            break;
+            return;
 
         if(!ssLogFileStream.is_open())
         {
@@ -99,7 +99,7 @@
             ssLogFileStream.open(nowString, std::ofstream::out);
 
             if(!ssLogFileStream.good())
-                break;
+                return;
         }
         ssLogFileStream << localss.rdbuf() << std::endl;
     }
