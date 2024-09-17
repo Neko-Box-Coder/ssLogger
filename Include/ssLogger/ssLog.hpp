@@ -430,23 +430,16 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
        Internal_ssLogSetCurrentLogLevel(0);
     }
 
-    inline void Internal_ssLogFuncImpl( std::string funcName, 
-                                        std::string fileName, 
-                                        std::string lineNum)
+    inline void Internal_ssLogFuncImpl(std::string fileName, std::string lineNum)
     {
         Internal_ssLogCheckNewThread();
-        if(INTERNAL_ssLOG_TARGET_LEVEL() >= Internal_ssLogGetCurrentLogLevel())
-        {
-            INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() <<
-                                INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) <<
-                                INTERNAL_ssLOG_GET_LOG_LEVEL() <<
-                                INTERNAL_ssLOG_GET_PREPEND() <<
-                                funcName <<
-                                fileName <<
-                                lineNum);
-        }
-       
+        INTERNAL_ssLOG_BASE(INTERNAL_ssLOG_PRINT_THREAD_ID() <<
+                            INTERNAL_ssLOG_GET_DATE_TIME() <<
+                            Internal_ssLog_TabAdder(INTERNAL_ssLOG_TAB_SPACE(), true) <<
+                            INTERNAL_ssLOG_GET_LOG_LEVEL() <<
+                            INTERNAL_ssLOG_GET_PREPEND() <<
+                            fileName <<
+                            lineNum);
        Internal_ssLogSetCurrentLogLevel(0);
     }
 
@@ -473,18 +466,18 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
     #define ssLOG_FUNC( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC, __VA_ARGS__ )
 
     inline void Internal_ssLogFuncEntry(std::string expr,
-                                        std::string funcName, 
                                         std::string fileName, 
                                         std::string lineNum)
     {
         Internal_ssLogCheckNewThread();
         int currentLogLevel = Internal_ssLogGetCurrentLogLevel();
         INTERNAL_ssLOG_FUNC_LOG_LEVEL_STACK().push(currentLogLevel);
+        
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= currentLogLevel)
         { 
             Internal_ssLogEmptyLine();
             Internal_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " BEGINS"));
-            Internal_ssLogFuncImpl(funcName, fileName, lineNum);
+            Internal_ssLogFuncImpl(fileName, lineNum);
         }
 
         INTERNAL_ssLOG_FUNC_NAME_STACK().push(expr);
@@ -493,7 +486,6 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
     }
 
     inline void Internal_ssLogFuncExit( std::string expr,
-                                        std::string funcName, 
                                         std::string fileName, 
                                         std::string lineNum)
     {
@@ -515,8 +507,7 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
         if(INTERNAL_ssLOG_TARGET_LEVEL() >= currentLogLevel)
         {
             Internal_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " EXITS"));
-            if(!lineNum.empty())
-                Internal_ssLogFuncImpl(funcName, fileName, lineNum);
+            Internal_ssLogFuncImpl(fileName, lineNum);
             Internal_ssLogEmptyLine();
         }
         Internal_ssLogSetCurrentLogLevel(0);
@@ -525,14 +516,12 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
     #define ssLOG_FUNC_CONTENT(expr) \
         std::string ssLogLimitedExpr = INTERNAL_ssLOG_LIMIT_EXPR(expr); \
         Internal_ssLogFuncEntry(std::string("[") + ssLogLimitedExpr + "]", \
-                                INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
                                 INTERNAL_ssLOG_GET_FILE_NAME(), \
                                 INTERNAL_ssLOG_GET_LINE_NUM()); \
         \
         expr; \
         \
         Internal_ssLogFuncExit( std::string("[") + ssLogLimitedExpr + "]", \
-                                INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
                                 INTERNAL_ssLOG_GET_FILE_NAME(), \
                                 INTERNAL_ssLOG_GET_LINE_NUM())
 
@@ -547,14 +536,14 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
                                                 std::string fileName, 
                                                 std::string lineNum)
             {
-                Internal_ssLogFuncEntry(funcName, "", fileName, lineNum);
+                Internal_ssLogFuncEntry(funcName, fileName, lineNum);
                 FuncName = funcName;
                 FileName = fileName;
             }
 
             inline ~Internal_ssLogFunctionScope()
             {
-                Internal_ssLogFuncExit(FuncName, "", FileName, "");
+                Internal_ssLogFuncExit(FuncName, FileName, "");
             }
     };
     
@@ -587,13 +576,11 @@ std::basic_ostream<CharT>& ApplyLog(std::basic_ostream<CharT>& stream);
 
     #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFuncName) \
         Internal_ssLogFuncEntry(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName), \
-                                "", \
                                 INTERNAL_ssLOG_GET_FILE_NAME(), \
                                 INTERNAL_ssLOG_GET_LINE_NUM());
 
     #define INTERNAL_ssLOG_FUNC_EXIT_1(customFuncName) \
         Internal_ssLogFuncExit( INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STRING(customFuncName), \
-                                "", \
                                 INTERNAL_ssLOG_GET_FILE_NAME(), \
                                 INTERNAL_ssLOG_GET_LINE_NUM());
 #endif //!ssLOG_CALL_STACK
