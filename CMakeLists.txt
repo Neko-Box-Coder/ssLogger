@@ -158,7 +158,15 @@ if(${ssLOG_BUILD_TESTS})
         
         if(WIN32)
             set_target_properties(ssLogger_SRC PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests/$<CONFIG>"
+                    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests/$<CONFIG>"
                     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests/$<CONFIG>"
+            )
+        else()
+            set_target_properties(ssLogger_SRC PROPERTIES
+                    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests"
+                    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests"
+                    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/SourceTests"
             )
         endif()
     elseif("${ssLOG_BUILD_TYPE}" STREQUAL "OBJECT")
