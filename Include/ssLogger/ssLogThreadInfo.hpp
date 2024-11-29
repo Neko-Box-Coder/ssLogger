@@ -4,6 +4,8 @@
 #include <stack>
 #include <string>
 #include <sstream>
+#include <chrono>
+#include <vector>
 
 struct ssLogThreadInfo
 {
@@ -12,7 +14,7 @@ struct ssLogThreadInfo
     std::stack<int> LogLevelStack = std::stack<int>();
     std::stringstream CurrentPrepend;
     bool CacheOutput = false;
-    std::stringstream CurrentCachedOutput;
+    std::vector<std::pair<std::chrono::system_clock::time_point, std::string>> CurrentCachedOutput;
     int ID;
     int ssCurrentLogLevel = 0;
     #ifdef ssLOG_LEVEL

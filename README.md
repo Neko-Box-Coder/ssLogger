@@ -59,6 +59,9 @@ ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS()
 //Output all the logs that are stored in cache
 ssLOG_OUTPUT_ALL_CACHE();
 
+//Output all the logs that are stored in cache but grouped in threads
+ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+
 //Logs can be output as different level, for example.
 ssLOG_FATAL(["message"]);
 ssLOG_ERROR(["message"]);

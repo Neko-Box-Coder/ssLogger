@@ -13,6 +13,7 @@
 #include <atomic>
 #include <chrono>
 #include <utility>
+#include <algorithm>
 
 // =======================================================================
 // Macros for allowing overloadable Macro functions
@@ -132,7 +133,6 @@
         localss << x; \
         if(InternalUnsafe_ssLogIsCacheOutput()) \
         { \
-            localss << std::endl; \
             InternalUnsafe_ssLogAppendCurrentCacheOutput(localss); \
             break; \
         } \
@@ -635,7 +635,7 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 // Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, 
 // ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, 
 // ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS, ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS, 
-// ssLOG_CACHE_OUTPUT_FOR_SCOPE and ssLOG_OUTPUT_ALL_CACHE
+// ssLOG_CACHE_OUTPUT_FOR_SCOPE, ssLOG_OUTPUT_ALL_CACHE and ssLOG_OUTPUT_ALL_CACHE_GROUPED
 // =======================================================================
 inline void Internal_ssLogSetAllCacheOutput(bool cache)
 {
@@ -689,7 +689,7 @@ class Internal_ssLogCacheScope
     Internal_ssLogCacheScope \
     INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
 
-inline void Internal_ssLogOutputAllCache()
+inline void Internal_ssLogOutputAllCacheGrouped()
 {
     Internal_ssLogCheckNewThread();
     //Reading all map entries
@@ -701,11 +701,12 @@ inline void Internal_ssLogOutputAllCache()
         
         for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it)
         {
-            if(it->second.CurrentCachedOutput.rdbuf()->in_avail() == 0)
+            if(it->second.CurrentCachedOutput.empty())
                 continue;
 
-            ssLOG_BASE(it->second.CurrentCachedOutput.str());
-            it->second.CurrentCachedOutput.str("");
+            for(int i = 0; i < it->second.CurrentCachedOutput.size(); i++)
+                ssLOG_BASE(it->second.CurrentCachedOutput[i].second);
+
             it->second.CurrentCachedOutput.clear();
         }
         
@@ -713,7 +714,50 @@ inline void Internal_ssLogOutputAllCache()
     }
 }
 
+inline void Internal_ssLogOutputAllCache()
+{
+    Internal_ssLogCheckNewThread();
+    //Reading all map entries
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        
+        std::vector<std::pair<std::chrono::system_clock::time_point, std::string>> allOutput;
+        
+        for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end(); ++it)
+        {
+            if(!it->second.CurrentCachedOutput.empty())
+            {
+                allOutput.insert(allOutput.end(), 
+                               it->second.CurrentCachedOutput.begin(),
+                               it->second.CurrentCachedOutput.end());
+                it->second.CurrentCachedOutput.clear();
+            }
+        }
+
+        std::sort(  allOutput.begin(), 
+                    allOutput.end(),
+                    []( const std::pair<std::chrono::system_clock::time_point, std::string>& a, 
+                        const std::pair<std::chrono::system_clock::time_point, std::string>& b) 
+                    { 
+                        return a.first < b.first; 
+                    });
+
+        INTERNAL_ssLOG_LOCK_OUTPUT();
+        
+        std::stringstream ss;
+        for(const auto& output : allOutput)
+            ss << output.second << "\n";
+            
+        ssLOG_BASE(ss.str());
+        
+        INTERNAL_ssLOG_UNLOCK_OUTPUT();
+    }
+}
+
 #define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
+
+#define ssLOG_OUTPUT_ALL_CACHE_GROUPED() Internal_ssLogOutputAllCacheGrouped()
 
 // =======================================================================
 // Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
