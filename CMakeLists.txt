@@ -28,8 +28,8 @@ set(ssLOG_CALL_STACK 1 CACHE BOOL "Show call stack for all logged functions")
 set(ssLOG_LOG_WITH_ASCII 0 CACHE BOOL "Call stack logging will be shown using ASCII characters")
 set(ssLOG_SHOW_FILE_NAME 1 CACHE BOOL "Show file name for all logged functions")
 set(ssLOG_SHOW_LINE_NUM 1 CACHE BOOL "Show line number for all logged functions")
-set(ssLOG_SHOW_FUNC_NAME 1 CACHE BOOL "Show function name for all logged functions")
-set(ssLOG_SHOW_DATE 1 CACHE BOOL "Show log date for all logged functions")
+set(ssLOG_SHOW_FUNC_NAME 0 CACHE BOOL "Show function name for all logged functions")
+set(ssLOG_SHOW_DATE 0 CACHE BOOL "Show log date for all logged functions")
 set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
 set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomic. Can be turned off if only running in single thread for performance.")
 set(ssLOG_SHOW_THREADS 1 CACHE BOOL "Shows the thread ID for the output")
@@ -45,6 +45,9 @@ DEBUG    (Program state which **does** spam the log)")
 
 set(ssLOG_USE_ESCAPE_SEQUENCES 0 CACHE BOOL "Use escape sequences regardless of it being supported or not")
 
+if(WIN32)
+    set(ssLOG_USE_WINDOWS_COLOR 0 CACHE BOOL "Force to use Win32 instead of escape sequences")
+endif()
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
                                                 "FATAL" 
                                                 "ERROR" 
@@ -101,6 +104,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_ESCAPE_SEQUENCES=$<BOOL:${ssLOG_USE_ESCAPE_SEQUENCES}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")

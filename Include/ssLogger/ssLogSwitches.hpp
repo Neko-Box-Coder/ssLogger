@@ -22,11 +22,11 @@
     #endif
 
     #ifndef ssLOG_SHOW_FUNC_NAME
-        #define ssLOG_SHOW_FUNC_NAME 1
+        #define ssLOG_SHOW_FUNC_NAME 0
     #endif
 
     #ifndef ssLOG_SHOW_DATE
-        #define ssLOG_SHOW_DATE 1
+        #define ssLOG_SHOW_DATE 0
     #endif
 
     #ifndef ssLOG_SHOW_TIME
@@ -59,4 +59,7 @@
         #define ssLOG_USE_ESCAPE_SEQUENCES 0
     #endif
 
+    #ifndef ssLOG_USE_WINDOWS_COLOR
+        #define ssLOG_USE_WINDOWS_COLOR 0
+    #endif
 #endif
