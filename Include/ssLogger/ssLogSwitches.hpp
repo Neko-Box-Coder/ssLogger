@@ -22,7 +22,7 @@
     #endif
 
     #ifndef ssLOG_SHOW_FUNC_NAME
-        #define ssLOG_SHOW_FUNC_NAME 0
+        #define ssLOG_SHOW_FUNC_NAME 1
     #endif
 
     #ifndef ssLOG_SHOW_DATE
