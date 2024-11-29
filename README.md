@@ -1,302 +1,189 @@
 # ssLogger 📔
+A lightweight, flexible C++11 logging library with call stack tracking and multi-threading support.
+
 ![](./logo.png)
-##### Logs incoming....
 
----
+## ✨ Key Features
 
-#### Super simple macro based Logger for call stack and quick debug logging, with minimum dependencies, high flexiblity and works with C++ 11 or above.
+- 🗒️ **Call Stack Tracking**: Full function call stack visualization
+- 🎯 **Multiple Log Levels**: FATAL, ERROR, WARNING, INFO, DEBUG with runtime control
+- 🧵 **Thread Safety**: Built-in support for multi-threaded applications
+- 🚀 **Minimal Dependencies**: Header-only or CMake integration
+- ⚡ **High Performance**: Optional caching and configurable thread safety
+- 🛠️ **Highly Configurable**: Extensive compile-time and runtime options
 
-#### Both header only or CMake option available.
+## 📸 Quick Look
 
-#### 🗒️ Fully verbose with call stack?
+### Call Stack Visualization
 ![demo](./Resources/demo.gif)
 
-#### 👟 Simple logging with just function name and line number?
+### Simple Function Logging
 ![demo2](./Resources/demo2.gif)
 
-#### 🧵 Thread-safety for multithreading? (Can be disabled for performance)
-![demo2](./Resources/demo3.gif)
+### Thread-Safe Logging
+![demo3](./Resources/demo3.gif)
 
-#### 🐞 Logging with different levels?
+### Log Levels
 ![logLevel](./Resources/logLevels.png)
 
-Powered by [termcolor](https://github.com/ikalnytskyi/termcolor) with [license distributed](./External/termcolor LICENSE)
+## 🚀 Getting Started
 
-### 📔 Documentations:
-```c++
+### Installation
 
-//Directly output a message without any decorator or checks
-ssLOG_BASE("message");
+1. Add ssLogger to your project:
+    ```shell
+    git submodule add https://github.com/Neko-Box-Coder/ssLogger.git
+    # OR
+    git clone https://github.com/Neko-Box-Coder/ssLogger.git
+    ```
 
-//Logs at a line with an optional message
-ssLOG_LINE(["message"]);
+2. Choose your integration method:
 
-//Prepend a text for only the next log function
-ssLOG_PREPEND("prepend text");
+    #### CMake Integration
+    ```cmake
+    add_subdirectory(path/to/ssLogger)
+    target_link_libraries(YourTarget PUBLIC ssLogger)
+    ```
 
-//Cache all the logs in the current thread after this macro  
-//  that are in the current scope, which can be output at a later time
-//
-//This has minimum thread synchronization which is great for 
-//  logging multi-threaded applications
+    #### Header-Only Usage
+    1. Add `include/ssLogger` to your include paths
+    2. Include in your entry point (once):
+      ```cpp
+      #include "ssLogger/ssLogInit.hpp"
+      #include "ssLogger/ssLog.hpp"
+      ```
+    3. Define macro options you want before including `ssLog.hpp`. See [Configuration](#configuration) for all options.
+
+> ⚠️ **Warning**: Do not use ssLogger before main() as it uses global static variables.
+
+## 💻 Basic Usage
+
+### Simple Line Logging
+```cpp
+ssLOG_LINE("Hello, World!");  //Basic logging
+ssLOG_LINE("Value: " << 42);  //Stream-style logging
+
+//Different log levels
+ssLOG_FATAL("Critical error!");
+ssLOG_ERROR("Error occurred");
+ssLOG_WARNING("Warning message");
+ssLOG_INFO("Information");
+ssLOG_DEBUG("Debug info");
+
+//Set runtime log level for current thread
+ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+```
+
+### Function Call Tracking
+```cpp
+void ProcessData()
+{
+    ssLOG_FUNC();  //Automatically logs function entry/exit
+    ssLOG_LINE("Processing...");
+}
+
+//Custom function name (great for lambdas)
+auto handler = []() 
+{
+    ssLOG_FUNC("CustomHandler");
+    //... code ...
+};
+
+//Function tracking with different log levels
+ssLOG_FUNC_ERROR("Critical operation");
+ssLOG_FUNC_WARNING("Important operation");
+ssLOG_FUNC_INFO("Normal operation");
+```
+
+### Log Caching And Thread Control
+```cpp
+//Cache in current scope
 ssLOG_CACHE_OUTPUT_IN_SCOPE();
 
-//Enable/Disable cache in all threads for all the logs after 
-//  this macro, which can be output at a later time
-ssLOG_ENABLE_CACHE_OUTPUT();
-ssLOG_DISABLE_CACHE_OUTPUT();
+//Global cache control
+ssLOG_ENABLE_CACHE_OUTPUT();   //Enable for all threads
+ssLOG_DISABLE_CACHE_OUTPUT();  //Disable for all threads
 
-//Enable/Disable cache in current thread for all the logs after 
-//  this macro, which can be output at a later time
-ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
-ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
+//Thread-specific cache control
+ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();   //Enable for current thread
+ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();  //Disable for current thread
 
-//Enable/Disable cache in new threads for all the logs after 
-//  this macro, which can be output at a later time
-ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS()
-ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS()
+//New thread cache control
+ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();   //Enable for new threads
+ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS();  //Disable for new threads
 
-//Output all the logs that are stored in cache
-ssLOG_OUTPUT_ALL_CACHE();
+//Output cached logs
+ssLOG_OUTPUT_ALL_CACHE();           //Output all cached logs
+ssLOG_OUTPUT_ALL_CACHE_GROUPED();   //Output grouped by thread
 
-//Output all the logs that are stored in cache but grouped in threads
-ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+//Combine caching with log levels
+ssLOG_CACHE_OUTPUT_IN_SCOPE();
+ssLOG_ERROR("This error will be cached");
+ssLOG_WARNING("This warning will be cached");
+```
 
-//Logs can be output as different level, for example.
-ssLOG_FATAL(["message"]);
-ssLOG_ERROR(["message"]);
-ssLOG_WARNING(["message"]);
-ssLOG_INFO(["message"]);
-ssLOG_DEBUG(["message"]);
+## ⚙️ Configuration
 
-//Logs with levels are discarded at compile time depending 
-//  on the value of `#define ssLOG_LEVEL`
-//
-//It then can be furthered restricted at runtime per thread with one of
-//
-//`ssLOG_LEVEL_DEBUG`, `ssLOG_LEVEL_INFO`, `ssLOG_LEVEL_WARNING`, 
-//  `ssLOG_LEVEL_ERROR`, `ssLOG_LEVEL_FATAL`
-//
-//For example:
-ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+### Key Configuration Options
 
-//Below are the macro functions that can be output with different levels...
+| Option | Default | Description |
+|--------|---------|-------------|
+| ssLOG_CALL_STACK | 1 | Enable function call stack tracking |
+| ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
+| ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
+| ssLOG_LOG_TO_FILE | 0 | Enable file logging |
+| ssLOG_SHOW_DATE | 1 | Show date in logs |
+| ssLOG_SHOW_TIME | 1 | Show time in logs |
 
-//Logs before and after the statements passed as parameter
-ssLOG_CONTENT(c++ statements);
-ssLOG_CONTENT_FATAL(c++ statements);
-ssLOG_CONTENT_ERROR(c++ statements);
-//...
+> 📝 For a complete list of options, see [Configuration Details](#configuration-details) below.
 
-//Logs when the current function begins and ends
-ssLOG_FUNC(["Optional custom function name"]);
-ssLOG_FUNC_FATAL(["Optional custom function name"]);
-ssLOG_FUNC_ERROR(["Optional custom function name"]);
-//...
+## 🔍 Advanced Features
 
-//Logs as the function begins (Needs to be placed manually)
-ssLOG_FUNC_ENTRY(["Optional custom function name"]);
-ssLOG_FUNC_ENTRY_FATAL(["Optional custom function name"]);
-ssLOG_FUNC_ENTRY_ERROR(["Optional custom function name"]);
-//...
-
-//Logs as the function exit (Needs to be placed manually)
-ssLOG_FUNC_EXIT(["Optional custom function name"]);
-ssLOG_FUNC_EXIT_FATAL(["Optional custom function name"]);
-ssLOG_FUNC_EXIT_ERROR(["Optional custom function name"]);
-//...
-
-//Starting a benchmark
-auto benchmark = ssLOG_BENCH_START(["Optional benchmark name"]);
-auto benchmarkFatal = ssLOG_BENCH_FATAL(["Optional benchmark name"]);
-auto benchmarkError = ssLOG_BENCH_ERROR(["Optional benchmark name"]);
-//...
-
-//Ending a benchmark
+### Benchmarking
+```cpp
+auto benchmark = ssLOG_BENCH_START("Operation");
+//... code to benchmark ...
 ssLOG_BENCH_END(benchmark);
-ssLOG_BENCH_END_FATAL(benchmarkFatal);
-ssLOG_BENCH_END_ERROR(benchmarkError);
-//...
+
+//Benchmarking with different log levels
+auto benchError = ssLOG_BENCH_ERROR("Critical Operation");
+//... code ...
+ssLOG_BENCH_END(benchError);
 ```
 
-## 🔨 Examples:
+### Content Logging
+```cpp
+ssLOG_CONTENT( ProcessData(userID, username, password) );
 
-### Logging a line:
-```c++
-    ssLOG_LINE();
-
-    int someValue = 42;
-    ssLOG_LINE("Here's some value: " << someValue);
-    
-    //[Thread 0] 2022-08-14 16:49:53.802 MethodName() in FileName.cpp on line 9
-    //[Thread 0] 2022-08-14 16:49:53.802 MethodName() in FileName.cpp on line 9: Here's some value: 42
+//Content logging with different log levels
+ssLOG_CONTENT_WARNING( RiskyOperation() );
 ```
 
-### Logging with level:
-```c++
-    ssLOG_FATAL("Test fatal");
-    ssLOG_ERROR("Test error");
-    ssLOG_WARNING("Test warning");
-    ssLOG_INFO("Test info");
-    ssLOG_DEBUG("Test debug");
+## 📚 Configuration Details
 
-    int someValue = 42;
-    ssLOG_WARNING("Here's some value: "<<someValue);
-    
-    //[Thread 0] 2022-08-14 16:49:53.802 [FATAL] MethodName() in FileName.cpp on line 9: Test fatal
-    //[Thread 0] 2022-08-14 16:49:53.802 [ERROR] MethodName() in FileName.cpp on line 9: Test error
-    //[Thread 0] 2022-08-14 16:49:53.802 [WARNING] MethodName() in FileName.cpp on line 9: Test warning
-    //[Thread 0] 2022-08-14 16:49:53.802 [INFO] MethodName() in FileName.cpp on line 9: Test info
-    //[Thread 0] 2022-08-14 16:49:53.802 [DEBUG] MethodName() in FileName.cpp on line 9: Test debug
-    //[Thread 0] 2022-08-14 16:49:53.802 [WARNING] MethodName() in FileName.cpp on line 9: Here's some value: 42
-```
+<details>
+<summary>Click to expand full configuration options</summary>
 
-### Logging functions call stack:
+| Define Macro Name | Default | Description |
+|-------------------|---------|-------------|
+| ssLOG_CALL_STACK | 1 | Show call stack for logged functions |
+| ssLOG_LOG_WITH_ASCII | 0 | Use ASCII-only characters |
+| ssLOG_SHOW_FILE_NAME | 1 | Show file name (⚠️ contains full path) |
+| ssLOG_SHOW_LINE_NUM | 1 | Show line numbers |
+| ssLOG_SHOW_FUNC_NAME | 1 | Show function names |
+| ssLOG_SHOW_DATE | 1 | Show log date |
+| ssLOG_SHOW_TIME | 1 | Show log time |
+| ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
+| ssLOG_SHOW_THREADS | 1 | Show thread IDs |
+| ssLOG_LOG_TO_FILE | 0 | Enable file logging |
+| ssLOG_USE_ESCAPE_SEQUENCES | 0 | Force use of escape sequences |
+| ssLOG_LEVEL | 3 | Compile-time log level (0:NONE, 1:FATAL, 2:ERROR, 3:WARNING, 4:INFO, 5:DEBUG) |
+| ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
 
-```c++
-    //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
+</details>
 
-    //Log function callstack with ssLOG_FUNC
-    void InitializeApp()
-    {
-        ssLOG_FUNC();
-        ssLOG_LINE("Initializing MyApp...");
-    }
+## 🤝 Credits
+Powered by [termcolor](https://github.com/ikalnytskyi/termcolor) ([license](./External/termcolor%20LICENSE))
 
-    void SanitizeData()
-    {
-        ssLOG_FUNC();
-        ssLOG_LINE("Sanitizing data...");
-    }
-
-    void ProcessData()
-    {
-        ssLOG_FUNC();
-        ssLOG_LINE("Processing data...");
-        SanitizeData();
-    }
-
-    //You can also have custom names for functions as well, which is useful for lambda functions.
-    auto userDataHandler = []()
-    {
-        ssLOG_FUNC("userDataHandler");
-        ssLOG_LINE("Handling user data...");
-    };
-    
-    int main()
-    {
-        ssLOG_FUNC();
-        InitializeApp();
-        ProcessData();
-        
-        auto userDataHandler = []()
-        {
-            ssLOG_FUNC("userDataHandler");
-            ssLOG_LINE("Handling user data...");
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        };
-
-        userDataHandler();
-        CleanupApp();
-        return 0;
-    }
-```
-
-### Logging multiple lines as content:
-
-```c++
-    //***Functions call stack are only logged when ssLOG_CALL_STACK is true***
-
-    int ProcessLotsOfData(  int userID,
-                            std::string username, 
-                            std::string password, 
-                            int health,
-                            int mana)
-    {
-        (void)userID;
-        (void)username;
-        (void)password;
-        (void)health;
-        (void)mana;
-        
-        ssLOG_LINE("Processing data...");
-        return 42;
-    }
-
-    int main()
-    {
-        ssLOG_CONTENT
-        (
-            ProcessLotsOfData
-            (
-                69, 
-                "Bob", 
-                "Very Secure Password", 
-                9000, 
-                9000
-            );
-        );
-
-        return 0;
-    }
-```
-
-----
-
-### How to use:
-1. Clone this repository
-    - `git submodule add https://github.com/Neko-Box-Coder/ssLogger.git <folder name>`
-    - Or `git clone https://github.com/Neko-Box-Coder/ssLogger.git`
-2. There are two ways to use ssLogger:
-    - Source with CMake:
-        1. Add `add_subdirectory(<path to ssLogger> <optional binary directory>)` to your `CMakeLists.txt`
-        2. Link ssLogger with your target. `target_link_libraries(<Your Target> PUBLIC ssLogger)`
-        3. Add `#include "ssLogger/ssLog.hpp"` to your header(s)
-        4. Edit properties via CMake GUI or command line
-    - Header only:
-        1. Define the options you want (from above) that are not the defaults
-        2. Add `include/ssLogger` as to include paths
-        3. Include `include/ssLogger/ssLog.hpp`
-        4. Include `include/ssLogger/ssLogInit.hpp` to your entry point **ONCE** (above `include/ssLogger/ssLog.hpp`)
-
-> <font size="4">⚠️ **Warning:** Using ssLogger before main (i.e. inside static class initialization) will result undefined behaviour (as ssLogger uses global static variable).</font>
-
-----
-
-#### 🔧 Easy Customization:
-
-##### CMake / Header Defines
-| Define Macro Name         | Default Value | Explanation                                                                                           |
-| ---                       | ---           | ---                                                                                                   |
-| ssLOG_CALL_STACK          | 1             | Show call stack for all logged functions                                                              |
-| ssLOG_LOG_WITH_ASCII      | 0             | Logging will only use ASCII characters,                                                               |
-|                           |               | which changes the call stack tree characters and disables log level text highlights                   |
-| ssLOG_SHOW_FILE_NAME      | 1             | Show file name for all logged functions                                                               |
-|                           |               | ⚠️ **Warning:** This extracts the file name from the `__FILE__` macro in runtime,                      |
-|                           |               | which contains the **full path** to the file, and will contain sensitive information                  |
-|                           |               | such as **your username** or **system file structure**.                                               |
-|                           |               | It is recommended to turn it **off** in any production build                                          |
-| ssLOG_SHOW_LINE_NUM       | 1             | Show line number for all logged functions                                                             |
-| ssLOG_SHOW_FUNC_NAME      | 1             | Show function name for all logged functions                                                           |
-| ssLOG_SHOW_DATE           | 1             | Show log date for all logged functions                                                                |
-| ssLOG_SHOW_TIME           | 1             | Show log time for all logged functions                                                                |
-| ssLOG_THREAD_SAFE_OUTPUT  | 1             | Use locks to ensure outputs are atomic.                                                               |
-|                           |               | Can be turned off if only running in single thread for performance.                                   |
-| ssLOG_SHOW_THREADS        | 1             | Shows the thread ID for the output                                                                    |
-| ssLOG_LOG_TO_FILE         | 0             | Log to file instead for all logged functions                                                          |
-| ssLOG_USE_ESCAPE_SEQUENCES| 0             | Use escape sequences regardless of it being supported or not                                          |
-| ssLOG_LEVEL               | 3             | Compile time log level (0: NONE, 1: FATAL, 2: ERROR, 3: WARNING, 4: INFO, 5: DEBUG)                   |
-|                           |               | Recommended usage:                                                                                    |
-|                           |               | NONE:     None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC    |
-|                           |               | FATAL:    Indicates program will crash                                                                |
-|                           |               | ERROR:    Indicates program might crash and **likely** to not function correctly                      |
-|                           |               | WARNING:  Indicates program won't crash but **might** not function correctly                          |
-|                           |               | INFO:     Prints program state which **doesn't** spam the log                                         |
-|                           |               | DEBUG:    Prints program state which **does** spam the log                                            |
-| ssLOG_DLL                 | 0             | Indicates if functions/symbols need to be imported/exported. This is set automatically by CMake       |
-| ssLOG_SHARED_EXPORT       | 0             | Indicates if functions are being exported or not. This is set automatically by CMake                  |
-
-----
-
-### 🔜 TODOs:
+## 🔜 TODOs:
 - Add script for running tests in different configurations
