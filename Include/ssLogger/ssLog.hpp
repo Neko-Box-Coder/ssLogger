@@ -839,25 +839,25 @@ inline void Interna_ssLogBenchEnd(  const std::pair<std::string,
     if(ssLogBenchUs > 1000000000)
     {
         Internal_ssLogLine( funcName, fileName, lineNum, 
-                            std::string(": Benchmark ") + benchmarkName + "toke " +
+                            std::string("Benchmark ") + benchmarkName + "took " +
                             std::to_string(ssLogBenchUs / 1000000000.0) + " minutes");
     }
     else if(ssLogBenchUs > 1000000)
     {
         Internal_ssLogLine( funcName, fileName, lineNum, 
-                            std::string(": Benchmark ") + benchmarkName + "toke " +
+                            std::string("Benchmark ") + benchmarkName + "took " +
                             std::to_string(ssLogBenchUs / 1000000.0) + " seconds");
     }
     else if(ssLogBenchUs > 1000)
     {
         Internal_ssLogLine( funcName, fileName, lineNum, 
-                            std::string(": Benchmark ") + benchmarkName + "toke " +
+                            std::string("Benchmark ") + benchmarkName + "took " +
                             std::to_string(ssLogBenchUs / 1000.0) + " milliseconds");
     }
     else
     {
         Internal_ssLogLine( funcName, fileName, lineNum, 
-                            std::string(": Benchmark ") + benchmarkName + "toke " +
+                            std::string("Benchmark ") + benchmarkName + "took " +
                             std::to_string(ssLogBenchUs) + " microseconds");
     }
 }

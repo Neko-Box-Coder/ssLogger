@@ -52,7 +52,7 @@ set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE"
                                                 "INFO" 
                                                 "DEBUG")
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W4;")
 else()
     set(STANDARD_COMPILE_FLAGS  "-Wall"
@@ -183,7 +183,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FILE_NAME=$<BOOL:${ssLOG_SHOW_FILE_NAME}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_LINE_NUM=$<BOOL:${ssLOG_SHOW_LINE_NUM}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_FUNC_NAME=$<BOOL:${ssLOG_SHOW_FUNC_NAME}>)
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_DATE=$<BOOL:${ssLOG_SHOW_DAT}>)
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_DATE=$<BOOL:${ssLOG_SHOW_DATE}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_SHOW_TIME=$<BOOL:${ssLOG_SHOW_TIME}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
