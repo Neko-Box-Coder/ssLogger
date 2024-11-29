@@ -48,6 +48,7 @@ set(ssLOG_USE_ESCAPE_SEQUENCES 0 CACHE BOOL "Use escape sequences regardless of 
 if(WIN32)
     set(ssLOG_USE_WINDOWS_COLOR 0 CACHE BOOL "Force to use Win32 instead of escape sequences")
 endif()
+
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
                                                 "FATAL" 
                                                 "ERROR" 

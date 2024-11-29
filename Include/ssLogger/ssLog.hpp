@@ -150,7 +150,12 @@
     inline std::string Internal_ssLogGetFileName(std::string fileName)
     {
         std::size_t ssLogfound = fileName.find_last_of("/\\");
-        return " in " + fileName.substr(ssLogfound+1);
+
+        #if ssLOG_SHOW_LINE_NUM
+            return "[" + fileName.substr(ssLogfound+1);
+        #else
+            return "[" + fileName.substr(ssLogfound+1) + "] ";
+        #endif
     };
 
     #define INTERNAL_ssLOG_GET_FILE_NAME() Internal_ssLogGetFileName(__FILE__)
@@ -159,7 +164,11 @@
 #endif
 
 #if ssLOG_SHOW_LINE_NUM
-    #define INTERNAL_ssLOG_GET_LINE_NUM() std::string(" on line ") + std::to_string(__LINE__)
+    #if ssLOG_SHOW_FILE_NAME
+        #define INTERNAL_ssLOG_GET_LINE_NUM() std::string(":") + std::to_string(__LINE__) + "] "
+    #else
+        #define INTERNAL_ssLOG_GET_LINE_NUM() std::string("[line ") + std::to_string(__LINE__) + "] "
+    #endif
 #else
     #define INTERNAL_ssLOG_GET_LINE_NUM() ""
 #endif
@@ -168,8 +177,8 @@
 //#define GET_FUNCTION_NAME( ... ) INTERNAL_ssLOG_VA_SELECT( GET_FUNCTION_NAME, __VA_ARGS__ )
 
 #if ssLOG_SHOW_FUNC_NAME
-    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_0() std::string(__func__) + "()"
-    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_1(x) std::string(x) + "()"
+    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_0() std::string("[") + __func__ + "()] "
+    #define INTERNAL_ssLOG_GET_FUNCTION_NAME_1(x) std::string("[") + x + "()] "
     
     #define INTERNAL_ssLOG_GET_CONTENT_NAME(x) x
 #else
@@ -324,7 +333,9 @@ inline bool InternalUnsafe_ssLogIsCacheOutput()
 
 inline void InternalUnsafe_ssLogAppendCurrentCacheOutput(const std::stringstream& localss)
 {
-    ssLogInfoMap.at(std::this_thread::get_id()).CurrentCachedOutput << localss.rdbuf();
+    ssLogInfoMap.at(std::this_thread::get_id())
+                .CurrentCachedOutput.push_back(std::make_pair(  std::chrono::system_clock::now(), 
+                                                                localss.str()));
 }
 
 inline int InternalUnsafe_ssLogGetTargetLogLevel()
@@ -392,7 +403,7 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
     #define INTERNAL_ssLOG_LINE_1(debugText) \
         std::stringstream localssLogString; \
-        localssLogString << ": " << debugText; \
+        localssLogString << debugText; \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
                             INTERNAL_ssLOG_GET_FILE_NAME(), \
                             INTERNAL_ssLOG_GET_LINE_NUM(), \
@@ -476,7 +487,7 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
     #define INTERNAL_ssLOG_LINE_1(debugText) \
         std::stringstream localssLogString; \
-        localssLogString << ": " << debugText; \
+        localssLogString << debugText; \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
                             INTERNAL_ssLOG_GET_FILE_NAME(), \
                             INTERNAL_ssLOG_GET_LINE_NUM(), \
@@ -505,7 +516,8 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
         if(InternalUnsafe_ssLogGetTargetLogLevel() >= currentLogLevel)
         { 
             InternalUnsafe_ssLogEmptyLine();
-            InternalUnsafe_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " BEGINS"));
+            InternalUnsafe_ssLogAppendPrepend(  INTERNAL_ssLOG_GET_CONTENT_NAME(expr) + 
+                                                std::string("BEGINS "));
             InternalUnsafe_ssLogFuncImpl(fileName, lineNum);
         }
 
@@ -540,7 +552,8 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
         InternalUnsafe_ssLogDecrementTabSpace();
         if(InternalUnsafe_ssLogGetTargetLogLevel() >= currentLogLevel)
         {
-            InternalUnsafe_ssLogAppendPrepend(INTERNAL_ssLOG_GET_CONTENT_NAME(expr + " EXITS"));
+            InternalUnsafe_ssLogAppendPrepend(  INTERNAL_ssLOG_GET_CONTENT_NAME(expr) + 
+                                                std::string("EXITS "));
             InternalUnsafe_ssLogFuncImpl(fileName, lineNum);
             InternalUnsafe_ssLogEmptyLine();
         }
@@ -577,7 +590,13 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
             inline ~Internal_ssLogFunctionScope()
             {
-                Internal_ssLogFuncExit(FuncName, FileName, "");
+                Internal_ssLogFuncExit( FuncName, 
+                                        FileName, 
+                                        #if ssLOG_SHOW_LINE_NUM
+                                            FileName.empty() ? "" : "] ");
+                                        #else
+                                            "");
+                                        #endif
             }
     };
     
