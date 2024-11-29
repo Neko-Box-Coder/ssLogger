@@ -215,7 +215,8 @@ pipeline
                         unstash 'source'
                         bat 'dir'
                         bat "mkdir Build"
-                        bat 'cd .\\Build && cmake .. -DssLOG_BUILD_TYPE=STATIC && cmake --build . -j 16'
+                        //2 jobs since it is failing due to memory
+                        bat 'cd .\\Build && cmake .. -DssLOG_BUILD_TYPE=STATIC && cmake --build . -j 2'
                         
                         stash 'windows_static_build'
                     }
