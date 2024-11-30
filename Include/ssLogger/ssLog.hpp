@@ -343,12 +343,18 @@ inline int InternalUnsafe_ssLogGetTargetLogLevel()
     return ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel;
 }
 
+inline std::string InternalUnsafe_ssLogGetThreadVSpace()
+{
+    return std::string().append(InternalUnsafe_ssLogGetThreadId() * ssLOG_THREAD_VSPACE, ' ');
+}
+
 #if ssLOG_SHOW_THREADS
     #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() \
         "[Thread " << InternalUnsafe_ssLogGetThreadId() << "] "
 #else
     #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
 #endif
+
 
 // =======================================================================
 // Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
@@ -382,7 +388,8 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
             INTERNAL_ssLOG_MAP_READ_GUARD();
             if(InternalUnsafe_ssLogGetTargetLogLevel() >= InternalUnsafe_ssLogGetCurrentLogLevel())
             {
-                INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
+                                            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
                                             INTERNAL_ssLOG_GET_DATE_TIME() <<
                                             INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() <<
                                             InternalUnsafe_ssLogGetPrepend() <<
@@ -433,7 +440,8 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
     inline void InternalUnsafe_ssLogEmptyLine()
     {
-        INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() << 
+        INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
+                                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() << 
                                     INTERNAL_ssLOG_GET_DATE_TIME() << 
                                     Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace())); 
     }
@@ -450,7 +458,8 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
             INTERNAL_ssLOG_MAP_READ_GUARD();
             if(InternalUnsafe_ssLogGetTargetLogLevel() >= InternalUnsafe_ssLogGetCurrentLogLevel())
             {
-                INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
+                                            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
                                             INTERNAL_ssLOG_GET_DATE_TIME() <<
                                             Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), 
                                                                     true) <<
@@ -468,7 +477,8 @@ std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
     inline void InternalUnsafe_ssLogFuncImpl(std::string fileName, std::string lineNum)
     {
-        INTERNAL_UNSAFE_ssLOG_BASE( INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+        INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
+                                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
                                     INTERNAL_ssLOG_GET_DATE_TIME() <<
                                     Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), 
                                                             true) <<

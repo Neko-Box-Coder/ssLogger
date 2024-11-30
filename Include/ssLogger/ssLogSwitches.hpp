@@ -62,4 +62,8 @@
     #ifndef ssLOG_USE_WINDOWS_COLOR
         #define ssLOG_USE_WINDOWS_COLOR 0
     #endif
+    
+    #ifndef ssLOG_THREAD_VSPACE
+        #define ssLOG_THREAD_VSPACE 4
+    #endif
 #endif

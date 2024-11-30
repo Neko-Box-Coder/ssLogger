@@ -132,7 +132,7 @@ ssLOG_WARNING("This warning will be cached");
 | ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
 | ssLOG_LOG_TO_FILE | 0 | Enable file logging |
-| ssLOG_SHOW_DATE | 1 | Show date in logs |
+| ssLOG_SHOW_DATE | 0 | Show date in logs |
 | ssLOG_SHOW_TIME | 1 | Show time in logs |
 
 > 📝 For a complete list of options, see [Configuration Details](#configuration-details) below.
@@ -171,7 +171,7 @@ ssLOG_CONTENT_WARNING( RiskyOperation() );
 | ssLOG_SHOW_FILE_NAME | 1 | Show file name (⚠️ contains full path) |
 | ssLOG_SHOW_LINE_NUM | 1 | Show line numbers |
 | ssLOG_SHOW_FUNC_NAME | 1 | Show function names |
-| ssLOG_SHOW_DATE | 1 | Show log date |
+| ssLOG_SHOW_DATE | 0 | Show log date |
 | ssLOG_SHOW_TIME | 1 | Show log time |
 | ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
 | ssLOG_SHOW_THREADS | 1 | Show thread IDs |
@@ -179,6 +179,7 @@ ssLOG_CONTENT_WARNING( RiskyOperation() );
 | ssLOG_USE_ESCAPE_SEQUENCES | 0 | Force use of escape sequences |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE, 1:FATAL, 2:ERROR, 3:WARNING, 4:INFO, 5:DEBUG) |
 | ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
+| ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |
 
 </details>
 

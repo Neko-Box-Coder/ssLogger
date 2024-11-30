@@ -49,6 +49,8 @@ if(WIN32)
     set(ssLOG_USE_WINDOWS_COLOR 0 CACHE BOOL "Force to use Win32 instead of escape sequences")
 endif()
 
+set(ssLOG_THREAD_VSPACE 4 CACHE INTERNAL "Vertical space between individual threads outputs")
+
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
                                                 "FATAL" 
                                                 "ERROR" 
@@ -106,6 +108,8 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_ESCAPE_SEQUENCES=$<BOOL:${ssLOG_USE_ESCAPE_SEQUENCES}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
+    
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
@@ -193,6 +197,9 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_SAFE_OUTPUT=$<BOOL:${ssLOG_THREAD_SAFE_OUTPUT}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LOG_TO_FILE=$<BOOL:${ssLOG_LOG_TO_FILE}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_ESCAPE_SEQUENCES=$<BOOL:${ssLOG_USE_ESCAPE_SEQUENCES}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
+    
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
