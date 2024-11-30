@@ -366,9 +366,9 @@ inline std::string InternalUnsafe_ssLogGetThreadVSpace()
 #define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
 
 template <typename CharT>
-std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream);
+std::basic_ostream<CharT>& Internal_ssLogApplyLogUnsafe(std::basic_ostream<CharT>& stream);
 
-#define INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() ApplyLogUnsafe
+#define INTERNAL_UNSAFE_ssLOG_GET_LOG_LEVEL() Internal_ssLogApplyLogUnsafe
 
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... ) do{}while(0)
@@ -937,7 +937,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 
 #if ssLOG_ASCII != 1 && ssLOG_LOG_TO_FILE != 1
     template <typename CharT>
-    inline std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream)
+    inline std::basic_ostream<CharT>& Internal_ssLogApplyLogUnsafe(std::basic_ostream<CharT>& stream)
     {
         switch(InternalUnsafe_ssLogGetCurrentLogLevel())
         {
@@ -998,7 +998,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
     }
 #else
     template <typename CharT>
-    inline std::basic_ostream<CharT>& ApplyLogUnsafe(std::basic_ostream<CharT>& stream)
+    inline std::basic_ostream<CharT>& Internal_ssLogApplyLogUnsafe(std::basic_ostream<CharT>& stream)
     {
         switch(InternalUnsafe_ssLogGetCurrentLogLevel())
         {
