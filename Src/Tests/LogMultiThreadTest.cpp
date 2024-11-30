@@ -139,6 +139,17 @@ int main()
         ssLOG_OUTPUT_ALL_CACHE();
     }
     
+    {
+        ssLOG_LINE("========================================");
+        ssLOG_LINE("6. Manual Entry and Exit");
+        ssLOG_LINE("========================================");
+        
+        ssLOG_FUNC_ENTRY("Process");
+        ssLOG_LINE("Processing amount: " << 100);
+        ssLOG_ERROR("Invalid amount");
+        ssLOG_FUNC_EXIT("Process");
+    }
+
     ssLOG_BENCH_END_ERROR(benchLevelStart);
     ssLOG_BENCH_END(namedBenchStart);
     ssLOG_BENCH_END(benchStart);

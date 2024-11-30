@@ -139,6 +139,53 @@ ssLOG_WARNING("This warning will be cached");
 
 ## 🔍 Advanced Features
 
+### Raw Output and Custom Implementation
+```cpp
+//Basic output without formatting and thread safe checks
+//Expects stream operations (<<)
+ssLOG_BASE("Hello" << 42);  
+
+//Custom implementation example
+static std::mutex logMutex;
+static std::ofstream logFile("app.log", std::ios::app);
+
+void my_custom_log(const std::string& message) 
+{
+    std::lock_guard<std::mutex> lock(logMutex);
+    std::cout << "[Custom] " << message << std::endl;
+    logFile << "[Custom] " << message << std::endl;
+}
+
+#undef ssLOG_BASE
+#define ssLOG_BASE(message) \
+    do { \
+        std::stringstream ss; \
+        ss << message; \
+        my_custom_log(ss.str()); \
+    } while(0)
+```
+
+### Precise Function Exit Log
+Using `ssLOG_FUNC_ENTRY` and `ssLOG_FUNC_EXIT` will give you the line number of the exit log.
+
+```cpp
+void ProcessTransaction(int amount) 
+{
+    ssLOG_FUNC_ENTRY();
+    ssLOG_LINE("Processing amount: " << amount);
+    
+    if(amount <= 0)
+    {
+        ssLOG_ERROR("Invalid amount");
+        ssLOG_FUNC_EXIT();
+        return;
+    }
+    
+    //...processing...
+    ssLOG_FUNC_EXIT();
+}
+```
+
 ### Benchmarking
 ```cpp
 auto benchmark = ssLOG_BENCH_START("Operation");
