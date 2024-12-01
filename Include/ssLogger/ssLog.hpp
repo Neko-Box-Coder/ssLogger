@@ -959,7 +959,9 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 #endif
 
 #if ssLOG_USE_ESCAPE_SEQUENCES || !ssLOG_USE_WINDOWS_COLOR
-    #define TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES
+    #if !defined(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
+        #define TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES
+    #endif
 #endif
 
 #include "./termcolor.hpp"
