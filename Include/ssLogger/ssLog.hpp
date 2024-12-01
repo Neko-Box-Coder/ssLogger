@@ -784,9 +784,38 @@ inline void Internal_ssLogOutputAllCache()
     }
 }
 
+inline void Internal_ssLogResetAllThreadInfo()
+{
+    std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+    while(ssLogReadCount > 0) {}    //Wait until all reads are done
+    
+    //Remove only threads that have no remaining information
+    int maxThreadID = 0;
+    for(auto it = ssLogInfoMap.begin(); it != ssLogInfoMap.end();)
+    {
+        const ssLogThreadInfo& info = it->second;
+        bool hasInfo =  !info.CurrentCachedOutput.empty() ||
+                        !info.FuncNameStack.empty() ||
+                        !info.LogLevelStack.empty() ||
+                        info.TabSpace != 0;
+                       
+        if(!hasInfo)
+            it = ssLogInfoMap.erase(it);
+        else
+        {
+            maxThreadID = maxThreadID > info.ID ? maxThreadID : info.ID;
+            ++it;
+        }
+    }
+    
+    ssLogNewThreadID = maxThreadID + 1;    
+}
+
 #define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
 
 #define ssLOG_OUTPUT_ALL_CACHE_GROUPED() Internal_ssLogOutputAllCacheGrouped()
+
+#define ssLOG_RESET_ALL_THREAD_INFO() Internal_ssLogResetAllThreadInfo()
 
 // =======================================================================
 // Macros for ssLOG_BENCH_START and ssLOG_BENCH_END

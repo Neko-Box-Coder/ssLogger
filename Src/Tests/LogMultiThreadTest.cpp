@@ -74,6 +74,8 @@ int main()
         #else
             ssLOG_LINE("NO ssLOG_THREAD_SAFE_OUTPUT");
         #endif
+
+        ssLOG_RESET_ALL_THREAD_INFO();
     }
     
     {
@@ -91,6 +93,7 @@ int main()
         
         ssLOG_DISABLE_CACHE_OUTPUT();
         ssLOG_OUTPUT_ALL_CACHE();
+        ssLOG_RESET_ALL_THREAD_INFO();
     }
     
     {
@@ -108,6 +111,7 @@ int main()
         
         ssLOG_OUTPUT_ALL_CACHE();
         ssLOG_DISABLE_CACHE_OUTPUT();
+        ssLOG_RESET_ALL_THREAD_INFO();
     }
     
     {
@@ -122,6 +126,7 @@ int main()
         b.join();
 
         ssLOG_OUTPUT_ALL_CACHE();
+        ssLOG_RESET_ALL_THREAD_INFO();
     }
     
     
@@ -137,6 +142,7 @@ int main()
         b.join();
         
         ssLOG_OUTPUT_ALL_CACHE();
+        ssLOG_RESET_ALL_THREAD_INFO();
     }
     
     {
@@ -148,12 +154,13 @@ int main()
         ssLOG_LINE("Processing amount: " << 100);
         ssLOG_ERROR("Invalid amount");
         ssLOG_FUNC_EXIT("Process");
+        ssLOG_RESET_ALL_THREAD_INFO();
     }
 
     ssLOG_BENCH_END_ERROR(benchLevelStart);
     ssLOG_BENCH_END(namedBenchStart);
     ssLOG_BENCH_END(benchStart);
-
+    ssLOG_RESET_ALL_THREAD_INFO();
 
     return 0;
 }

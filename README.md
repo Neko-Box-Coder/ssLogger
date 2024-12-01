@@ -112,6 +112,9 @@ ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();  //Disable for current thread
 ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();   //Enable for new threads
 ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS();  //Disable for new threads
 
+//Reset all thread information
+ssLOG_RESET_ALL_THREAD_INFO();   //Clear all thread info and reset thread ID counter
+
 //Output cached logs
 ssLOG_OUTPUT_ALL_CACHE();           //Output all cached logs
 ssLOG_OUTPUT_ALL_CACHE_GROUPED();   //Output grouped by thread
