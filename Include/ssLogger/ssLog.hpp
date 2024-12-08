@@ -301,6 +301,8 @@ inline std::stack<int>& InternalUnsafe_ssLogGetLogLevelStack()
 
 inline void Internal_ssLogSetCacheOutput(bool cache)
 {
+    Internal_ssLogCheckNewThread();
+    
     //Accessing map entry
     INTERNAL_ssLOG_MAP_READ_GUARD();
     ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput = cache;
@@ -309,6 +311,15 @@ inline void Internal_ssLogSetCacheOutput(bool cache)
 inline bool InternalUnsafe_ssLogIsCacheOutput()
 {
     return ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput;
+}
+
+inline bool Internal_ssLogIsCacheOutput()
+{
+    Internal_ssLogCheckNewThread();
+    
+    //Accessing map entry
+    INTERNAL_ssLOG_MAP_READ_GUARD();
+    return InternalUnsafe_ssLogIsCacheOutput();
 }
 
 inline void InternalUnsafe_ssLogAppendCurrentCacheOutput(const std::stringstream& localss)
@@ -697,19 +708,11 @@ inline void Internal_ssLogSetAllCacheOutput(bool cache)
 
 #define ssLOG_DISABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(false)
 
-#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        Internal_ssLogSetCacheOutput(true); \
-    } while(0)
+#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogSetCacheOutput(true)
 
-#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() \
-    do \
-    { \
-        Internal_ssLogCheckNewThread(); \
-        Internal_ssLogSetCacheOutput(false); \
-    } while(0)
+#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogSetCacheOutput(false)
+
+#define ssLOG_IS_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogIsCacheOutput()
 
 #define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(true)
 
@@ -936,8 +939,18 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
     ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel = targetLevel;
 }
 
+inline int Internal_ssLogGetCurrentThreadTargetLevel()
+{
+    Internal_ssLogCheckNewThread();
+    //Reading map
+    INTERNAL_ssLOG_MAP_READ_GUARD();
+    return InternalUnsafe_ssLogGetTargetLogLevel();
+}
+
 #define ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(targetLevel) \
     Internal_ssLogSetCurrentThreadTargetLevel(targetLevel)
+
+#define ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL() Internal_ssLogGetCurrentThreadTargetLevel()
 
 // =======================================================================
 // Macros for output level
@@ -948,6 +961,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 #define ssLOG_LEVEL_WARNING 3
 #define ssLOG_LEVEL_ERROR 2
 #define ssLOG_LEVEL_FATAL 1
+#define ssLOG_LEVEL_NONE 0
 
 #include <cstdint>
 #ifdef _WIN32

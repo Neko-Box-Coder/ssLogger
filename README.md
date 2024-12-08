@@ -72,6 +72,9 @@ ssLOG_DEBUG("Debug info");
 
 //Set runtime log level for current thread
 ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+
+//Get current thread's target log level
+int level = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
 ```
 
 ### Function Call Tracking
@@ -107,6 +110,8 @@ ssLOG_DISABLE_CACHE_OUTPUT();  //Disable for all threads
 //Thread-specific cache control
 ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();   //Enable for current thread
 ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();  //Disable for current thread
+
+bool isCaching = ssLOG_IS_CACHE_OUTPUT_FOR_CURRENT_THREAD();  //Check if current thread is caching
 
 //New thread cache control
 ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();   //Enable for new threads
