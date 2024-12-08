@@ -65,6 +65,17 @@ void CleanupApp()
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
+std::string FuncThatReturnsError()
+{
+    ssLOG_FUNC();
+    
+    ssLOG_LINE("Doing something");
+    
+    ssLOG_WARNING("Something occured");
+    
+    return "Some error";
+}
+
 int main()
 {
     ssLOG_FUNC();
@@ -93,6 +104,8 @@ int main()
     };
 
     userDataHandler();
+    
+    ssLOG_ERROR(FuncThatReturnsError());
 
     CleanupApp();
 

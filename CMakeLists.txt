@@ -245,7 +245,11 @@ if(${ssLOG_BUILD_TESTS})
             # Get the file name without path and extension
             get_filename_component(EXECUTABLE_NAME "${CUR_SOURCE_PATH}" NAME_WE)
 
-            # if(NOT "${EXECUTABLE_NAME}" STREQUAL "LogMultiThreadTest")
+            # if("${EXECUTABLE_NAME}" STREQUAL "LogMultiThreadTest")
+            #     continue()
+            # endif()
+            
+            # if("${EXECUTABLE_NAME}" STREQUAL "LogLevelTest")
             #     continue()
             # endif()
 

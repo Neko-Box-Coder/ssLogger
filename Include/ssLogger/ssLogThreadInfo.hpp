@@ -16,7 +16,6 @@ struct ssLogThreadInfo
     bool CacheOutput = false;
     std::vector<std::pair<std::chrono::system_clock::time_point, std::string>> CurrentCachedOutput;
     int ID;
-    int ssCurrentLogLevel = 0;
     #ifdef ssLOG_LEVEL
         int ssTargetLogLevel = ssLOG_LEVEL;
     #else
