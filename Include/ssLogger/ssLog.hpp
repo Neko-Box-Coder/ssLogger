@@ -751,7 +751,7 @@ inline void Internal_ssLogOutputAllCacheGrouped()
             if(it->second.CurrentCachedOutput.empty())
                 continue;
 
-            for(int i = 0; i < it->second.CurrentCachedOutput.size(); i++)
+            for(int i = 0; i < (int)it->second.CurrentCachedOutput.size(); i++)
                 ssLOG_BASE(it->second.CurrentCachedOutput[i].second);
 
             it->second.CurrentCachedOutput.clear();

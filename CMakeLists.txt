@@ -62,13 +62,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W4;")
 else()
     set(STANDARD_COMPILE_FLAGS  "-Wall"
-                                "-Wno-return-local-addr"
-                                "-Wno-sign-compare"
+                                #"-Wno-return-local-addr"
+                                #"-Wno-sign-compare"
                                 #"-Wno-unused-variable"
                                 #"-Wno-unused-but-set-variable"
-                                "-Wno-unused-parameter"
-                                "-Wno-switch"
-                                "-Wno-gnu-zero-variadic-macro-arguments"
+                                #"-Wno-unused-parameter"
+                                #"-Wno-switch"
+                                #"-Wno-gnu-zero-variadic-macro-arguments"
                                 "-Wextra"
                                 "-pedantic"
                                 "-Werror")
@@ -143,7 +143,7 @@ else()
         target_compile_definitions(ssLogger INTERFACE _CRT_SECURE_NO_WARNINGS)
     endif()
     
-    target_compile_options(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
+    # target_compile_options(ssLogger INTERFACE ${STANDARD_COMPILE_FLAGS})
 endif()
 
 if(${ssLOG_BUILD_TESTS})
