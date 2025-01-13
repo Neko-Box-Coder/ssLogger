@@ -9,6 +9,7 @@
 
 void Thread_Inner_Work(int threadIndex, int x)
 {
+    (void)threadIndex;
     ssLOG_LINE("Thread " << threadIndex << " Working...");
     std::this_thread::sleep_for(std::chrono::milliseconds(x));
 }

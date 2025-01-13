@@ -122,22 +122,25 @@
             Internal_ssLogBase(localss); \
         } while(0)
     
+    #define ssLOG_FLUSH() \
+        if(ssLogFileStream.good() && ssLogFileStream.is_open()) \
+            ssLogFileStream.flush()
 #else
     #include <iostream>
-    
-    inline void Internal_ssLogBase(const std::stringstream& localss)
-    {
-        std::cout << localss.rdbuf() << ssLOG_ENDL;
-    }
     
     #define ssLOG_BASE(x) \
         do{ \
             std::cout << x << ssLOG_ENDL; \
         } while(0)
     
+    inline void Internal_ssLogBase(const std::stringstream& localss)
+    {
+        ssLOG_BASE(localss.rdbuf());
+    }
+    
+    #define ssLOG_FLUSH() std::cout << std::flush;
 #endif //ssLOG_LOG_TO_FILE
 
-#define ssLOG_FLUSH() ssLOG_BASE(std::flush)
 
 #define INTERNAL_UNSAFE_ssLOG_BASE(x) \
     do \

@@ -164,6 +164,12 @@ void my_custom_log(const std::string& message)
     logFile << "[Custom] " << message << std::endl;
 }
 
+void my_custom_flush()
+{
+    std::lock_guard<std::mutex> lock(logMutex);
+    logFile.flush();
+}
+
 #undef ssLOG_BASE
 #define ssLOG_BASE(message) \
     do { \
@@ -171,6 +177,9 @@ void my_custom_log(const std::string& message)
         ss << message; \
         my_custom_log(ss.str()); \
     } while(0)
+
+#undef ssLOG_FLUSH
+#define ssLOG_FLUSH() my_custom_flush()
 ```
 
 ### Precise Function Exit Log
