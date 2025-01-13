@@ -147,18 +147,48 @@
 #define ssLOG_SIMPLE(x) ssLOG_BASE(x)
 
 #if ssLOG_SHOW_FILE_NAME
-    inline std::string Internal_ssLogGetFileName(std::string fileName)
+    #if __cplusplus >= 202002L
+        consteval
+    #elif __cplusplus >= 201703L
+        constexpr
+    #else
+        inline
+    #endif
+    const char* Internal_ssLogGetFileName(const char* path)
     {
-        std::size_t ssLogfound = fileName.find_last_of("/\\");
-
-        #if ssLOG_SHOW_LINE_NUM
-            return "[" + fileName.substr(ssLogfound+1);
-        #else
-            return "[" + fileName.substr(ssLogfound+1) + "] ";
-        #endif
+        const char* result = path;
+        while(*path != '\0')
+        {
+            if(*path == '/' || *path == '\\')
+                result = ++path;
+            else
+                ++path;
+        }
+        
+        return result;
     };
 
-    #define INTERNAL_ssLOG_GET_FILE_NAME() Internal_ssLogGetFileName(__FILE__)
+    #if __cplusplus >= 201703L
+        #define INTERNAL_ssLOG_CONST constexpr const
+    #else
+        #define INTERNAL_ssLOG_CONST const
+    #endif
+
+    #if ssLOG_SHOW_LINE_NUM
+        #define INTERNAL_ssLOG_GET_FILE_NAME() \
+            []() \
+            { \
+                INTERNAL_ssLOG_CONST char* constFilename = Internal_ssLogGetFileName(__FILE__); \
+                return std::string("[") + constFilename; \
+            }()
+    #else
+        #define INTERNAL_ssLOG_GET_FILE_NAME() \
+            []() \
+            { \
+                INTERNAL_ssLOG_CONST char* constFilename = Internal_ssLogGetFileName(__FILE__); \
+                return std::string("[") + constFilename + "] "; \
+            }()
+    #endif
 #else
     #define INTERNAL_ssLOG_GET_FILE_NAME() ""
 #endif
@@ -345,7 +375,6 @@ inline std::string InternalUnsafe_ssLogGetThreadVSpace()
 #else
     #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
 #endif
-
 
 // =======================================================================
 // Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
