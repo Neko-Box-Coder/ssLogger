@@ -48,8 +48,9 @@ if(WIN32)
 endif()
 
 set(ssLOG_THREAD_VSPACE "4" CACHE STRING "Vertical space between individual threads outputs")
-set(ssLOG_IMMEDIATE_FLUSH OFF CACHE BOOL "Flush the current log immediately")
-set(ssLOG_IMPLICIT_CXX_STANDARD ON CACHE BOOL "Do not set to c++11 explicitly")
+set(ssLOG_IMMEDIATE_FLUSH 0 CACHE BOOL "Flush the current log immediately")
+set(ssLOG_IMPLICIT_CXX_STANDARD 1 CACHE BOOL "Do not set to c++11 explicitly")
+set(ssLOG_CALL_STACK_ONLY 0 CACHE BOOL "Only show function call stack logs, other logs will be ignored")
 
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
                                                 "FATAL" 
@@ -114,6 +115,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
     target_compile_definitions(ssLogger PUBLIC ssLOG_IMMEDIATE_FLUSH=${ssLOG_IMMEDIATE_FLUSH})
+    target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK_ONLY=${ssLOG_CALL_STACK_ONLY})
     
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
@@ -209,6 +211,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_IMMEDIATE_FLUSH=${ssLOG_IMMEDIATE_FLUSH})
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK_ONLY=${ssLOG_CALL_STACK_ONLY})
     
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 

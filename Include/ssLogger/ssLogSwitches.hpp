@@ -70,4 +70,8 @@
     #ifndef ssLOG_IMMEDIATE_FLUSH
         #define ssLOG_IMMEDIATE_FLUSH 0
     #endif
+    
+    #ifndef ssLOG_CALL_STACK_ONLY
+        #define ssLOG_CALL_STACK_ONLY 0
+    #endif
 #endif

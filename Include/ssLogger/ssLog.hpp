@@ -396,7 +396,11 @@ inline std::string InternalUnsafe_ssLogGetThreadVSpace()
 // Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
 // =======================================================================
 
-#define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
+#if !ssLOG_CALL_STACK_ONLY
+    #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
+#else
+    #define ssLOG_LINE(...) do {} while(false)
+#endif
 
 //NOTE: ssLOG_CONTENT replaces ssLOG_FUNC_CONTENT
 #define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
@@ -618,7 +622,11 @@ class Internal_ssLogLevelApplier
     #define INERNAL_ssLOG_FUNC_LEVELED( ... ) \
         INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_LEVELED_IMPL, __VA_ARGS__ )
 
-    #define ssLOG_FUNC_CONTENT(expr) INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, 0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT(expr) INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, 0)
+    #else
+        #define ssLOG_FUNC_CONTENT(expr) expr
+    #endif
 
     #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) \
         std::string ssLogLimitedExpr = INTERNAL_ssLOG_LIMIT_EXPR(expr); \
@@ -723,13 +731,16 @@ class Internal_ssLogLevelApplier
 // Macros for ssLOG_PREPEND
 // =======================================================================
 
-#define ssLOG_PREPEND(x) \
-    do{ \
-        std::stringstream localssLogString; \
-        localssLogString << x; \
-        Internal_ssLogAppendPrepend(localssLogString); \
-    } while(0)
-
+#if !ssLOG_CALL_STACK_ONLY
+    #define ssLOG_PREPEND(x) \
+        do{ \
+            std::stringstream localssLogString; \
+            localssLogString << x; \
+            Internal_ssLogAppendPrepend(localssLogString); \
+        } while(0)
+#else
+    #define ssLOG_PREPEND(x) do{} while(0)
+#endif
 
 // =======================================================================
 // Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, 
@@ -887,11 +898,15 @@ inline void Internal_ssLogResetAllThreadInfo()
 // Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
 // =======================================================================
 
-#define ssLOG_BENCH_START( ... ) \
-    INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
-
-#define ssLOG_BENCH_END( ... ) \
-    do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
+#if !ssLOG_CALL_STACK_ONLY
+    #define ssLOG_BENCH_START( ... ) \
+        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
+    #define ssLOG_BENCH_END( ... ) \
+        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
+#else
+    #define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_BENCH_END( ... ) do{} while(false)
+#endif
 
 #define INTERNAL_ssLOG_BENCH_START_0() INTERNAL_ssLOG_BENCH_START_1("")
 
@@ -1118,8 +1133,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
 #define INTERNAL_ssLOG_EXECUTE_COMMAND_2(a, command) command
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
-    #define ssLOG_FATAL(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FATAL, __VA_ARGS__ ) } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FATAL(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FATAL, __VA_ARGS__ ) } while(0)
+    #else
+        #define ssLOG_FATAL(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_FATAL_0() \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
@@ -1136,8 +1155,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
                             localssLogString.str(), \
                             ssLOG_LEVEL_FATAL);
     
-    #define ssLOG_FUNC_CONTENT_FATAL(expr) \
-        INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_FATAL)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT_FATAL(expr) \
+            INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_FATAL)
+    #else
+        #define ssLOG_FUNC_CONTENT_FATAL(expr) expr
+    #endif
     
     #define ssLOG_FUNC_ENTRY_FATAL(...) \
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY_FATAL, __VA_ARGS__ ) } while(0)
@@ -1166,8 +1189,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
     #define INTERNAL_ssLOG_FUNC_FATAL_1(customFuncName) \
         INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, ssLOG_LEVEL_FATAL)
     
-    #define ssLOG_BENCH_START_FATAL(...) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_FATAL, __VA_ARGS__ )
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_START_FATAL(...) \
+            INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_FATAL, __VA_ARGS__ )
+    #else
+        #define ssLOG_BENCH_START_FATAL(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #endif
     
     #define INTERNAL_ssLOG_BENCH_START_FATAL_0() \
         INTERNAL_ssLOG_BENCH_START_FATAL_1("")
@@ -1176,8 +1203,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, ssLOG_LEVEL_FATAL)
     
-    #define ssLOG_BENCH_END_FATAL(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_FATAL, __VA_ARGS__ ); } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_END_FATAL(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_FATAL, __VA_ARGS__ ); } while(0)
+    #else
+        #define ssLOG_BENCH_END_FATAL(...) do{} while(false)
+    #endif
     
     #define INTERNAL_ssLOG_BENCH_END_FATAL_0() \
         static_assert(false, "ssLOG_BENCH_END_FATAL must accept 1 argument")

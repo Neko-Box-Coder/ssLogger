@@ -251,6 +251,7 @@ ssLOG_FLUSH();
 | ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
 | ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |
 | ssLOG_IMMEDIATE_FLUSH | 0 | Flush the log output immediately for each log (⚠️ may affect performance) |
+| ssLOG_CALL_STACK_ONLY | 0 | Only show function call stack logs, other logs will be ignored |
 
 </details>
 
