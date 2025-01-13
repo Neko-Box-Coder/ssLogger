@@ -4,8 +4,6 @@ if(TARGET ssLogger)
     return()
 endif()
 
-set (CMAKE_CXX_STANDARD 11)
-
 # For Clang to do parsing
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -50,6 +48,7 @@ if(WIN32)
 endif()
 
 set(ssLOG_THREAD_VSPACE "4" CACHE STRING "Vertical space between individual threads outputs")
+set(ssLOG_IMPLICIT_CXX_STANDARD ON CACHE BOOL "Do not set to c++11 explicitly")
 
 set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
                                                 "FATAL" 
@@ -93,6 +92,10 @@ if("${ssLOG_USE_SOURCE}")
         add_library(ssLogger OBJECT
         "${CMAKE_CURRENT_SOURCE_DIR}/Src/ssLogInit.cpp"
         )
+    endif()
+    
+    if(NOT ssLOG_IMPLICIT_CXX_STANDARD)
+        set_property(TARGET ssLogger PROPERTY CXX_STANDARD 11)
     endif()
 
     target_include_directories(ssLogger PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include")
@@ -184,6 +187,10 @@ if(${ssLOG_BUILD_TESTS})
         )
     endif()
     
+    if(NOT ssLOG_IMPLICIT_CXX_STANDARD)
+        set_property(TARGET ssLogger_SRC PROPERTY CXX_STANDARD 11)
+    endif()
+    
     # target_sources(ssLogger_SRC PUBLIC "${PROJECT_SOURCE_DIR}/ssLogInit.cpp")
     target_include_directories(ssLogger_SRC PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/Include")
 
@@ -260,6 +267,7 @@ if(${ssLOG_BUILD_TESTS})
 
             # Add executable
             add_executable("${EXECUTABLE_NAME}${exeSuffix}" "${CUR_SOURCE_PATH}")
+            set_property(TARGET ${EXECUTABLE_NAME}${exeSuffix} PROPERTY CXX_STANDARD 11)
 
             target_link_libraries("${EXECUTABLE_NAME}${exeSuffix}" PUBLIC ${targetsToLink})
 

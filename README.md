@@ -21,7 +21,7 @@ A lightweight, flexible C++11 logging library with call stack tracking and multi
 ![demo2](./Resources/demo2.gif)
 
 ### Thread-Safe Logging
-![demo3](./Resources/demo3.gif)
+![demo3](./Resources/MultiThread.png)
 
 ### Log Levels
 ![logLevel](./Resources/logLevels.png)
