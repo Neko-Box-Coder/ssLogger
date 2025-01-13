@@ -66,4 +66,8 @@
     #ifndef ssLOG_THREAD_VSPACE
         #define ssLOG_THREAD_VSPACE 4
     #endif
+    
+    #ifndef ssLOG_IMMEDIATE_FLUSH
+        #define ssLOG_IMMEDIATE_FLUSH 0
+    #endif
 #endif

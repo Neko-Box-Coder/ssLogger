@@ -214,6 +214,12 @@ ssLOG_CONTENT( ProcessData(userID, username, password) );
 ssLOG_CONTENT_WARNING( RiskyOperation() );
 ```
 
+### Log Flush
+Flushes the output buffer to the console or file.
+```cpp
+ssLOG_FLUSH();
+```
+
 ## 📚 Configuration Details
 
 <details>
@@ -235,6 +241,7 @@ ssLOG_CONTENT_WARNING( RiskyOperation() );
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE, 1:FATAL, 2:ERROR, 3:WARNING, 4:INFO, 5:DEBUG) |
 | ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
 | ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |
+| ssLOG_IMMEDIATE_FLUSH | 0 | Flush the log output immediately for each log (⚠️ may affect performance) |
 
 </details>
 

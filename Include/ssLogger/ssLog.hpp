@@ -78,6 +78,16 @@
     #define INTERNAL_ssLOG_UNLOCK_OUTPUT()
 #endif //ssLOG_THREAD_SAFE_OUTPUT
 
+
+#if ssLOG_IMMEDIATE_FLUSH
+    #define ssLOG_ENDL std::endl
+#else
+    #define ssLOG_ENDL "\n"
+#endif //ssLOG_IMMEDIATE_FLUSH
+
+// =======================================================================
+// Macros for ssLOG_BASE and ssLOG_FLUSH
+// =======================================================================
 #if ssLOG_LOG_TO_FILE
     #include <fstream>
     #include <ctime>
@@ -102,7 +112,7 @@
             if(!ssLogFileStream.good())
                 return;
         }
-        ssLogFileStream << localss.rdbuf() << std::endl;
+        ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
     }
 
     #define ssLOG_BASE(x) \
@@ -117,14 +127,17 @@
     
     inline void Internal_ssLogBase(const std::stringstream& localss)
     {
-        std::cout << localss.rdbuf() << std::endl;
+        std::cout << localss.rdbuf() << ssLOG_ENDL;
     }
     
     #define ssLOG_BASE(x) \
         do{ \
-            std::cout << x << std::endl; \
+            std::cout << x << ssLOG_ENDL; \
         } while(0)
+    
 #endif //ssLOG_LOG_TO_FILE
+
+#define ssLOG_FLUSH() ssLOG_BASE(std::flush)
 
 #define INTERNAL_UNSAFE_ssLOG_BASE(x) \
     do \
@@ -786,6 +799,8 @@ inline void Internal_ssLogOutputAllCacheGrouped()
             it->second.CurrentCachedOutput.clear();
         }
         
+        ssLOG_FLUSH();
+        
         INTERNAL_ssLOG_UNLOCK_OUTPUT();
     }
 }
@@ -826,6 +841,7 @@ inline void Internal_ssLogOutputAllCache()
             ss << output.second << "\n";
             
         ssLOG_BASE(ss.str());
+        ssLOG_FLUSH();
         
         INTERNAL_ssLOG_UNLOCK_OUTPUT();
     }
