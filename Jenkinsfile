@@ -232,7 +232,7 @@ pipeline
                         unstash 'source'
                         bat 'dir'
                         bat "mkdir Build"
-                        bat 'cd .\\Build && cmake .. -DssLOG_BUILD_TYPE=SHARED && cmake --build . -j 16'
+                        bat 'cd .\\Build && cmake .. -DssLOG_BUILD_TYPE=SHARED && cmake --build . -j 16 -- -verbosity:detailed'
                         
                         stash 'windows_shared_build'
                     }
