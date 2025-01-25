@@ -1232,8 +1232,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
-    #define ssLOG_ERROR(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_ERROR, __VA_ARGS__ ) } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_ERROR(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_ERROR, __VA_ARGS__ ) } while(0)
+    #else
+        #define ssLOG_ERROR(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_ERROR_0() \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
@@ -1250,8 +1254,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
                             localssLogString.str(), \
                             ssLOG_LEVEL_ERROR);
 
-    #define ssLOG_FUNC_CONTENT_ERROR(expr) \
-        INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_ERROR)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT_ERROR(expr) \
+            INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_ERROR)
+    #else
+        #define ssLOG_FUNC_CONTENT_ERROR(expr) expr
+    #endif
 
     #define ssLOG_FUNC_ENTRY_ERROR(...) \
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY_ERROR, __VA_ARGS__ ) } while(0)
@@ -1280,8 +1288,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
     #define INTERNAL_ssLOG_FUNC_ERROR_1(customFuncName) \
         INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, ssLOG_LEVEL_ERROR)
 
-    #define ssLOG_BENCH_START_ERROR(...) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_ERROR, __VA_ARGS__ )
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_START_ERROR(...) \
+            INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_ERROR, __VA_ARGS__ )
+    #else
+        #define ssLOG_BENCH_START_ERROR(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_START_ERROR_0() \
         INTERNAL_ssLOG_BENCH_START_ERROR_1("")
@@ -1290,8 +1302,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, ssLOG_LEVEL_ERROR)
 
-    #define ssLOG_BENCH_END_ERROR(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_ERROR, __VA_ARGS__ ); } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_END_ERROR(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_ERROR, __VA_ARGS__ ); } while(0)
+    #else
+        #define ssLOG_BENCH_END_ERROR(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_END_ERROR_0() \
         static_assert(false, "ssLOG_BENCH_END_ERROR must accept 1 argument")
@@ -1315,8 +1331,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
-    #define ssLOG_WARNING(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_WARNING, __VA_ARGS__ ) } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_WARNING(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_WARNING, __VA_ARGS__ ) } while(0)
+    #else
+        #define ssLOG_WARNING(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_WARNING_0() \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
@@ -1333,8 +1353,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
                             localssLogString.str(), \
                             ssLOG_LEVEL_WARNING);
     
-    #define ssLOG_FUNC_CONTENT_WARNING(expr) \
-        INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_WARNING)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT_WARNING(expr) \
+            INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_WARNING)
+    #else
+        #define ssLOG_FUNC_CONTENT_WARNING(expr) expr
+    #endif
     
     #define ssLOG_FUNC_ENTRY_WARNING(...) \
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY_WARNING, __VA_ARGS__ ) } while(0)
@@ -1363,18 +1387,26 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
     #define INTERNAL_ssLOG_FUNC_WARNING_1(customFuncName) \
         INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, ssLOG_LEVEL_WARNING)
 
-    #define ssLOG_BENCH_START_WARNING(...) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_WARNING, __VA_ARGS__ )
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_START_WARNING(...) \
+            INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_WARNING, __VA_ARGS__ )
+    #else
+        #define ssLOG_BENCH_START_WARNING(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_START_WARNING_0() \
-        INTERNAL_ssLOG_BENCH_START_WARNING_1("", ssLOG_LEVEL_WARNING)
+        INTERNAL_ssLOG_BENCH_START_WARNING_1("")
 
     #define INTERNAL_ssLOG_BENCH_START_WARNING_1(benchName) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, ssLOG_LEVEL_WARNING)
 
-    #define ssLOG_BENCH_END_WARNING(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_WARNING, __VA_ARGS__ ); } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_END_WARNING(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_WARNING, __VA_ARGS__ ); } while(0)
+    #else
+        #define ssLOG_BENCH_END_WARNING(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_END_WARNING_0() \
         static_assert(false, "ssLOG_BENCH_END_WARNING must accept 1 argument")
@@ -1398,8 +1430,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_INFO
-    #define ssLOG_INFO(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_INFO, __VA_ARGS__ ) } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_INFO(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_INFO, __VA_ARGS__ ) } while(0)
+    #else
+        #define ssLOG_INFO(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_INFO_0() \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
@@ -1416,8 +1452,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
                             localssLogString.str(), \
                             ssLOG_LEVEL_INFO);
     
-    #define ssLOG_FUNC_CONTENT_INFO(expr) \
-        INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_INFO)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT_INFO(expr) \
+            INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_INFO)
+    #else
+        #define ssLOG_FUNC_CONTENT_INFO(expr) expr
+    #endif
     
     #define ssLOG_FUNC_ENTRY_INFO(...) \
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY_INFO, __VA_ARGS__ ) } while(0)
@@ -1446,18 +1486,26 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
     #define INTERNAL_ssLOG_FUNC_INFO_1(customFuncName) \
         INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, ssLOG_LEVEL_INFO)
 
-    #define ssLOG_BENCH_START_INFO(...) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_INFO, __VA_ARGS__ )
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_START_INFO(...) \
+            INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_INFO, __VA_ARGS__ )
+    #else
+        #define ssLOG_BENCH_START_INFO(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_START_INFO_0() \
-        INTERNAL_ssLOG_BENCH_START_INFO_1("", ssLOG_LEVEL_INFO)
+        INTERNAL_ssLOG_BENCH_START_INFO_1("")
 
     #define INTERNAL_ssLOG_BENCH_START_INFO_1(benchName) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, ssLOG_LEVEL_INFO)
 
-    #define ssLOG_BENCH_END_INFO(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_INFO, __VA_ARGS__ ); } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_END_INFO(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_INFO, __VA_ARGS__ ); } while(0)
+    #else
+        #define ssLOG_BENCH_END_INFO(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_END_INFO_0() \
         static_assert(false, "ssLOG_BENCH_END_INFO must accept 1 argument")
@@ -1481,8 +1529,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
 #endif //ssLOG_LEVEL >= ssLOG_LEVEL_INFO
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
-    #define ssLOG_DEBUG(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_DEBUG, __VA_ARGS__ ) } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_DEBUG(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_DEBUG, __VA_ARGS__ ) } while(0)
+    #else
+        #define ssLOG_DEBUG(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_DEBUG_0() \
         Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
@@ -1499,8 +1551,12 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
                             localssLogString.str(), \
                             ssLOG_LEVEL_DEBUG);
     
-    #define ssLOG_FUNC_CONTENT_DEBUG(expr) \
-        INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_DEBUG)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT_DEBUG(expr) \
+            INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, ssLOG_LEVEL_DEBUG)
+    #else
+        #define ssLOG_FUNC_CONTENT_DEBUG(expr) expr
+    #endif
     
     #define ssLOG_FUNC_ENTRY_DEBUG(...) \
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY_DEBUG, __VA_ARGS__ ) } while(0)
@@ -1529,18 +1585,26 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
     #define INTERNAL_ssLOG_FUNC_DEBUG_1(customFuncName) \
         INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, ssLOG_LEVEL_DEBUG)
 
-    #define ssLOG_BENCH_START_DEBUG(...) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_DEBUG, __VA_ARGS__ )
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_START_DEBUG(...) \
+            INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_DEBUG, __VA_ARGS__ )
+    #else
+        #define ssLOG_BENCH_START_DEBUG(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_START_DEBUG_0() \
-        INTERNAL_ssLOG_BENCH_START_DEBUG_1("", ssLOG_LEVEL_DEBUG)
+        INTERNAL_ssLOG_BENCH_START_DEBUG_1("")
 
     #define INTERNAL_ssLOG_BENCH_START_DEBUG_1(benchName) \
         INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
         INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, ssLOG_LEVEL_DEBUG)
 
-    #define ssLOG_BENCH_END_DEBUG(...) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_DEBUG, __VA_ARGS__ ); } while(0)
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_BENCH_END_DEBUG(...) \
+            do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END_DEBUG, __VA_ARGS__ ); } while(0)
+    #else
+        #define ssLOG_BENCH_END_DEBUG(...) do{} while(false)
+    #endif
 
     #define INTERNAL_ssLOG_BENCH_END_DEBUG_0() \
         static_assert(false, "ssLOG_BENCH_END_DEBUG must accept 1 argument")
