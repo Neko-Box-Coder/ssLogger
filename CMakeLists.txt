@@ -115,7 +115,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
     target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
     target_compile_definitions(ssLogger PUBLIC ssLOG_IMMEDIATE_FLUSH=${ssLOG_IMMEDIATE_FLUSH})
-    target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK_ONLY=${ssLOG_CALL_STACK_ONLY})
+    target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK_ONLY=$<BOOL:${ssLOG_CALL_STACK_ONLY}>)
     
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
@@ -211,7 +211,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_WINDOWS_COLOR=$<BOOL:${ssLOG_USE_WINDOWS_COLOR}>)
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_IMMEDIATE_FLUSH=${ssLOG_IMMEDIATE_FLUSH})
-    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK_ONLY=${ssLOG_CALL_STACK_ONLY})
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK_ONLY=$<BOOL:${ssLOG_CALL_STACK_ONLY}>)
     
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
