@@ -43,6 +43,10 @@ set_property(CACHE ssLOG_MODE PROPERTY STRINGS  "CONSOLE"
                                                 "FILE" 
                                                 "CONSOLE_AND_FILE")
 
+set(ssLOG_PREPEND_LOC "BEFORE_FUNC_NAME" CACHE STRING "Where to insert preprend (BEFORE_FUNC_NAME, BEFORE_FILE_NAME, BEFORE_MESSAGE)")
+
+set_property(CACHE ssLOG_PREPEND_LOC PROPERTY STRINGS "BEFORE_FUNC_NAME" "BEFORE_FILE_NAME" "BEFORE_MESSAGE")
+
 set(ssLOG_LEVEL "WARNING" CACHE STRING 
 "Compile time log level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG)
 NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
@@ -58,6 +62,7 @@ set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE"
                                                 "WARNING" 
                                                 "INFO" 
                                                 "DEBUG")
+
 set(ssLOG_USE_ESCAPE_SEQUENCES 0 CACHE BOOL "Use escape sequences regardless of it being supported or not")
 
 if(WIN32)
@@ -129,6 +134,14 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK_ONLY=$<BOOL:${ssLOG_CALL_STACK_ONLY}>)
     
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
+
+    if(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FUNC_NAME")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_PREPEND_LOC=0)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FILE_NAME")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_PREPEND_LOC=1)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_MESSAGE")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_PREPEND_LOC=2)
+    endif()
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=0)
@@ -233,6 +246,14 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK_ONLY=$<BOOL:${ssLOG_CALL_STACK_ONLY}>)
     
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
+
+    if(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FUNC_NAME")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_PREPEND_LOC=0)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FILE_NAME")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_PREPEND_LOC=1)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_MESSAGE")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_PREPEND_LOC=2)
+    endif()
 
     if(${ssLOG_LEVEL} STREQUAL "NONE")
         target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=0)

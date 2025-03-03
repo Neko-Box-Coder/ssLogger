@@ -208,7 +208,15 @@ Flushes the output buffer to the console or file.
 ssLOG_FLUSH();
 ```
 
+### Log Prepending
+Prepends additional message to the log
+```cpp
+ssLOG_PREPEND("My prepend message");
+ssLOG_LINE("Test"); //"My prepend message" will be prepended for current thread
 
+ssLOG_PREPEND_RESET();
+ssLOG_LINE("Test"); //Normal log message
+```
 
 ### Precise Function Exit Log
 Using `ssLOG_FUNC_ENTRY` and `ssLOG_FUNC_EXIT` will give you the line number of the exit log.
@@ -246,6 +254,7 @@ void ProcessTransaction(int amount)
 | ssLOG_SHOW_THREADS | 1 | Show thread IDs |
 | ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
 | ssLOG_USE_ESCAPE_SEQUENCES | 0 | Force use of escape sequences |
+| ssLOG_PREPEND_LOC | 0 | Where to insert preprend (0: BEFORE_FUNC_NAME, 1: BEFORE_FILE_NAME, 2: BEFORE_MESSAGE) |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE, 1:FATAL, 2:ERROR, 3:WARNING, 4:INFO, 5:DEBUG) |
 | ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
 | ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |

@@ -268,6 +268,22 @@
     #define INTERNAL_ssLOG_GET_LINE_NUM() ""
 #endif
 
+#if ssLOG_PREPEND_LOC == ssLOG_PREPEND_LOC_BEFORE_FUNC_NAME
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() InternalUnsafe_ssLogGetPrepend()
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() ""
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() ""
+#elif ssLOG_PREPEND_LOC == ssLOG_PREPEND_LOC_BEFORE_FILE_NAME
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() ""
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() InternalUnsafe_ssLogGetPrepend()
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() ""
+#elif ssLOG_PREPEND_LOC == ssLOG_PREPEND_LOC_BEFORE_MESSAGE
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() ""
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() ""
+    #define INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() InternalUnsafe_ssLogGetPrepend()
+#else
+    #error Invalid ssLOG_PREPEND_LOC
+#endif
+
 //NOTE: Nesting INTERNAL_ssLOG_VA_SELECT doesn't work :/
 //#define GET_FUNCTION_NAME( ... ) INTERNAL_ssLOG_VA_SELECT( GET_FUNCTION_NAME, __VA_ARGS__ )
 
@@ -345,28 +361,25 @@ inline int InternalUnsafe_ssLogGetThreadId()
 
 inline std::string InternalUnsafe_ssLogGetPrepend()
 {
-    std::string s;
-    {
-        auto& currentSS = ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend;
-        s = currentSS.str();
-        currentSS.str("");
-        currentSS.clear();
-    }
-    return s;
+    return ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend;
 }
 
-inline void InternalUnsafe_ssLogAppendPrepend(std::string appendMsg)
-{
-    ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << appendMsg;
-}
-
-inline void Internal_ssLogAppendPrepend(std::stringstream& ss)
+inline void Internal_ssLogSetPrepend(std::stringstream& ss)
 {
     Internal_ssLogCheckNewThread();
     
     //Accessing map entry
     INTERNAL_ssLOG_MAP_READ_GUARD();
-    ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend << ss.rdbuf();
+    ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend = ss.str();
+}
+
+inline void Internal_ssLogResetPrepend()
+{
+    Internal_ssLogCheckNewThread();
+    
+    //Accessing map entry
+    INTERNAL_ssLOG_MAP_READ_GUARD();
+    ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend.clear();
 }
 
 inline void InternalUnsafe_ssLogIncrementTabSpace()
@@ -519,9 +532,12 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
                     INTERNAL_ssLOG_GET_DATE_TIME() <<
                     levelApplier <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() <<
                     funcName <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
                     message
                 );
                 
@@ -604,9 +620,12 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_ssLOG_GET_DATE_TIME() <<
                     Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), true) <<
                     levelApplier <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() <<
                     funcName <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     message
                 );
                 
@@ -622,14 +641,17 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
-                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     message
                 );
             }
         }
     }
 
-    inline void InternalUnsafe_ssLogFuncImpl(std::string fileName, std::string lineNum, int level)
+    inline void InternalUnsafe_ssLogFuncImpl(   std::string fileName, 
+                                                std::string lineNum, 
+                                                int level, 
+                                                std::string prependMsg)
     {
         Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
         INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
@@ -639,9 +661,12 @@ inline std::string Internal_ssLogLevelNoColor(int level)
             INTERNAL_ssLOG_GET_DATE_TIME() <<
             Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), true) <<
             levelApplier <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() <<
             prependMsg <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
             fileName <<
-            lineNum
+            lineNum <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE()
         );
         
         INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED
@@ -655,8 +680,8 @@ inline std::string Internal_ssLogLevelNoColor(int level)
             prependMsg <<
             INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
             fileName <<
-            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
-            lineNum
+            lineNum <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE()
         );
     }
     
@@ -674,9 +699,13 @@ inline std::string Internal_ssLogLevelNoColor(int level)
         if(InternalUnsafe_ssLogGetTargetLogLevel() >= level)
         { 
             InternalUnsafe_ssLogEmptyLine();
-            InternalUnsafe_ssLogAppendPrepend(  INTERNAL_ssLOG_GET_CONTENT_NAME(expr) + 
-                                                std::string("BEGINS "));
-            InternalUnsafe_ssLogFuncImpl(fileName, lineNum, level);
+            InternalUnsafe_ssLogFuncImpl
+            (
+                fileName, 
+                lineNum, 
+                level, 
+                INTERNAL_ssLOG_GET_CONTENT_NAME(expr) + std::string("BEGINS ")
+            );
         }
 
         InternalUnsafe_ssLogGetFuncNameStack().push(expr);
@@ -720,9 +749,13 @@ inline std::string Internal_ssLogLevelNoColor(int level)
         InternalUnsafe_ssLogDecrementTabSpace();
         if(InternalUnsafe_ssLogGetTargetLogLevel() >= currentLogLevel)
         {
-            InternalUnsafe_ssLogAppendPrepend(  INTERNAL_ssLOG_GET_CONTENT_NAME(expr) + 
-                                                std::string("EXITS "));
-            InternalUnsafe_ssLogFuncImpl(fileName, lineNum, currentLogLevel);
+            InternalUnsafe_ssLogFuncImpl
+            (
+                fileName, 
+                lineNum, 
+                currentLogLevel,
+                INTERNAL_ssLOG_GET_CONTENT_NAME(expr) + std::string("EXITS ")
+            );
             InternalUnsafe_ssLogEmptyLine();
         }
     }
@@ -879,13 +912,17 @@ inline std::string Internal_ssLogLevelNoColor(int level)
 
 #if !ssLOG_CALL_STACK_ONLY
     #define ssLOG_PREPEND(x) \
-        do{ \
+        do \
+        { \
             std::stringstream localssLogString; \
             localssLogString << x; \
-            Internal_ssLogAppendPrepend(localssLogString); \
+            Internal_ssLogSetPrepend(localssLogString); \
         } while(0)
+    
+    #define ssLOG_PREPEND_RESET() Internal_ssLogResetPrepend()
 #else
     #define ssLOG_PREPEND(x) do{} while(0)
+    #define ssLOG_PREPEND_RESET() do{} while(0)
 #endif
 
 // =======================================================================

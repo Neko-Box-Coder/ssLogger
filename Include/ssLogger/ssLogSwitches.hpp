@@ -41,6 +41,14 @@
         #define ssLOG_LOG_TO_FILE 0
     #endif
     
+    #define ssLOG_PREPEND_LOC_BEFORE_MESSAGE 2
+    #define ssLOG_PREPEND_LOC_BEFORE_FILE_NAME 1
+    #define ssLOG_PREPEND_LOC_BEFORE_FUNC_NAME 0
+    
+    #ifndef ssLOG_PREPEND_LOC
+        #define ssLOG_PREPEND_LOC ssLOG_PREPEND_LOC_BEFORE_FUNC_NAME
+    #endif
+    
     #define ssLOG_MODE_CONSOLE_AND_FILE 2
     #define ssLOG_MODE_FILE 1
     #define ssLOG_MODE_CONSOLE 0

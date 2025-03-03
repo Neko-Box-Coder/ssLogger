@@ -12,7 +12,7 @@ struct ssLogThreadInfo
     int TabSpace = 0;
     std::stack<std::string> FuncNameStack = std::stack<std::string>();
     std::stack<int> LogLevelStack = std::stack<int>();
-    std::stringstream CurrentPrepend;
+    std::string CurrentPrepend;
     bool CacheOutput = false;
     std::vector<std::pair<std::chrono::system_clock::time_point, std::string>> CurrentCachedOutput;
     int ID;

@@ -9,6 +9,7 @@
 
 void TestLogLine()
 {
+    ssLOG_PREPEND("[Test Prepend]");
     ssLOG_LINE("Test");
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     ssLOG_LINE();
@@ -26,7 +27,7 @@ int main()
     ssLOG_LINE("Test 🎲");
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     TestLogLine();
-    
+    ssLOG_PREPEND_RESET();
     ssLOG_LINE("Nested_ssLog: " << Nested_ssLog());
     return 0;
 }
