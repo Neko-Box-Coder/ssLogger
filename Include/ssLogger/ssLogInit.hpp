@@ -26,10 +26,12 @@ ssLOG_API std::mutex ssLogMapWriteMutex;
     ssLOG_API std::mutex ssLogOutputMutex;
 #endif
 
-#if ssLOG_LOG_TO_FILE
+#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE || ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
     #include <fstream>
     ssLOG_API std::ofstream ssLogFileStream = std::ofstream();
-#else
+#endif
+
+#if ssLOG_MODE != ssLOG_MODE_FILE && !ssLOG_LOG_TO_FILE
     #ifdef _WIN32
         #ifndef NOMINMAX
             #define NOMINMAX
@@ -42,7 +44,6 @@ ssLOG_API std::mutex ssLogMapWriteMutex;
             return static_cast<bool>(SetConsoleOutputCP(CP_UTF8));
         }();
     #endif
-    
 #endif
 
 #if ssLOG_SHOW_TIME || ssLOG_SHOW_DATE
@@ -73,4 +74,4 @@ ssLOG_API std::mutex ssLogMapWriteMutex;
     };
 #endif
 
-#endif
+#endif //#ifndef ssLOG_INIT_HPP

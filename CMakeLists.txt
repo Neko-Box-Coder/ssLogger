@@ -31,7 +31,22 @@ set(ssLOG_SHOW_DATE 0 CACHE BOOL "Show log date for all logged functions")
 set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
 set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomic. Can be turned off if only running in single thread for performance.")
 set(ssLOG_SHOW_THREADS 1 CACHE BOOL "Shows the thread ID for the output")
-set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "Log to file instead for all logged functions")
+set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "[Deprecated] Log to file instead for all logged functions")
+
+if("${ssLOG_LOG_TO_FILE}")
+    message(WARNING "ssLOG_LOG_TO_FILE is deprecated. Use ssLOG_MODE instead")
+endif()
+
+set(ssLOG_MODE "CONSOLE" CACHE STRING "Log mode for ssLogger (CONSOLE, FILE, CONSOLE_AND_FILE)")
+
+set_property(CACHE ssLOG_MODE PROPERTY STRINGS  "CONSOLE" 
+                                                "FILE" 
+                                                "CONSOLE_AND_FILE")
+
+set(ssLOG_PREPEND_LOC "BEFORE_FUNC_NAME" CACHE STRING "Where to insert preprend (BEFORE_FUNC_NAME, BEFORE_FILE_NAME, BEFORE_MESSAGE)")
+
+set_property(CACHE ssLOG_PREPEND_LOC PROPERTY STRINGS "BEFORE_FUNC_NAME" "BEFORE_FILE_NAME" "BEFORE_MESSAGE")
+
 set(ssLOG_LEVEL "WARNING" CACHE STRING 
 "Compile time log level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG)
 NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
@@ -40,6 +55,13 @@ ERROR    (Program might crash and **likely** to not function correctly)
 WARNING  (Program won't crash but **might** not function correctly)
 INFO     (Program state which **doesn't** spam the log)
 DEBUG    (Program state which **does** spam the log)")
+
+set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
+                                                "FATAL" 
+                                                "ERROR" 
+                                                "WARNING" 
+                                                "INFO" 
+                                                "DEBUG")
 
 set(ssLOG_USE_ESCAPE_SEQUENCES 0 CACHE BOOL "Use escape sequences regardless of it being supported or not")
 
@@ -52,12 +74,6 @@ set(ssLOG_IMMEDIATE_FLUSH 0 CACHE BOOL "Flush the current log immediately")
 set(ssLOG_IMPLICIT_CXX_STANDARD 1 CACHE BOOL "Do not set to c++11 explicitly")
 set(ssLOG_CALL_STACK_ONLY 0 CACHE BOOL "Only show function call stack logs, other logs will be ignored")
 
-set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
-                                                "FATAL" 
-                                                "ERROR" 
-                                                "WARNING" 
-                                                "INFO" 
-                                                "DEBUG")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W4;")
@@ -119,6 +135,14 @@ if("${ssLOG_USE_SOURCE}")
     
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
+    if(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FUNC_NAME")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_PREPEND_LOC=0)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FILE_NAME")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_PREPEND_LOC=1)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_MESSAGE")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_PREPEND_LOC=2)
+    endif()
+
     if(${ssLOG_LEVEL} STREQUAL "NONE")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=0)
     elseif(${ssLOG_LEVEL} STREQUAL "FATAL")
@@ -131,6 +155,14 @@ if("${ssLOG_USE_SOURCE}")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=4)
     elseif(${ssLOG_LEVEL} STREQUAL "DEBUG")
         target_compile_definitions(ssLogger PUBLIC ssLOG_LEVEL=5)
+    endif()
+    
+    if(${ssLOG_MODE} STREQUAL "CONSOLE")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_MODE=0)
+    elseif(${ssLOG_MODE} STREQUAL "FILE")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_MODE=1)
+    elseif(${ssLOG_MODE} STREQUAL "CONSOLE_AND_FILE")
+        target_compile_definitions(ssLogger PUBLIC ssLOG_MODE=2)
     endif()
 
     #message("ssLOG_CALL_STACK: ${ssLOG_CALL_STACK}")
@@ -215,6 +247,14 @@ if(${ssLOG_BUILD_TESTS})
     
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
+    if(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FUNC_NAME")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_PREPEND_LOC=0)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_FILE_NAME")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_PREPEND_LOC=1)
+    elseif(${ssLOG_PREPEND_LOC} STREQUAL "BEFORE_MESSAGE")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_PREPEND_LOC=2)
+    endif()
+
     if(${ssLOG_LEVEL} STREQUAL "NONE")
         target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=0)
     elseif(${ssLOG_LEVEL} STREQUAL "FATAL")
@@ -229,6 +269,13 @@ if(${ssLOG_BUILD_TESTS})
         target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_LEVEL=5)
     endif()
 
+    if(${ssLOG_MODE} STREQUAL "CONSOLE")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_MODE=0)
+    elseif(${ssLOG_MODE} STREQUAL "FILE")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_MODE=1)
+    elseif(${ssLOG_MODE} STREQUAL "CONSOLE_AND_FILE")
+        target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_MODE=2)
+    endif()
 
     add_library(ssLogger_HEAD INTERFACE)
     target_include_directories(ssLogger_HEAD INTERFACE  "${CMAKE_CURRENT_LIST_DIR}/Include")

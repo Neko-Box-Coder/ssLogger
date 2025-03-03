@@ -139,13 +139,15 @@ ssLOG_WARNING("This warning will be cached");
 | ssLOG_CALL_STACK | 1 | Enable function call stack tracking |
 | ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
-| ssLOG_LOG_TO_FILE | 0 | Enable file logging |
+| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
 | ssLOG_SHOW_DATE | 0 | Show date in logs |
 | ssLOG_SHOW_TIME | 1 | Show time in logs |
 
 > 📝 For a complete list of options, see [Configuration Details](#configuration-details) below.
 
 ## 🔍 Advanced Features
+
+<!-- 
 
 ### Raw Output and Custom Implementation
 ```cpp
@@ -182,26 +184,7 @@ void my_custom_flush()
 #define ssLOG_FLUSH() my_custom_flush()
 ```
 
-### Precise Function Exit Log
-Using `ssLOG_FUNC_ENTRY` and `ssLOG_FUNC_EXIT` will give you the line number of the exit log.
-
-```cpp
-void ProcessTransaction(int amount) 
-{
-    ssLOG_FUNC_ENTRY();
-    ssLOG_LINE("Processing amount: " << amount);
-    
-    if(amount <= 0)
-    {
-        ssLOG_ERROR("Invalid amount");
-        ssLOG_FUNC_EXIT();
-        return;
-    }
-    
-    //...processing...
-    ssLOG_FUNC_EXIT();
-}
-```
+-->
 
 ### Benchmarking
 ```cpp
@@ -229,10 +212,38 @@ Flushes the output buffer to the console or file.
 ssLOG_FLUSH();
 ```
 
-## 📚 Configuration Details
+### Log Prepending
+Prepends additional message to the log
+```cpp
+ssLOG_PREPEND("My prepend message");
+ssLOG_LINE("Test"); //"My prepend message" will be prepended for current thread
 
-<details>
-<summary>Click to expand full configuration options</summary>
+ssLOG_PREPEND_RESET();
+ssLOG_LINE("Test"); //Normal log message
+```
+
+### Precise Function Exit Log
+Using `ssLOG_FUNC_ENTRY` and `ssLOG_FUNC_EXIT` will give you the line number of the exit log.
+
+```cpp
+void ProcessTransaction(int amount) 
+{
+    ssLOG_FUNC_ENTRY();
+    ssLOG_LINE("Processing amount: " << amount);
+    
+    if(amount <= 0)
+    {
+        ssLOG_ERROR("Invalid amount");
+        ssLOG_FUNC_EXIT();
+        return;
+    }
+    
+    //...processing...
+    ssLOG_FUNC_EXIT();
+}
+```
+
+## 📚 Configuration Details
 
 | Define Macro Name | Default | Description |
 |-------------------|---------|-------------|
@@ -245,15 +256,14 @@ ssLOG_FLUSH();
 | ssLOG_SHOW_TIME | 1 | Show log time |
 | ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
 | ssLOG_SHOW_THREADS | 1 | Show thread IDs |
-| ssLOG_LOG_TO_FILE | 0 | Enable file logging |
+| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
 | ssLOG_USE_ESCAPE_SEQUENCES | 0 | Force use of escape sequences |
+| ssLOG_PREPEND_LOC | 0 | Where to insert preprend (0: BEFORE_FUNC_NAME, 1: BEFORE_FILE_NAME, 2: BEFORE_MESSAGE) |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE, 1:FATAL, 2:ERROR, 3:WARNING, 4:INFO, 5:DEBUG) |
 | ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
 | ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |
 | ssLOG_IMMEDIATE_FLUSH | 0 | Flush the log output immediately for each log (⚠️ may affect performance) |
 | ssLOG_CALL_STACK_ONLY | 0 | Only show function call stack logs, other logs will be ignored |
-
-</details>
 
 ## 🤝 Credits
 Powered by [termcolor](https://github.com/ikalnytskyi/termcolor) ([license](./External/termcolor%20LICENSE))
