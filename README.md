@@ -147,6 +147,8 @@ ssLOG_WARNING("This warning will be cached");
 
 ## 🔍 Advanced Features
 
+<!-- 
+
 ### Raw Output and Custom Implementation
 ```cpp
 //Basic output without formatting and thread safe checks
@@ -181,6 +183,8 @@ void my_custom_flush()
 #undef ssLOG_FLUSH
 #define ssLOG_FLUSH() my_custom_flush()
 ```
+
+-->
 
 ### Benchmarking
 ```cpp
