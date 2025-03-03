@@ -40,6 +40,14 @@
     #ifndef ssLOG_LOG_TO_FILE
         #define ssLOG_LOG_TO_FILE 0
     #endif
+    
+    #define ssLOG_MODE_CONSOLE_AND_FILE 2
+    #define ssLOG_MODE_FILE 1
+    #define ssLOG_MODE_CONSOLE 0
+    
+    #ifndef ssLOG_MODE
+        #define ssLOG_MODE ssLOG_MODE_CONSOLE
+    #endif
 
     #define ssLOG_LEVEL_DEBUG 5
     #define ssLOG_LEVEL_INFO 4

@@ -82,12 +82,12 @@
 // =======================================================================
 // Macros for ssLOG_BASE and ssLOG_FLUSH
 // =======================================================================
-#if ssLOG_LOG_TO_FILE
+#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE || ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
     #include <fstream>
     #include <ctime>
     ssLOG_API extern std::ofstream ssLogFileStream;
-
-    inline void Internal_ssLogBase(const std::stringstream& localss)
+    
+    inline void Internal_ssLogToFileWithNewline(const std::stringstream& localss)
     {
         if(!ssLogFileStream.good())
             return;
@@ -108,50 +108,105 @@
         }
         ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
     }
+#endif
 
-    #define ssLOG_BASE(x) \
-        do { \
-            std::stringstream localss; \
-            localss << x; \
-            Internal_ssLogBase(localss); \
-        } while(0)
-    
-    #define ssLOG_FLUSH() \
-        if(ssLogFileStream.good() && ssLogFileStream.is_open()) \
-            ssLogFileStream.flush()
-#else
-    #include <iostream>
-    
-    #define ssLOG_BASE(x) \
-        do{ \
-            std::cout << x << ssLOG_ENDL; \
-        } while(0)
-    
-    inline void Internal_ssLogBase(const std::stringstream& localss)
-    {
-        ssLOG_BASE(localss.rdbuf());
-    }
-    
-    #define ssLOG_FLUSH() std::cout << std::flush;
-#endif //ssLOG_LOG_TO_FILE
-
-
-#define INTERNAL_UNSAFE_ssLOG_BASE(x) \
-    do \
+#define INTERNAL_UNSAFE_ssLOG_CACHE_OUTPUT_AND_BREAK_IF_CACHING(x) \
+    if(InternalUnsafe_ssLogIsCacheOutput()) \
     { \
         std::stringstream localss; \
         localss << x; \
-        if(InternalUnsafe_ssLogIsCacheOutput()) \
+        InternalUnsafe_ssLogAppendCurrentCacheOutput(localss); \
+        break; \
+    }
+
+//If we are only logging to file
+#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE
+    #define INTERNAL_UNSAFE_ssLOG_TO_CONSOLE(x) 
+    #define INTERNAL_UNSAFE_ssLOG_TO_FILE(x) \
+        do \
         { \
-            InternalUnsafe_ssLogAppendCurrentCacheOutput(localss); \
-            break; \
-        } \
-        \
+            INTERNAL_UNSAFE_ssLOG_CACHE_OUTPUT_AND_BREAK_IF_CACHING(x); \
+            std::stringstream localss; \
+            localss << x; \
+            Internal_ssLogToFileWithNewline(localss); \
+        } while(0)
+    
+    #define ssLOG_BASE(x) INTERNAL_UNSAFE_ssLOG_TO_FILE(x)
+    #define ssLOG_FLUSH() \
+        if(ssLogFileStream.good() && ssLogFileStream.is_open()) \
+            ssLogFileStream.flush()
+
+//If we are only logging to console
+#elif !ssLOG_LOG_TO_FILE && ssLOG_MODE == ssLOG_MODE_CONSOLE
+    #include <iostream>
+    
+    #define INTERNAL_UNSAFE_ssLOG_TO_CONSOLE(x) \
+        do \
+        { \
+            INTERNAL_UNSAFE_ssLOG_CACHE_OUTPUT_AND_BREAK_IF_CACHING(x); \
+            std::cout << x << ssLOG_ENDL; \
+        } while(0)
+    #define INTERNAL_UNSAFE_ssLOG_TO_FILE(x) 
+    
+    #define ssLOG_BASE(x) INTERNAL_UNSAFE_ssLOG_TO_CONSOLE(x)
+    #define ssLOG_FLUSH() std::cout << std::flush
+
+//If we are logging to both
+#else
+    #include <iostream>
+    
+    static_assert(!ssLOG_LOG_TO_FILE, "ssLOG_LOG_TO_FILE should not be set");
+    static_assert(  ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE, 
+                    "ssLOG_MODE should be ssLOG_MODE_CONSOLE_AND_FILE");
+    
+    //NOTE: Since these are called together, we only need to cache in the console call
+    #define INTERNAL_UNSAFE_ssLOG_TO_CONSOLE(x) \
+        do \
+        { \
+            INTERNAL_UNSAFE_ssLOG_CACHE_OUTPUT_AND_BREAK_IF_CACHING(x); \
+            std::cout << x << ssLOG_ENDL; \
+        } while(0)
+        
+    #define INTERNAL_UNSAFE_ssLOG_TO_FILE(x) \
+        do \
+        { \
+            if(InternalUnsafe_ssLogIsCacheOutput()) break; \
+            std::stringstream localss; \
+            localss << x; \
+            Internal_ssLogToFileWithNewline(localss); \
+        } while(0)
+    
+    #define ssLOG_BASE(x) \
+        do \
+        { \
+            INTERNAL_UNSAFE_ssLOG_TO_CONSOLE(x); \
+            INTERNAL_UNSAFE_ssLOG_TO_FILE(x); \
+        } while(0)
+    
+    #define ssLOG_FLUSH() \
+        do \
+        { \
+            std::cout << std::flush; \
+            if(ssLogFileStream.good() && ssLogFileStream.is_open()) \
+                ssLogFileStream.flush(); \
+        } while(0)
+#endif //#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE
+
+#define INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED(x) \
+    do \
+    { \
         INTERNAL_ssLOG_LOCK_OUTPUT(); \
-        Internal_ssLogBase(localss); \
+        INTERNAL_UNSAFE_ssLOG_TO_CONSOLE(x); \
         INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
     } while(0)
 
+#define INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED(x) \
+    do \
+    { \
+        INTERNAL_ssLOG_LOCK_OUTPUT(); \
+        INTERNAL_UNSAFE_ssLOG_TO_FILE(x); \
+        INTERNAL_ssLOG_UNLOCK_OUTPUT(); \
+    } while(0)
 
 //NOTE: ssLOG_BASE replaces ssLOG_SIMPLE for legacy reasons
 #define ssLOG_SIMPLE(x) ssLOG_BASE(x)
@@ -414,6 +469,30 @@ class Internal_ssLogLevelApplier
                                                         Internal_ssLogLevelApplier&);
 };
 
+inline std::string Internal_ssLogLevelNoColor(int level)
+{
+    switch(level)
+    {
+        case ssLOG_LEVEL_FATAL:
+            return "[FATAL] ";
+        
+        case ssLOG_LEVEL_ERROR:
+            return "[ERROR] ";
+        
+        case ssLOG_LEVEL_WARNING:
+            return "[WARNING] ";
+        
+        case ssLOG_LEVEL_INFO:
+            return "[INFO] ";
+        
+        case ssLOG_LEVEL_DEBUG:
+            return "[DEBUG] ";
+        
+        default:
+            return "";
+    }
+}
+
 #if !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... ) do{}while(0)
     #define ssLOG_FUNC_ENTRY( ... ) do{}while(0)
@@ -434,15 +513,32 @@ class Internal_ssLogLevelApplier
             if(InternalUnsafe_ssLogGetTargetLogLevel() >= level)
             {
                 Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
-                INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
-                                            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
-                                            INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                            levelApplier <<
-                                            InternalUnsafe_ssLogGetPrepend() <<
-                                            funcName <<
-                                            fileName <<
-                                            lineNum << 
-                                            message);
+                INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
+                (
+                    InternalUnsafe_ssLogGetThreadVSpace() <<
+                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                    INTERNAL_ssLOG_GET_DATE_TIME() <<
+                    levelApplier <<
+                    funcName <<
+                    fileName <<
+                    lineNum << 
+                    message
+                );
+                
+                INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED
+                (
+                    InternalUnsafe_ssLogGetThreadVSpace() <<
+                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                    INTERNAL_ssLOG_GET_DATE_TIME() <<
+                    Internal_ssLogLevelNoColor(level) <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() <<
+                    funcName <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+                    fileName <<
+                    lineNum << 
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
+                    message
+                );
             }
         }
     }
@@ -470,10 +566,21 @@ class Internal_ssLogLevelApplier
 
     inline void InternalUnsafe_ssLogEmptyLine()
     {
-        INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
-                                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() << 
-                                    INTERNAL_ssLOG_GET_DATE_TIME() << 
-                                    Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace())); 
+        INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
+        (
+            InternalUnsafe_ssLogGetThreadVSpace() <<
+            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() << 
+            INTERNAL_ssLOG_GET_DATE_TIME() << 
+            Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace())
+        );
+        
+        INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED
+        (
+            InternalUnsafe_ssLogGetThreadVSpace() <<
+            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() << 
+            INTERNAL_ssLOG_GET_DATE_TIME() << 
+            Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace())
+        );
     }
 
     inline void Internal_ssLogLine( std::string funcName, 
@@ -490,17 +597,34 @@ class Internal_ssLogLevelApplier
             if(InternalUnsafe_ssLogGetTargetLogLevel() >= level)
             {
                 Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
-                INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
-                                            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
-                                            INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                            Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), 
-                                                                    true) <<
-                                            levelApplier <<
-                                            InternalUnsafe_ssLogGetPrepend() <<
-                                            funcName <<
-                                            fileName <<
-                                            lineNum << 
-                                            message);
+                INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
+                (
+                    InternalUnsafe_ssLogGetThreadVSpace() <<
+                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                    INTERNAL_ssLOG_GET_DATE_TIME() <<
+                    Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), true) <<
+                    levelApplier <<
+                    funcName <<
+                    fileName <<
+                    lineNum << 
+                    message
+                );
+                
+                INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED
+                (
+                    InternalUnsafe_ssLogGetThreadVSpace() <<
+                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+                    INTERNAL_ssLOG_GET_DATE_TIME() <<
+                    Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), true) <<
+                    Internal_ssLogLevelNoColor(level) <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() <<
+                    funcName <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+                    fileName <<
+                    lineNum << 
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
+                    message
+                );
             }
         }
     }
@@ -508,15 +632,32 @@ class Internal_ssLogLevelApplier
     inline void InternalUnsafe_ssLogFuncImpl(std::string fileName, std::string lineNum, int level)
     {
         Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
-        INTERNAL_UNSAFE_ssLOG_BASE( InternalUnsafe_ssLogGetThreadVSpace() <<
-                                    INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
-                                    INTERNAL_ssLOG_GET_DATE_TIME() <<
-                                    Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), 
-                                                            true) <<
-                                    levelApplier <<
-                                    InternalUnsafe_ssLogGetPrepend() <<
-                                    fileName <<
-                                    lineNum);
+        INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
+        (
+            InternalUnsafe_ssLogGetThreadVSpace() <<
+            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+            INTERNAL_ssLOG_GET_DATE_TIME() <<
+            Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), true) <<
+            levelApplier <<
+            prependMsg <<
+            fileName <<
+            lineNum
+        );
+        
+        INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED
+        (
+            InternalUnsafe_ssLogGetThreadVSpace() <<
+            INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() <<
+            INTERNAL_ssLOG_GET_DATE_TIME() <<
+            Internal_ssLog_TabAdder(InternalUnsafe_ssLogGetTabSpace(), true) <<
+            Internal_ssLogLevelNoColor(level) <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FUNC() <<
+            prependMsg <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+            fileName <<
+            INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
+            lineNum
+        );
     }
     
     inline void Internal_ssLogFuncEntry(std::string expr,
@@ -553,10 +694,21 @@ class Internal_ssLogLevelApplier
         if( InternalUnsafe_ssLogGetFuncNameStack().empty() || 
             InternalUnsafe_ssLogGetFuncNameStack().top() != expr) 
         { 
-            INTERNAL_UNSAFE_ssLOG_BASE( "ssLOG_FUNC_EXIT is missing somewhere. " << 
-                                        expr << " is expected but" << 
-                                        InternalUnsafe_ssLogGetFuncNameStack().top() << 
-                                        " is found instead."); 
+            INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
+            (
+                "ssLOG_FUNC_EXIT is missing somewhere. " << 
+                expr << " is expected but" << 
+                InternalUnsafe_ssLogGetFuncNameStack().top() << 
+                " is found instead."
+            );
+            
+            INTERNAL_UNSAFE_ssLOG_TO_FILE_LOCKED
+            (
+                "ssLOG_FUNC_EXIT is missing somewhere. " << 
+                expr << " is expected but" << 
+                InternalUnsafe_ssLogGetFuncNameStack().top() << 
+                " is found instead."
+            );
             
             ssLogReadCount--;
             return;

@@ -139,7 +139,7 @@ ssLOG_WARNING("This warning will be cached");
 | ssLOG_CALL_STACK | 1 | Enable function call stack tracking |
 | ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
-| ssLOG_LOG_TO_FILE | 0 | Enable file logging |
+| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
 | ssLOG_SHOW_DATE | 0 | Show date in logs |
 | ssLOG_SHOW_TIME | 1 | Show time in logs |
 
@@ -244,7 +244,7 @@ void ProcessTransaction(int amount)
 | ssLOG_SHOW_TIME | 1 | Show log time |
 | ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
 | ssLOG_SHOW_THREADS | 1 | Show thread IDs |
-| ssLOG_LOG_TO_FILE | 0 | Enable file logging |
+| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
 | ssLOG_USE_ESCAPE_SEQUENCES | 0 | Force use of escape sequences |
 | ssLOG_LEVEL | 3 | Compile-time log level (0:NONE, 1:FATAL, 2:ERROR, 3:WARNING, 4:INFO, 5:DEBUG) |
 | ssLOG_USE_WINDOWS_COLOR | 0 | Force use of Windows color codes |
