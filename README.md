@@ -182,27 +182,6 @@ void my_custom_flush()
 #define ssLOG_FLUSH() my_custom_flush()
 ```
 
-### Precise Function Exit Log
-Using `ssLOG_FUNC_ENTRY` and `ssLOG_FUNC_EXIT` will give you the line number of the exit log.
-
-```cpp
-void ProcessTransaction(int amount) 
-{
-    ssLOG_FUNC_ENTRY();
-    ssLOG_LINE("Processing amount: " << amount);
-    
-    if(amount <= 0)
-    {
-        ssLOG_ERROR("Invalid amount");
-        ssLOG_FUNC_EXIT();
-        return;
-    }
-    
-    //...processing...
-    ssLOG_FUNC_EXIT();
-}
-```
-
 ### Benchmarking
 ```cpp
 auto benchmark = ssLOG_BENCH_START("Operation");
@@ -229,10 +208,30 @@ Flushes the output buffer to the console or file.
 ssLOG_FLUSH();
 ```
 
-## 📚 Configuration Details
 
-<details>
-<summary>Click to expand full configuration options</summary>
+
+### Precise Function Exit Log
+Using `ssLOG_FUNC_ENTRY` and `ssLOG_FUNC_EXIT` will give you the line number of the exit log.
+
+```cpp
+void ProcessTransaction(int amount) 
+{
+    ssLOG_FUNC_ENTRY();
+    ssLOG_LINE("Processing amount: " << amount);
+    
+    if(amount <= 0)
+    {
+        ssLOG_ERROR("Invalid amount");
+        ssLOG_FUNC_EXIT();
+        return;
+    }
+    
+    //...processing...
+    ssLOG_FUNC_EXIT();
+}
+```
+
+## 📚 Configuration Details
 
 | Define Macro Name | Default | Description |
 |-------------------|---------|-------------|
@@ -252,8 +251,6 @@ ssLOG_FLUSH();
 | ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |
 | ssLOG_IMMEDIATE_FLUSH | 0 | Flush the log output immediately for each log (⚠️ may affect performance) |
 | ssLOG_CALL_STACK_ONLY | 0 | Only show function call stack logs, other logs will be ignored |
-
-</details>
 
 ## 🤝 Credits
 Powered by [termcolor](https://github.com/ikalnytskyi/termcolor) ([license](./External/termcolor%20LICENSE))

@@ -41,6 +41,12 @@ WARNING  (Program won't crash but **might** not function correctly)
 INFO     (Program state which **doesn't** spam the log)
 DEBUG    (Program state which **does** spam the log)")
 
+set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
+                                                "FATAL" 
+                                                "ERROR" 
+                                                "WARNING" 
+                                                "INFO" 
+                                                "DEBUG")
 set(ssLOG_USE_ESCAPE_SEQUENCES 0 CACHE BOOL "Use escape sequences regardless of it being supported or not")
 
 if(WIN32)
@@ -52,12 +58,6 @@ set(ssLOG_IMMEDIATE_FLUSH 0 CACHE BOOL "Flush the current log immediately")
 set(ssLOG_IMPLICIT_CXX_STANDARD 1 CACHE BOOL "Do not set to c++11 explicitly")
 set(ssLOG_CALL_STACK_ONLY 0 CACHE BOOL "Only show function call stack logs, other logs will be ignored")
 
-set_property(CACHE ssLOG_LEVEL PROPERTY STRINGS "NONE" 
-                                                "FATAL" 
-                                                "ERROR" 
-                                                "WARNING" 
-                                                "INFO" 
-                                                "DEBUG")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W4;")

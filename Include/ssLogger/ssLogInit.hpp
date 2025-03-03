@@ -42,7 +42,6 @@ ssLOG_API std::mutex ssLogMapWriteMutex;
             return static_cast<bool>(SetConsoleOutputCP(CP_UTF8));
         }();
     #endif
-    
 #endif
 
 #if ssLOG_SHOW_TIME || ssLOG_SHOW_DATE
@@ -73,4 +72,4 @@ ssLOG_API std::mutex ssLogMapWriteMutex;
     };
 #endif
 
-#endif
+#endif //#ifndef ssLOG_INIT_HPP

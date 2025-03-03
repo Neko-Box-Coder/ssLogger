@@ -41,14 +41,15 @@
         #define ssLOG_LOG_TO_FILE 0
     #endif
 
-    //5 is DEBUG    (Program state which **does** spam the log)
-    //4 is INFO     (Program state which **doesn't** spam the log)
-    //3 is WARNING  (Program won't crash but **might** not function correctly)
-    //2 is ERROR    (Program might crash and **likely** to not function correctly)
-    //1 is FATAL    (Program will crash)
-    //0 is NONE     (None of the levels will be printed, but will still print normal ssLOG_LINE or ssLOG_FUNC)
+    #define ssLOG_LEVEL_DEBUG 5
+    #define ssLOG_LEVEL_INFO 4
+    #define ssLOG_LEVEL_WARNING 3
+    #define ssLOG_LEVEL_ERROR 2
+    #define ssLOG_LEVEL_FATAL 1
+    #define ssLOG_LEVEL_NONE 0
+
     #ifndef ssLOG_LEVEL
-        #define ssLOG_LEVEL 3
+        #define ssLOG_LEVEL ssLOG_LEVEL_WARNING
     #endif
 
     #ifndef ssLOG_SHOW_THREADS
