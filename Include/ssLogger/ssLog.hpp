@@ -558,6 +558,22 @@ inline std::string Internal_ssLogLevelNoColor(int level)
             }
         }
     }
+    
+    #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) expr;
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(...)
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(...) 
+    
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_1(...) 
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(...) 
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_1(...) 
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(...) 
 #else
     inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
     {
