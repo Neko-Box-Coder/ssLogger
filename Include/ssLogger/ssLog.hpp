@@ -526,6 +526,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
             if(InternalUnsafe_ssLogGetTargetLogLevel() >= level)
             {
                 Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
+                (void)levelApplier;
                 INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
                 (
                     InternalUnsafe_ssLogGetThreadVSpace() <<
@@ -629,6 +630,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
             if(InternalUnsafe_ssLogGetTargetLogLevel() >= level)
             {
                 Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
+                (void)levelApplier;
                 INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
                 (
                     InternalUnsafe_ssLogGetThreadVSpace() <<
@@ -670,6 +672,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                                                 std::string prependMsg)
     {
         Internal_ssLogLevelApplier levelApplier = Internal_ssLogLevelApplier(level);
+        (void)levelApplier;
         INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED
         (
             InternalUnsafe_ssLogGetThreadVSpace() <<

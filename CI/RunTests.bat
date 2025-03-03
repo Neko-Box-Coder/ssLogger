@@ -17,14 +17,21 @@ GOTO :FINAL
 
 :FINAL
 CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogFunctionTestSource.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogLevelTestSource.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogLineTestSource.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogMultiThreadTestSource.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\HeaderOnlyTests\Debug\LogFunctionTestHeader_Only.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\HeaderOnlyTests\Debug\LogLevelTestHeader_Only.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\HeaderOnlyTests\Debug\LogLineTestHeader_Only.exe"
+timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\HeaderOnlyTests\Debug\LogMultiThreadTestHeader_Only.exe"
-
+timeout /t 3
 EXIT 0
 
 :FAILED

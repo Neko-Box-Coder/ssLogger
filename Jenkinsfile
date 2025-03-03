@@ -24,6 +24,180 @@ def SetGithubStatus(githubToken, context, targetUrl, desc, status, repoOwner, re
         """
 }
 
+def LinuxBuildWithSettings(buildSettings)
+{
+    cleanWs()
+    bash "ls -lah"
+    unstash 'source'
+    bash "ls -lah"
+    bash "mkdir Build"
+    bash 'cd ./Build && cmake .. ' + buildSettings + ' && cmake --build . -j 16'
+}
+
+def WindowsBuildWithSettings(buildSettings)
+{
+    cleanWs()
+    bat 'dir'
+    unstash 'source'
+    bat 'dir'
+    bat "mkdir Build"
+    //2 jobs since it is failing due to memory
+    bat 'cd .\\Build && cmake .. ' + buildSettings + ' && cmake --build . -j 2'
+}
+
+def PrepareOneStage(stageName, agentLabel, buildSettings, stashName)
+{
+    return {
+        stage(stageName + " (" + agentLabel + ")")
+        {
+            node(agentLabel)
+            {
+                try
+                {
+                    if(agentLabel.equals("windows"))
+                        WindowsBuildWithSettings(buildSettings)
+                    else if(agentLabel.equals("linux"))
+                        LinuxBuildWithSettings(buildSettings)
+                    else
+                        throw new Exception("Invalid agent label: " + agentLabel)
+                    
+                    stash(name: agentLabel + "_" + stashName)
+                }
+                catch(Exception e)
+                {
+                    FAILED_STAGE = env.STAGE_NAME
+                    throw e
+                }
+            }
+        }
+    }
+}
+
+def ToSnakeCase(str) 
+{
+   return str.split(' ').join('_').toLowerCase();
+}
+
+
+def ParallelStages()
+{
+    def stages = [:]
+    
+    def stageNames = 
+        [
+            "Static Build", 
+            "Shared Build", 
+            
+            "Call Stack On", 
+            "Call Stack Off",
+            
+            "ASCII On",
+            "ASCII Off",
+            
+            "File Name On",
+            "File Name Off",
+            "Line Number On",
+            "Line Number Off",
+            "Func Name On",
+            "Func Name Off",
+            
+            "Date On",
+            "Date Off",
+            
+            "Time On",
+            "Time Off",
+            
+            "Thread Safe On",
+            "Thread Safe Off",
+            
+            "Thread Index On",
+            "Thread Index Off",
+            
+            "Log Mode Console",
+            "Log Mode File",
+            "Log Mode Console And File",
+            
+            "Prepend Before Func Name",
+            "Prepend Before File Name",
+            "Prepend Before Message",
+            
+            "Log Level None",
+            "Log Level Error",
+            "Log Level Fatal",
+            "Log Level Warning",
+            "Log Level Info",
+            "Log Level Debug"
+        ]
+    
+    def buildSettings = 
+        [
+            "-DssLOG_BUILD_TYPE=STATIC", 
+            "-DssLOG_BUILD_TYPE=SHARED", 
+            
+            "-DssLOG_CALL_STACK=ON", 
+            "-DssLOG_CALL_STACK=OFF", 
+            
+            "-DssLOG_LOG_WITH_ASCII=ON", 
+            "-DssLOG_LOG_WITH_ASCII=OFF",
+            
+            "-DssLOG_SHOW_FILE_NAME=ON",
+            "-DssLOG_SHOW_FILE_NAME=OFF",
+            "-DssLOG_SHOW_LINE_NUM=ON",
+            "-DssLOG_SHOW_LINE_NUM=OFF",
+            "-DssLOG_SHOW_FUNC_NAME=ON",
+            "-DssLOG_SHOW_FUNC_NAME=OFF",
+            
+            "-DssLOG_SHOW_DATE=ON",
+            "-DssLOG_SHOW_DATE=OFF",
+            
+            "-DssLOG_SHOW_TIME=ON",
+            "-DssLOG_SHOW_TIME=OFF",
+            
+            "-DssLOG_THREAD_SAFE_OUTPUT=ON",
+            "-DssLOG_THREAD_SAFE_OUTPUT=OFF",
+            
+            "-DssLOG_SHOW_THREADS=ON",
+            "-DssLOG_SHOW_THREADS=OFF",
+            
+            "-DssLOG_MODE=CONSOLE",
+            "-DssLOG_MODE=FILE",
+            "-DssLOG_MODE=CONSOLE_AND_FILE",
+            
+            "-DssLOG_PREPEND_LOC=BEFORE_FUNC_NAME",
+            "-DssLOG_PREPEND_LOC=BEFORE_FILE_NAME",
+            "-DssLOG_PREPEND_LOC=BEFORE_MESSAGE",
+            
+            "-DssLOG_LEVEL=NONE",
+            "-DssLOG_LEVEL=FATAL",
+            "-DssLOG_LEVEL=ERROR",
+            "-DssLOG_LEVEL=WARNING",
+            "-DssLOG_LEVEL=INFO",
+            "-DssLOG_LEVEL=DEBUG"
+        ]
+    
+    def stashNames = []
+    stashNames.add(ToSnakeCase(stageNames.get(0)))
+    stashNames.add(ToSnakeCase(stageNames.get(1)))
+    for(int i = 2; i < stageNames.size(); i++)
+        stashNames.add(ToSnakeCase(stageNames.get(i)) + "_build")
+    
+    def agentLabels = ["linux", "windows"]
+    
+    for(int i = 0; i < stageNames.size(); i++)
+    {
+        for(int j = 0; j < agentLabels.size(); j++)
+        {
+            stages.put( stageNames.get(i) + " (" + agentLabels.get(j) + ")", 
+                        PrepareOneStage(stageNames.get(i), 
+                                        agentLabels.get(j), 
+                                        buildSettings.get(i),
+                                        stashNames.get(i)))
+        }
+    }
+    
+    return stages
+}
+
 def REPO_OWNER = "Neko-Box-Coder"
 def REPO_NAME = "ssLogger"
 def TARGET_URL = 'https://github.com/Neko-Box-Coder/ssLogger.git'
@@ -173,73 +347,13 @@ pipeline
 
         stage('Build') 
         {
-            parallel 
+            steps
             {
-                stage('Linux Static Build') 
+                script
                 {
-                    agent { label 'linux' }
-                    steps 
-                    {
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'source'
-                        bash "ls -lah"
-                        bash "mkdir Build"
-                        bash 'cd ./Build && cmake .. -DssLOG_BUILD_TYPE=STATIC && cmake --build . -j 16'
-                        stash 'linux_static_build'
-                    }
-                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
-                }
-                stage('Linux Shared Build') 
-                {
-                    agent { label 'linux' }
-                    steps 
-                    {
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'source'
-                        bash "ls -lah"
-                        bash "mkdir Build"
-                        bash 'cd ./Build && cmake .. -DssLOG_BUILD_TYPE=SHARED && cmake --build . -j 16'
-                        stash 'linux_shared_build'
-                    }
-                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
-                }
-                stage('Windows Static Build') 
-                {
-                    agent { label 'windows' }
-                    steps 
-                    {
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'source'
-                        bat 'dir'
-                        bat "mkdir Build"
-                        //2 jobs since it is failing due to memory
-                        bat 'cd .\\Build && cmake .. -DssLOG_BUILD_TYPE=STATIC && cmake --build . -j 2'
-                        
-                        stash 'windows_static_build'
-                    }
-                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
-                }
-                stage('Windows Shared Build') 
-                {
-                    agent { label 'windows' }
-                    steps 
-                    {
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'source'
-                        bat 'dir'
-                        bat "mkdir Build"
-                        bat 'cd .\\Build && cmake .. -DssLOG_BUILD_TYPE=SHARED && cmake --build . -j 16'
-                        
-                        stash 'windows_shared_build'
-                    }
-                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                    parallel ParallelStages()
                 }
             }
-            
             //NOTE: We use Debug builds for now even for release.
         }
 
@@ -279,6 +393,45 @@ pipeline
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
+                stage('Linux Log To File Test') 
+                {
+                    agent { label 'linux' }
+                    steps 
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_log_mode_file_build'
+                        bash "ls -lah"
+                        bash "ls -lah ./Build"
+                        bash "chmod -R +x ./Build"
+                        bash "chmod +x ./CI/RunTests.sh"
+                        bash "cd ./CI && ./RunTests.sh"
+                        bash "ls -lah ./CI"
+                        bash "cd ./CI && ls *.txt >/dev/null || exit 1"
+                        bash "cat ./CI/*.txt"
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Linux Log To Both Console File Test')
+                {
+                    agent { label 'linux' }
+                    steps 
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_log_mode_console_and_file_build'
+                        bash "ls -lah"
+                        bash "ls -lah ./Build"
+                        bash "chmod -R +x ./Build"
+                        bash "chmod +x ./CI/RunTests.sh"
+                        bash "cd ./CI && ./RunTests.sh"
+                        bash "ls -lah ./CI"
+                        bash "cd ./CI && ls *.txt >/dev/null || exit 1"
+                        bash "cat ./CI/*.txt"
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                
                 stage('Windows Static Test') 
                 {
                     agent { label 'windows' }
@@ -302,6 +455,38 @@ pipeline
                         unstash 'windows_shared_build'
                         bat 'dir'
                         bat 'cd .\\CI && .\\RunTests.bat'
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Windows Log To File Test') 
+                {
+                    agent { label 'windows' }
+                    steps 
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_log_mode_file_build'
+                        bat 'dir'
+                        bat 'cd .\\CI && .\\RunTests.bat'
+                        bat "dir .\\Build\\SourceTests\\Debug"
+                        bat "cd .\\Build\\SourceTests\\Debug && dir /a-d *.txt >nul 2>&1"
+                        bat "type .\\Build\\SourceTests\\Debug\\*.txt"
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Windows Both Console File Test') 
+                {
+                    agent { label 'windows' }
+                    steps 
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_log_mode_console_and_file_build'
+                        bat 'dir'
+                        bat 'cd .\\CI && .\\RunTests.bat'
+                        bat "dir .\\Build\\SourceTests\\Debug"
+                        bat "cd .\\Build\\SourceTests\\Debug && dir /a-d *.txt >nul 2>&1"
+                        bat "type .\\Build\\SourceTests\\Debug\\*.txt"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
