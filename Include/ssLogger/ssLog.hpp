@@ -97,7 +97,10 @@
     {
         if(!ssLogEnableLogToFile || !ssLogFileStream.good() || !ssLogFileStream.is_open())
             return;
-        ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
+        if(localss.rdbuf()->in_avail())
+            ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
+        else
+            ssLogFileStream << ssLOG_ENDL;
     }
 #endif
 
@@ -700,7 +703,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
-                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
                     message
                 );
                 
@@ -716,7 +719,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
-                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
                     message
                 );
             }
