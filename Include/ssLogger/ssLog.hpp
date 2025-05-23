@@ -82,31 +82,25 @@
 // =======================================================================
 // Macros for ssLOG_BASE and ssLOG_FLUSH
 // =======================================================================
-#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE || ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
+#if ssLOG_LOG_TO_FILE || \
+    ssLOG_MODE == ssLOG_MODE_FILE || \
+    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
+    
     #include <fstream>
     #include <ctime>
     ssLOG_API extern std::ofstream ssLogFileStream;
+    ssLOG_API extern bool ssLogEnableLogToFile;
+    ssLOG_API extern std::string ssLogOutputFileName;
+    ssLOG_API extern bool ssLogReopenLogFile;
     
-    inline void Internal_ssLogToFileWithNewline(const std::stringstream& localss)
+    inline void InternalUnsafe_ssLogToFileWithNewline(const std::stringstream& localss)
     {
-        if(!ssLogFileStream.good())
+        if(!ssLogEnableLogToFile || !ssLogFileStream.good() || !ssLogFileStream.is_open())
             return;
-
-        if(!ssLogFileStream.is_open())
-        {
-            time_t ssRawtime;
-            struct tm* ssTimeinfo;
-            char ssBuffer [80];
-            time(&ssRawtime);
-            ssTimeinfo = localtime(&ssRawtime);
-            strftime(ssBuffer, 80, "%a %b %d %H_%M_%S %Y", ssTimeinfo);
-            std::string nowString = std::string(ssBuffer)+"_log.txt";
-            ssLogFileStream.open(nowString, std::ofstream::out);
-
-            if(!ssLogFileStream.good())
-                return;
-        }
-        ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
+        if(localss.rdbuf()->in_avail())
+            ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
+        else
+            ssLogFileStream << ssLOG_ENDL;
     }
 #endif
 
@@ -128,7 +122,7 @@
             INTERNAL_UNSAFE_ssLOG_CACHE_OUTPUT_AND_BREAK_IF_CACHING(x); \
             std::stringstream localss; \
             localss << x; \
-            Internal_ssLogToFileWithNewline(localss); \
+            InternalUnsafe_ssLogToFileWithNewline(localss); \
         } while(0)
     
     #define ssLOG_BASE(x) INTERNAL_UNSAFE_ssLOG_TO_FILE(x)
@@ -173,7 +167,7 @@
             if(InternalUnsafe_ssLogIsCacheOutput()) break; \
             std::stringstream localss; \
             localss << x; \
-            Internal_ssLogToFileWithNewline(localss); \
+            InternalUnsafe_ssLogToFileWithNewline(localss); \
         } while(0)
     
     #define ssLOG_BASE(x) \
@@ -192,6 +186,8 @@
         } while(0)
 #endif //#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE
 
+//NOTE: Reason needs to differentiate this against ssLOG_BASE is because this allows us to log the
+//      same thing with and without color or a variation of text for console vs file
 #define INTERNAL_UNSAFE_ssLOG_TO_CONSOLE_LOCKED(x) \
     do \
     { \
@@ -334,23 +330,57 @@ class Internal_ssLogMapReadGuard
     Internal_ssLogMapReadGuard mapGuard = Internal_ssLogMapReadGuard(); \
     (void)mapGuard;
 
-inline void Internal_ssLogCheckNewThread()
+inline void Internal_ssLogPreActionChecks()
 {
-    bool needsNewEntry = false;
-    //Reading map
-    {
-        INTERNAL_ssLOG_MAP_READ_GUARD();
-        needsNewEntry = ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end();
-    }
-    
-    //Adding map entry
-    if(needsNewEntry)
+    //Check if we need to open a new text file
+    #if ssLOG_LOG_TO_FILE || \
+        ssLOG_MODE == ssLOG_MODE_FILE || \
+        ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
     {
         std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
         while(ssLogReadCount > 0) {}    //Wait until all reads are done
         
-        ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++;
-        ssLogInfoMap[std::this_thread::get_id()].CacheOutput = ssLogNewThreadCacheByDefault.load();
+        if((ssLogEnableLogToFile && ssLogReopenLogFile) || !ssLogFileStream.good())
+        {
+            if(ssLogFileStream.is_open())
+                ssLogFileStream.close();
+            
+            ssLogReopenLogFile = false;
+            if(ssLogOutputFileName.empty())
+            {
+                time_t rawTime;
+                struct tm* timeinfo;
+                char filenameBuffer [80];
+                time(&rawTime);
+                timeinfo = localtime(&rawTime);
+                strftime(filenameBuffer, 80, "%a %b %d %H_%M_%S %Y", timeinfo);
+                ssLogOutputFileName = std::string(filenameBuffer)+"_log.txt";
+            }
+            
+            ssLogFileStream.open(ssLogOutputFileName, std::ofstream::out);
+        }
+    }
+    #endif
+    
+    //Check if this is a new thread, if so add to entry
+    {
+        bool needsNewEntry = false;
+        //Reading map
+        {
+            INTERNAL_ssLOG_MAP_READ_GUARD();
+            needsNewEntry = ssLogInfoMap.find(std::this_thread::get_id()) == ssLogInfoMap.end();
+        }
+        
+        //Adding map entry
+        if(needsNewEntry)
+        {
+            std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+            while(ssLogReadCount > 0) {}    //Wait until all reads are done
+            
+            ssLogInfoMap[std::this_thread::get_id()].ID = ssLogNewThreadID++;
+            ssLogInfoMap[std::this_thread::get_id()].CacheOutput = 
+                ssLogNewThreadCacheByDefault.load();
+        }
     }
 }
 
@@ -366,8 +396,7 @@ inline std::string InternalUnsafe_ssLogGetPrepend()
 
 inline void Internal_ssLogSetPrepend(std::stringstream& ss)
 {
-    Internal_ssLogCheckNewThread();
-    
+    Internal_ssLogPreActionChecks();
     //Accessing map entry
     INTERNAL_ssLOG_MAP_READ_GUARD();
     ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend = ss.str();
@@ -375,8 +404,7 @@ inline void Internal_ssLogSetPrepend(std::stringstream& ss)
 
 inline void Internal_ssLogResetPrepend()
 {
-    Internal_ssLogCheckNewThread();
-    
+    Internal_ssLogPreActionChecks();
     //Accessing map entry
     INTERNAL_ssLOG_MAP_READ_GUARD();
     ssLogInfoMap.at(std::this_thread::get_id()).CurrentPrepend.clear();
@@ -409,8 +437,7 @@ inline std::stack<int>& InternalUnsafe_ssLogGetLogLevelStack()
 
 inline void Internal_ssLogSetCacheOutput(bool cache)
 {
-    Internal_ssLogCheckNewThread();
-    
+    Internal_ssLogPreActionChecks();
     //Accessing map entry
     INTERNAL_ssLOG_MAP_READ_GUARD();
     ssLogInfoMap.at(std::this_thread::get_id()).CacheOutput = cache;
@@ -423,8 +450,7 @@ inline bool InternalUnsafe_ssLogIsCacheOutput()
 
 inline bool Internal_ssLogIsCacheOutput()
 {
-    Internal_ssLogCheckNewThread();
-    
+    Internal_ssLogPreActionChecks();
     //Accessing map entry
     INTERNAL_ssLOG_MAP_READ_GUARD();
     return InternalUnsafe_ssLogIsCacheOutput();
@@ -446,6 +472,40 @@ inline std::string InternalUnsafe_ssLogGetThreadVSpace()
 {
     return std::string().append(InternalUnsafe_ssLogGetThreadId() * ssLOG_THREAD_VSPACE, ' ');
 }
+
+#if ssLOG_LOG_TO_FILE || \
+    ssLOG_MODE == ssLOG_MODE_FILE || \
+    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
+    
+    inline void Internal_ssLogEnableLogToFile(bool enable)
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        ssLogEnableLogToFile = enable;
+    }
+    
+    inline bool Internal_ssLogIsEnabledLogToFile()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        return ssLogEnableLogToFile;
+    }
+    
+    inline void Internal_ssLogSetLogFilename(const std::string& filename)
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        ssLogOutputFileName = filename;
+        ssLogReopenLogFile = true;
+    }
+    
+    inline std::string Internal_ssLogGetLogFilename()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        return ssLogOutputFileName;
+    }
+#endif
 
 #if ssLOG_SHOW_THREADS
     #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() \
@@ -518,7 +578,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                                     std::string message,
                                     int level)
     {
-        Internal_ssLogCheckNewThread();
+        Internal_ssLogPreActionChecks();
         
         //Accessing map entry
         {
@@ -622,7 +682,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                                     std::string message,
                                     int level)
     {
-        Internal_ssLogCheckNewThread();
+        Internal_ssLogPreActionChecks();
         
         //Accessing map entry
         {
@@ -643,7 +703,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
-                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
                     message
                 );
                 
@@ -659,7 +719,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                     INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
                     fileName <<
                     lineNum << 
-                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_FILE() <<
+                    INTERNAL_UNSAFE_ssLOG_GET_PREPEND_BEFORE_MESSAGE() <<
                     message
                 );
             }
@@ -709,7 +769,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                                         std::string lineNum,
                                         int level)
     {
-        Internal_ssLogCheckNewThread();
+        Internal_ssLogPreActionChecks();
         
         //Accessing map entry
         INTERNAL_ssLOG_MAP_READ_GUARD();
@@ -735,7 +795,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                                         std::string fileName, 
                                         std::string lineNum)
     {
-        Internal_ssLogCheckNewThread();
+        Internal_ssLogPreActionChecks();
         
         //Accessing map entry
         INTERNAL_ssLOG_MAP_READ_GUARD();
@@ -945,6 +1005,26 @@ inline std::string Internal_ssLogLevelNoColor(int level)
 #endif
 
 // =======================================================================
+// Macros for ssLOG_ENABLE_LOG_TO_FILE, ssLOG_IS_LOG_TO_FILE_ENABLE, ssLOG_SET_LOG_FILENAME,
+// ssLOG_GET_LOG_FILENAME
+// =======================================================================
+
+#if ssLOG_LOG_TO_FILE || \
+    ssLOG_MODE == ssLOG_MODE_FILE || \
+    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
+
+    #define ssLOG_ENABLE_LOG_TO_FILE(enable) Internal_ssLogEnableLogToFile(enable)
+    #define ssLOG_IS_LOG_TO_FILE_ENABLED() Internal_ssLogIsEnabledLogToFile()
+    #define ssLOG_SET_LOG_FILENAME(filename) Internal_ssLogSetLogFilename(filename)
+    #define ssLOG_GET_LOG_FILENAME() Internal_ssLogGetLogFilename()
+#else
+    #define ssLOG_ENABLE_LOG_TO_FILE(enable) 
+    #define ssLOG_IS_LOG_TO_FILE_ENABLED() false
+    #define ssLOG_SET_LOG_FILENAME(filename) 
+    #define ssLOG_GET_LOG_FILENAME() ""
+#endif
+
+// =======================================================================
 // Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, 
 // ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, 
 // ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS, ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS, 
@@ -952,7 +1032,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
 // =======================================================================
 inline void Internal_ssLogSetAllCacheOutput(bool cache)
 {
-    Internal_ssLogCheckNewThread();
+    Internal_ssLogPreActionChecks();
     //Editing all map entries
     {
         std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
@@ -996,7 +1076,7 @@ class Internal_ssLogCacheScope
 
 inline void Internal_ssLogOutputAllCacheGrouped()
 {
-    Internal_ssLogCheckNewThread();
+    Internal_ssLogPreActionChecks();
     //Reading all map entries
     {
         std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
@@ -1023,7 +1103,7 @@ inline void Internal_ssLogOutputAllCacheGrouped()
 
 inline void Internal_ssLogOutputAllCache()
 {
-    Internal_ssLogCheckNewThread();
+    Internal_ssLogPreActionChecks();
     //Reading all map entries
     {
         std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
@@ -1198,7 +1278,7 @@ inline void Interna_ssLogBenchEnd(  const std::pair<std::string,
 
 inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 {
-    Internal_ssLogCheckNewThread();
+    Internal_ssLogPreActionChecks();
     //Reading map
     INTERNAL_ssLOG_MAP_READ_GUARD();
     ssLogInfoMap.at(std::this_thread::get_id()).ssTargetLogLevel = targetLevel;
@@ -1206,7 +1286,7 @@ inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 
 inline int Internal_ssLogGetCurrentThreadTargetLevel()
 {
-    Internal_ssLogCheckNewThread();
+    Internal_ssLogPreActionChecks();
     //Reading map
     INTERNAL_ssLOG_MAP_READ_GUARD();
     return InternalUnsafe_ssLogGetTargetLogLevel();

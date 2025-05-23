@@ -130,10 +130,36 @@ int main()
         ssLOG_RESET_ALL_THREAD_INFO();
     }
     
+    {
+        ssLOG_LINE("========================================");
+        ssLOG_LINE("5. ssLOG_ENABLE_LOG_TO_FILE()");
+        ssLOG_LINE("========================================");
+        
+        ssLOG_LINE("ssLOG_ENABLE_LOG_TO_FILE(false)");
+        
+        int CheckCounter = 0;
+        ssLOG_ENABLE_LOG_TO_FILE(false);
+        ssLOG_LINE("Test: " << CheckCounter);
+        ssLOG_FATAL("Test fatal: " << CheckCounter);
+        ssLOG_ERROR("Test error: " << CheckCounter);
+        ssLOG_WARNING("Test warning: " << CheckCounter);
+        ssLOG_INFO("Test info: " << CheckCounter);
+        ssLOG_DEBUG("Test debug: " << CheckCounter);
+        
+        ++CheckCounter;
+        ssLOG_LINE("ssLOG_ENABLE_LOG_TO_FILE(true)");
+        ssLOG_ENABLE_LOG_TO_FILE(true);
+        ssLOG_LINE("Test: " << CheckCounter);
+        ssLOG_FATAL("Test fatal: " << CheckCounter);
+        ssLOG_ERROR("Test error: " << CheckCounter);
+        ssLOG_WARNING("Test warning: " << CheckCounter);
+        ssLOG_INFO("Test info: " << CheckCounter);
+        ssLOG_DEBUG("Test debug: " << CheckCounter);
+    }
     
     {
         ssLOG_LINE("========================================");
-        ssLOG_LINE("5. Current Thread Cached Multi-Threaded");
+        ssLOG_LINE("6. Current Thread Cached Multi-Threaded");
         ssLOG_LINE("========================================");
         
         std::thread a = std::thread(Thread_Worker_cached_2, 0, 50, 10);
@@ -148,13 +174,39 @@ int main()
     
     {
         ssLOG_LINE("========================================");
-        ssLOG_LINE("6. Manual Entry and Exit");
+        ssLOG_LINE("7. Manual Entry and Exit");
         ssLOG_LINE("========================================");
         
         ssLOG_FUNC_ENTRY("Process");
         ssLOG_LINE("Processing amount: " << 100);
         ssLOG_ERROR("Invalid amount");
         ssLOG_FUNC_EXIT("Process");
+        ssLOG_RESET_ALL_THREAD_INFO();
+    }
+
+    {
+        ssLOG_LINE("========================================");
+        ssLOG_LINE("8. ssLOG_SET_LOG_FILENAME()");
+        ssLOG_LINE("========================================");
+        
+        ssLOG_LINE("ssLOG_SET_LOG_FILENAME(\"testLog.txt\")");
+        
+        int CheckCounter = 0;
+        ssLOG_SET_LOG_FILENAME("testLog.txt");
+        ssLOG_LINE("Test: " << CheckCounter);
+        ssLOG_FATAL("Test fatal: " << CheckCounter);
+        ssLOG_ERROR("Test error: " << CheckCounter);
+        ssLOG_WARNING("Test warning: " << CheckCounter);
+        ssLOG_INFO("Test info: " << CheckCounter);
+        ssLOG_DEBUG("Test debug: " << CheckCounter);
+        
+        std::thread a = std::thread(Thread_Worker_cached_2, 0, 50, 10);
+        std::thread b = std::thread(Thread_Worker_cached_2, 1, 50, 12);
+
+        a.join();
+        b.join();
+        
+        ssLOG_OUTPUT_ALL_CACHE();
         ssLOG_RESET_ALL_THREAD_INFO();
     }
 

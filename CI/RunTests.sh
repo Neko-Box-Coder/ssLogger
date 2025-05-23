@@ -4,6 +4,7 @@ if [ -e ../Build/libssLogger_SRC.so ]; then
     cp -f ../Build/libssLogger_SRC.so ../Build/SourceTests
 fi
 
+echo "SourceTests:"
 ../Build/SourceTests/LogFunctionTestSource
 sleep 1
 ../Build/SourceTests/LogLevelTestSource
@@ -12,6 +13,8 @@ sleep 1
 sleep 1
 ../Build/SourceTests/LogMultiThreadTestSource
 sleep 1
+
+echo "HeaderOnlyTests:"
 ../Build/HeaderOnlyTests/LogFunctionTestHeader_Only
 sleep 1
 ../Build/HeaderOnlyTests/LogLevelTestHeader_Only

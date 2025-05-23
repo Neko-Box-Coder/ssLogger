@@ -29,6 +29,9 @@ ssLOG_API std::mutex ssLogMapWriteMutex;
 #if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE || ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
     #include <fstream>
     ssLOG_API std::ofstream ssLogFileStream = std::ofstream();
+    ssLOG_API bool ssLogEnableLogToFile = true;
+    ssLOG_API std::string ssLogOutputFileName = "";
+    ssLOG_API bool ssLogReopenLogFile = true;
 #endif
 
 #if ssLOG_MODE != ssLOG_MODE_FILE && !ssLOG_LOG_TO_FILE
