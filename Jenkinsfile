@@ -372,6 +372,22 @@ pipeline
         {
             parallel 
             {
+                stage('Linux Header Only Test') 
+                {
+                    agent { label 'linux' }
+                    steps 
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_static_build'
+                        bash "ls -lah"
+                        bash "ls -lah ./Build"
+                        bash "chmod -R +x ./Build"
+                        bash "chmod +x ./CI/RunHeaderOnlyTests.sh"
+                        bash "cd ./CI && ./RunHeaderOnlyTests.sh"
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
                 stage('Linux Static Test') 
                 {
                     agent { label 'linux' }
@@ -383,8 +399,8 @@ pipeline
                         bash "ls -lah"
                         bash "ls -lah ./Build"
                         bash "chmod -R +x ./Build"
-                        bash "chmod +x ./CI/RunTests.sh"
-                        bash "cd ./CI && ./RunTests.sh"
+                        bash "chmod +x ./CI/RunSourceTests.sh"
+                        bash "cd ./CI && ./RunSourceTests.sh"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -399,8 +415,8 @@ pipeline
                         bash "ls -lah"
                         bash "ls -lah ./Build"
                         bash "chmod -R +x ./Build"
-                        bash "chmod +x ./CI/RunTests.sh"
-                        bash "cd ./CI && ./RunTests.sh"
+                        bash "chmod +x ./CI/RunSourceTests.sh"
+                        bash "cd ./CI && ./RunSourceTests.sh"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -415,8 +431,8 @@ pipeline
                         bash "ls -lah"
                         bash "ls -lah ./Build"
                         bash "chmod -R +x ./Build"
-                        bash "chmod +x ./CI/RunTests.sh"
-                        bash "cd ./CI && ./RunTests.sh"
+                        bash "chmod +x ./CI/RunSourceTests.sh"
+                        bash "cd ./CI && ./RunSourceTests.sh"
                         bash "ls -lah ./CI"
                         bash "cd ./CI && ls *.txt >/dev/null || exit 1"
                         bash "find ./CI -maxdepth 1 -type f -name '*.txt' -exec sh -c \"echo '{}'; cat '{}'\" \\;"
@@ -434,8 +450,8 @@ pipeline
                         bash "ls -lah"
                         bash "ls -lah ./Build"
                         bash "chmod -R +x ./Build"
-                        bash "chmod +x ./CI/RunTests.sh"
-                        bash "cd ./CI && ./RunTests.sh"
+                        bash "chmod +x ./CI/RunSourceTests.sh"
+                        bash "cd ./CI && ./RunSourceTests.sh"
                         bash "ls -lah ./CI"
                         bash "cd ./CI && ls *.txt >/dev/null || exit 1"
                         bash "find ./CI -maxdepth 1 -type f -name '*.txt' -exec sh -c \"echo '{}'; cat '{}'\" \\;"
@@ -443,6 +459,19 @@ pipeline
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
                 
+                stage('Windows Header Only Test') 
+                {
+                    agent { label 'windows' }
+                    steps 
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_static_build'
+                        bat 'dir'
+                        bat 'cd .\\CI && .\\RunHeaderOnlyTests.bat'
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
                 stage('Windows Static Test') 
                 {
                     agent { label 'windows' }
@@ -452,7 +481,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_static_build'
                         bat 'dir'
-                        bat 'cd .\\CI && .\\RunTests.bat'
+                        bat 'cd .\\CI && .\\RunSourceTests.bat'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -465,7 +494,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_shared_build'
                         bat 'dir'
-                        bat 'cd .\\CI && .\\RunTests.bat'
+                        bat 'cd .\\CI && .\\RunSourceTests.bat'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -478,7 +507,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_log_mode_file_build'
                         bat 'dir'
-                        bat 'cd .\\CI && .\\RunTests.bat'
+                        bat 'cd .\\CI && .\\RunSourceTests.bat'
                         bat "dir .\\Build\\SourceTests\\Debug"
                         bat "cd .\\Build\\SourceTests\\Debug && dir /a-d *.txt >nul 2>&1"
                         bat "type .\\Build\\SourceTests\\Debug\\*.txt"
@@ -494,7 +523,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_log_mode_console_and_file_build'
                         bat 'dir'
-                        bat 'cd .\\CI && .\\RunTests.bat'
+                        bat 'cd .\\CI && .\\RunSourceTests.bat'
                         bat "dir .\\Build\\SourceTests\\Debug"
                         bat "cd .\\Build\\SourceTests\\Debug && dir /a-d *.txt >nul 2>&1"
                         bat "type .\\Build\\SourceTests\\Debug\\*.txt"
