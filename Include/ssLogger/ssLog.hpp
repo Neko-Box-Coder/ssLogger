@@ -268,10 +268,10 @@
 // Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
 // =======================================================================
 
-#if !ssLOG_CALL_STACK_ONLY
-    #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
-#else
+#if ssLOG_CALL_STACK_ONLY || ssLOG_DISABLE_LOGS
     #define ssLOG_LINE(...) do {} while(false)
+#else
+    #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
 #endif
 
 //NOTE: ssLOG_CONTENT replaces ssLOG_FUNC_CONTENT
@@ -285,7 +285,7 @@
     #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
 #endif
 
-#if !ssLOG_CALL_STACK
+#if ssLOG_DISABLE_LOGS || !ssLOG_CALL_STACK
     #define ssLOG_FUNC( ... ) do{}while(0)
     #define ssLOG_FUNC_ENTRY( ... ) do{}while(0)
     #define ssLOG_FUNC_EXIT( ... ) do{}while(0)
@@ -319,10 +319,10 @@
     #define INERNAL_ssLOG_FUNC_LEVELED( ... ) \
         INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_LEVELED_IMPL, __VA_ARGS__ )
 
-    #if !ssLOG_CALL_STACK_ONLY
-        #define ssLOG_FUNC_CONTENT(expr) INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, 0)
-    #else
+    #if ssLOG_CALL_STACK_ONLY
         #define ssLOG_FUNC_CONTENT(expr) expr
+    #else
+        #define ssLOG_FUNC_CONTENT(expr) INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, 0)
     #endif
 
     #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) \
@@ -406,7 +406,7 @@
                                 INTERNAL_ssLOG_GET_FILE_NAME(), \
                                 INTERNAL_ssLOG_GET_LINE_NUM() \
                                 /* NOTE: It should use the level from Entry */);
-#endif //#if !ssLOG_CALL_STACK
+#endif //#if !ssLOG_DISABLE_LOGS && ssLOG_CALL_STACK
 
 #define INTERNAL_ssLOG_LINE_0() \
     Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
@@ -427,7 +427,10 @@
 // Macros for ssLOG_PREPEND
 // =======================================================================
 
-#if !ssLOG_CALL_STACK_ONLY
+#if ssLOG_DISABLE_LOGS || ssLOG_CALL_STACK_ONLY
+    #define ssLOG_PREPEND(x) do{} while(0)
+    #define ssLOG_PREPEND_RESET() do{} while(0)
+#else
     #define ssLOG_PREPEND(x) \
         do \
         { \
@@ -437,9 +440,6 @@
         } while(0)
     
     #define ssLOG_PREPEND_RESET() Internal_ssLogResetPrepend()
-#else
-    #define ssLOG_PREPEND(x) do{} while(0)
-    #define ssLOG_PREPEND_RESET() do{} while(0)
 #endif
 
 // =======================================================================
@@ -456,9 +456,9 @@
     #define ssLOG_SET_LOG_FILENAME(filename) Internal_ssLogSetLogFilename(filename)
     #define ssLOG_GET_LOG_FILENAME() Internal_ssLogGetLogFilename()
 #else
-    #define ssLOG_ENABLE_LOG_TO_FILE(enable) 
+    #define ssLOG_ENABLE_LOG_TO_FILE(enable) do{} while(0)
     #define ssLOG_IS_LOG_TO_FILE_ENABLED() false
-    #define ssLOG_SET_LOG_FILENAME(filename) 
+    #define ssLOG_SET_LOG_FILENAME(filename) do{} while(0)
     #define ssLOG_GET_LOG_FILENAME() ""
 #endif
 
@@ -483,28 +483,38 @@
 
 #define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(false)
 
-#define ssLOG_CACHE_OUTPUT_IN_SCOPE() \
-    Internal_ssLogCacheScope \
-    INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
+#if !ssLOG_DISABLE_LOGS
+    #define ssLOG_CACHE_OUTPUT_IN_SCOPE() \
+        Internal_ssLogCacheScope \
+        INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
 
-#define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
+    #define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
 
-#define ssLOG_OUTPUT_ALL_CACHE_GROUPED() Internal_ssLogOutputAllCacheGrouped()
+    #define ssLOG_OUTPUT_ALL_CACHE_GROUPED() Internal_ssLogOutputAllCacheGrouped()
 
-#define ssLOG_RESET_ALL_THREAD_INFO() Internal_ssLogResetAllThreadInfo()
+    #define ssLOG_RESET_ALL_THREAD_INFO() Internal_ssLogResetAllThreadInfo()
+#else
+    #define ssLOG_CACHE_OUTPUT_IN_SCOPE() do{} while(0)
+
+    #define ssLOG_OUTPUT_ALL_CACHE() do{} while(0)
+
+    #define ssLOG_OUTPUT_ALL_CACHE_GROUPED() do{} while(0)
+
+    #define ssLOG_RESET_ALL_THREAD_INFO() do{} while(0)
+#endif
 
 // =======================================================================
 // Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
 // =======================================================================
 
-#if !ssLOG_CALL_STACK_ONLY
+#if ssLOG_DISABLE_LOGS || ssLOG_CALL_STACK_ONLY
+    #define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_BENCH_END( ... ) do{} while(false)
+#else
     #define ssLOG_BENCH_START( ... ) \
         INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
     #define ssLOG_BENCH_END( ... ) \
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
-#else
-    #define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_BENCH_END( ... ) do{} while(false)
 #endif
 
 #define INTERNAL_ssLOG_BENCH_START_0() INTERNAL_ssLOG_BENCH_START_1("")

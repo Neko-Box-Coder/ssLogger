@@ -31,6 +31,7 @@ set(ssLOG_SHOW_DATE 0 CACHE BOOL "Show log date for all logged functions")
 set(ssLOG_SHOW_TIME 1 CACHE BOOL "Show log time for all logged functions")
 set(ssLOG_THREAD_SAFE_OUTPUT 1 CACHE BOOL "Use locks to ensure outputs are atomic. Can be turned off if only running in single thread for performance.")
 set(ssLOG_SHOW_THREADS 1 CACHE BOOL "Shows the thread ID for the output")
+set(ssLOG_DISABLE_LOGS 0 CACHE BOOL "Disable all logging operations")
 set(ssLOG_LOG_TO_FILE 0 CACHE BOOL "[Deprecated] Log to file instead for all logged functions")
 
 if("${ssLOG_LOG_TO_FILE}")
@@ -132,6 +133,7 @@ if("${ssLOG_USE_SOURCE}")
     target_compile_definitions(ssLogger PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
     target_compile_definitions(ssLogger PUBLIC ssLOG_IMMEDIATE_FLUSH=${ssLOG_IMMEDIATE_FLUSH})
     target_compile_definitions(ssLogger PUBLIC ssLOG_CALL_STACK_ONLY=$<BOOL:${ssLOG_CALL_STACK_ONLY}>)
+    target_compile_definitions(ssLogger PUBLIC ssLOG_DISABLE_LOGS=$<BOOL:${ssLOG_DISABLE_LOGS}>)
     
     target_compile_definitions(ssLogger PUBLIC ssLOG_USE_SOURCE)
 
@@ -244,6 +246,7 @@ if(${ssLOG_BUILD_TESTS})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_THREAD_VSPACE=${ssLOG_THREAD_VSPACE})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_IMMEDIATE_FLUSH=${ssLOG_IMMEDIATE_FLUSH})
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_CALL_STACK_ONLY=$<BOOL:${ssLOG_CALL_STACK_ONLY}>)
+    target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_DISABLE_LOGS=$<BOOL:${ssLOG_DISABLE_LOGS}>)
     
     target_compile_definitions(ssLogger_SRC PUBLIC ssLOG_USE_SOURCE)
 
