@@ -52,24 +52,11 @@ A lightweight, flexible C++11 logging library with call stack tracking and multi
       #include "ssLogger/ssLogInit.hpp"
       #include "ssLogger/ssLog.hpp"
       ```
-    3. Define macro options you want before including `ssLog.hpp`. See [Configuration](#configuration) for all options.
+    3. Define macro options you want before including `ssLog.hpp`. 
+    
+    > 📝 For a complete list of options, see [Compile Time Configurations](#%EF%B8%8F-compile-time-configurations) below.
 
 > ⚠️ **Warning**: Do not use ssLogger before main() as it uses global static variables.
-
-## ⚙️ Compile Time Configurations
-
-This can be configured either as CMake options or simply as defines before including ssLogger header.
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| ssLOG_CALL_STACK | 1 | Enable function call stack tracking |
-| ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
-| ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
-| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
-| ssLOG_SHOW_DATE | 0 | Show date in logs |
-| ssLOG_SHOW_TIME | 1 | Show time in logs |
-
-> 📝 For a complete list of options, see [Configuration Details](#configuration-details) below.
 
 ## 💻 Usage
 
@@ -114,6 +101,14 @@ ssLOG_FUNC_INFO("Normal operation");
 ```
 
 ### Log Caching And Thread Control
+
+Caching is useful for situations where a lot of logs are being output in multiple threads. 
+
+This allows better performance by avoiding having multiple threads waiting for synchronization to
+output to file/console but instead save to local thread cache.
+
+Cache can all be output either in chronological order or grouped by thread at a later time.
+
 ```cpp
 //Cache in current scope
 ssLOG_CACHE_OUTPUT_IN_SCOPE();
@@ -255,7 +250,11 @@ void ProcessTransaction(int amount)
 }
 ```
 
-## 📚 Configuration Details
+## ⚙️ Compile Time Configurations
+
+These options can be configured either as CMake options or simply as defines before including ssLogger header.
+
+For exact definitions, checkout [ssLogSwitches.hpp](https://github.com/Neko-Box-Coder/ssLogger/blob/main/Include/ssLogger/ssLogSwitches.hpp)
 
 | Define Macro Name | Default | Description |
 |-------------------|---------|-------------|
