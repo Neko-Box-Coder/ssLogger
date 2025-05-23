@@ -113,7 +113,7 @@
 
 #define INTERNAL_ssLOG_EXECUTE_COMMAND_2(a, command) command
 
-#if ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
+#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
     #if !ssLOG_CALL_STACK_ONLY
         #define ssLOG_FATAL(...) \
             do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FATAL, __VA_ARGS__ ) } while(0)
@@ -210,9 +210,9 @@
     #define ssLOG_FUNC_FATAL(...) do{}while(0)
     #define ssLOG_BENCH_START_FATAL(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
     #define ssLOG_BENCH_END_FATAL(...) do{}while(0)
-#endif //#if ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
+#endif //#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_FATAL
 
-#if ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
+#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
     #if !ssLOG_CALL_STACK_ONLY
         #define ssLOG_ERROR(...) \
             do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_ERROR, __VA_ARGS__ ) } while(0)
@@ -309,7 +309,7 @@
     #define ssLOG_FUNC_ERROR(...) do{}while(0)
     #define ssLOG_BENCH_START_ERROR(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
     #define ssLOG_BENCH_END_ERROR(...) do{}while(0)
-#endif //#if ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
+#endif //#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_ERROR
 
 #if ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
     #if !ssLOG_CALL_STACK_ONLY
@@ -408,9 +408,9 @@
     #define ssLOG_FUNC_WARNING(...) do{}while(0)
     #define ssLOG_BENCH_START_WARNING(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
     #define ssLOG_BENCH_END_WARNING(...) do{}while(0)
-#endif //#if ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
+#endif //#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_WARNING
 
-#if ssLOG_LEVEL >= ssLOG_LEVEL_INFO
+#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_INFO
     #if !ssLOG_CALL_STACK_ONLY
         #define ssLOG_INFO(...) \
             do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_INFO, __VA_ARGS__ ) } while(0)
@@ -507,9 +507,9 @@
     #define ssLOG_FUNC_INFO(...) do{}while(0)
     #define ssLOG_BENCH_START_INFO(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
     #define ssLOG_BENCH_END_INFO(...) do{}while(0)
-#endif //#if ssLOG_LEVEL >= ssLOG_LEVEL_INFO
+#endif //#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_INFO
 
-#if ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
+#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
     #if !ssLOG_CALL_STACK_ONLY
         #define ssLOG_DEBUG(...) \
             do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_DEBUG, __VA_ARGS__ ) } while(0)
@@ -606,6 +606,6 @@
     #define ssLOG_FUNC_DEBUG(...) do{}while(0)
     #define ssLOG_BENCH_START_DEBUG(...) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
     #define ssLOG_BENCH_END_DEBUG(...) do{}while(0)
-#endif //#if ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
+#endif //#if !ssLOG_DISABLE_LOGS && ssLOG_LEVEL >= ssLOG_LEVEL_DEBUG
 
 #endif //#ifndef ssLOG_LEVELS_HPP

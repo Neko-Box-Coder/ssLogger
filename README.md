@@ -275,6 +275,7 @@ For exact definitions, checkout [ssLogSwitches.hpp](https://github.com/Neko-Box-
 | ssLOG_THREAD_VSPACE | 4 | Vertical space between individual threads outputs |
 | ssLOG_IMMEDIATE_FLUSH | 0 | Flush the log output immediately for each log (⚠️ may affect performance) |
 | ssLOG_CALL_STACK_ONLY | 0 | Only show function call stack logs, other logs will be ignored |
+| ssLOG_DISABLE_LOGS | 0 | Disable all logging operations |
 
 ## 🤝 Credits
 Powered by [termcolor](https://github.com/ikalnytskyi/termcolor) ([license](./External/termcolor%20LICENSE))

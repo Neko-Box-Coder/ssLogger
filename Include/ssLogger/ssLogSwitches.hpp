@@ -91,4 +91,8 @@
     #ifndef ssLOG_CALL_STACK_ONLY
         #define ssLOG_CALL_STACK_ONLY 0
     #endif
+    
+    #ifndef ssLOG_DISABLE_LOGS
+        #define ssLOG_DISABLE_LOGS 0
+    #endif
 #endif
