@@ -419,7 +419,7 @@ pipeline
                         bash "cd ./CI && ./RunTests.sh"
                         bash "ls -lah ./CI"
                         bash "cd ./CI && ls *.txt >/dev/null || exit 1"
-                        bash "cat ./CI/*.txt"
+                        bash "find ./CI -maxdepth 1 -type f -name '*.txt' -exec sh -c \"echo '{}'; cat '{}'\" \\;"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -438,7 +438,7 @@ pipeline
                         bash "cd ./CI && ./RunTests.sh"
                         bash "ls -lah ./CI"
                         bash "cd ./CI && ls *.txt >/dev/null || exit 1"
-                        bash "cat ./CI/*.txt"
+                        bash "find ./CI -maxdepth 1 -type f -name '*.txt' -exec sh -c \"echo '{}'; cat '{}'\" \\;"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
