@@ -1,6 +1,8 @@
 #ifndef ssLOG_THREAD_INFO_HPP
 #define ssLOG_THREAD_INFO_HPP
 
+#include "./ssLogAPIHelper.hpp"
+
 #include <stack>
 #include <string>
 #include <sstream>

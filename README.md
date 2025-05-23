@@ -56,14 +56,29 @@ A lightweight, flexible C++11 logging library with call stack tracking and multi
 
 > ⚠️ **Warning**: Do not use ssLogger before main() as it uses global static variables.
 
-## 💻 Basic Usage
+## ⚙️ Compile Time Configurations
+
+This can be configured either as CMake options or simply as defines before including ssLogger header.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| ssLOG_CALL_STACK | 1 | Enable function call stack tracking |
+| ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
+| ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
+| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
+| ssLOG_SHOW_DATE | 0 | Show date in logs |
+| ssLOG_SHOW_TIME | 1 | Show time in logs |
+
+> 📝 For a complete list of options, see [Configuration Details](#configuration-details) below.
+
+## 💻 Usage
 
 ### Simple Line Logging
 ```cpp
-ssLOG_LINE("Hello, World!");  //Basic logging
-ssLOG_LINE("Value: " << 42);  //Stream-style logging
+ssLOG_LINE("Hello, World!");
+ssLOG_LINE("Value: " << 42);
 
-//Different log levels
+//Log levels
 ssLOG_FATAL("Critical error!");
 ssLOG_ERROR("Error occurred");
 ssLOG_WARNING("Warning message");
@@ -130,20 +145,17 @@ ssLOG_ERROR("This error will be cached");
 ssLOG_WARNING("This warning will be cached");
 ```
 
-## ⚙️ Configuration
+### Log File Control
+By default, when `ssLOG_MODE` is set to `ssLOG_MODE_FILE` or `ssLOG_MODE_CONSOLE_AND_FILE`,
+the output log file is `<Weekday> <Month> <Day> <Hour>_<Minutes>_<Seconds> <Year>_log.txt`
 
-### Key Configuration Options
+```cpp
+ssLOG_ENABLE_LOG_TO_FILE(false)                     //Turns off logging to file at runtime
+bool loggingToFile = ssLOG_IS_LOG_TO_FILE_ENABLED();
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| ssLOG_CALL_STACK | 1 | Enable function call stack tracking |
-| ssLOG_THREAD_SAFE_OUTPUT | 1 | Enable thread-safe output |
-| ssLOG_LEVEL | 3 | Compile-time log level (0:NONE to 5:DEBUG) |
-| ssLOG_MODE | 0 | Log mode for ssLogger (0: CONSOLE, 1: FILE, 2: CONSOLE_AND_FILE) |
-| ssLOG_SHOW_DATE | 0 | Show date in logs |
-| ssLOG_SHOW_TIME | 1 | Show time in logs |
-
-> 📝 For a complete list of options, see [Configuration Details](#configuration-details) below.
+ssLOG_SET_LOG_FILENAME("custom_log_file.txt")       //Sets output log file at runtime
+std::string logfile = ssLOG_GET_LOG_FILENAME();
+```
 
 ## 🔍 Advanced Features
 
