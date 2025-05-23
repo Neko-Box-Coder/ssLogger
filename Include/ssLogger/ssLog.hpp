@@ -82,27 +82,6 @@
 // =======================================================================
 // Macros for ssLOG_BASE and ssLOG_FLUSH
 // =======================================================================
-#if ssLOG_LOG_TO_FILE || \
-    ssLOG_MODE == ssLOG_MODE_FILE || \
-    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
-    
-    #include <fstream>
-    #include <ctime>
-    ssLOG_API extern std::ofstream ssLogFileStream;
-    ssLOG_API extern bool ssLogEnableLogToFile;
-    ssLOG_API extern std::string ssLogOutputFileName;
-    ssLOG_API extern bool ssLogReopenLogFile;
-    
-    inline void InternalUnsafe_ssLogToFileWithNewline(const std::stringstream& localss)
-    {
-        if(!ssLogEnableLogToFile || !ssLogFileStream.good() || !ssLogFileStream.is_open())
-            return;
-        if(localss.rdbuf()->in_avail())
-            ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
-        else
-            ssLogFileStream << ssLOG_ENDL;
-    }
-#endif
 
 #define INTERNAL_UNSAFE_ssLOG_CACHE_OUTPUT_AND_BREAK_IF_CACHING(x) \
     if(InternalUnsafe_ssLogIsCacheOutput()) \
@@ -184,7 +163,7 @@
             if(ssLogFileStream.good() && ssLogFileStream.is_open()) \
                 ssLogFileStream.flush(); \
         } while(0)
-#endif //#if ssLOG_LOG_TO_FILE || ssLOG_MODE == ssLOG_MODE_FILE
+#endif //#if ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
 
 //NOTE: Reason needs to differentiate this against ssLOG_BASE is because this allows us to log the
 //      same thing with and without color or a variation of text for console vs file
@@ -208,27 +187,6 @@
 #define ssLOG_SIMPLE(x) ssLOG_BASE(x)
 
 #if ssLOG_SHOW_FILE_NAME
-    #if __cplusplus >= 202002L
-        consteval
-    #elif __cplusplus >= 201703L
-        constexpr
-    #else
-        inline
-    #endif
-    const char* Internal_ssLogGetFileName(const char* path)
-    {
-        const char* result = path;
-        while(*path != '\0')
-        {
-            if(*path == '/' || *path == '\\')
-                result = ++path;
-            else
-                ++path;
-        }
-        
-        return result;
-    };
-
     #if __cplusplus >= 201703L
         #define INTERNAL_ssLOG_CONST constexpr const
     #else
@@ -302,6 +260,348 @@
     #define INTERNAL_ssLOG_GET_DATE_TIME() ""
 #endif
 
+#define INTERNAL_ssLOG_MAP_READ_GUARD() \
+    Internal_ssLogMapReadGuard mapGuard = Internal_ssLogMapReadGuard(); \
+    (void)mapGuard;
+
+// =======================================================================
+// Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
+// =======================================================================
+
+#if !ssLOG_CALL_STACK_ONLY
+    #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
+#else
+    #define ssLOG_LINE(...) do {} while(false)
+#endif
+
+//NOTE: ssLOG_CONTENT replaces ssLOG_FUNC_CONTENT
+#define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
+
+
+#if ssLOG_SHOW_THREADS
+    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() \
+        "[Thread " << InternalUnsafe_ssLogGetThreadId() << "] "
+#else
+    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
+#endif
+
+#if !ssLOG_CALL_STACK
+    #define ssLOG_FUNC( ... ) do{}while(0)
+    #define ssLOG_FUNC_ENTRY( ... ) do{}while(0)
+    #define ssLOG_FUNC_EXIT( ... ) do{}while(0)
+    #define ssLOG_FUNC_CONTENT(expr) expr; do{}while(0)
+
+    #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) expr;
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(...)
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(...) 
+    
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_1(...) 
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(...) 
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_1(...) 
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(...) 
+#else
+    //INTERNAL_ssLOG_LIMIT_EXPR turns any expression into string limiting it to 50 characters
+    #define INTERNAL_ssLOG_LIMIT_EXPR(x) \
+        (std::string(#x).size() > 50 ? std::string(#x).substr(0, 50) + " ..." : #x)
+    
+    #define INTERNAL_ssLOG_LIMIT_STR(x) \
+        (x.size() > 50 ? x.substr(0, 50) + " ..." : x)
+
+    #define ssLOG_FUNC( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC, __VA_ARGS__ )
+
+    #define INERNAL_ssLOG_FUNC_LEVELED( ... ) \
+        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_LEVELED_IMPL, __VA_ARGS__ )
+
+    #if !ssLOG_CALL_STACK_ONLY
+        #define ssLOG_FUNC_CONTENT(expr) INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, 0)
+    #else
+        #define ssLOG_FUNC_CONTENT(expr) expr
+    #endif
+
+    #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) \
+        std::string ssLogLimitedExpr = INTERNAL_ssLOG_LIMIT_EXPR(expr); \
+        Internal_ssLogFuncEntry(std::string("[") + ssLogLimitedExpr + "]", \
+                                INTERNAL_ssLOG_GET_FILE_NAME(), \
+                                INTERNAL_ssLOG_GET_LINE_NUM(), \
+                                level); \
+        \
+        expr; \
+        \
+        Internal_ssLogFuncExit( std::string("[") + ssLogLimitedExpr + "]", \
+                                INTERNAL_ssLOG_GET_FILE_NAME(), \
+                                INTERNAL_ssLOG_GET_LINE_NUM())
+    
+    #define INTERNAL_ssLOG_TO_STRING(x) (std::stringstream() << x).str()
+    
+    #define INTERNAL_ssLOG_FUNC_0() INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(0)
+    
+    #define INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(customFuncName) \
+        INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName)))
+    
+    #define INTERNAL_ssLOG_FUNC_1(customFuncName) \
+        INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, 0)
+
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(level) \
+        Internal_ssLogFunctionScope ssLogScopeObj = \
+        Internal_ssLogFunctionScope(INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_0()), \
+                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
+                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()), \
+                                    level)
+    
+    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, level) \
+        Internal_ssLogFunctionScope ssLogScopeObj = \
+        Internal_ssLogFunctionScope(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(std::string(customFuncName)), \
+                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
+                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()), \
+                                    level)
+
+    #define ssLOG_FUNC_ENTRY( ... ) \
+        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY, __VA_ARGS__ ) } while(0)
+    
+    #define ssLOG_FUNC_EXIT( ... ) \
+        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_EXIT, __VA_ARGS__ ) } while(0)
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_0() \
+        INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(__func__, 0)
+    
+    #define INTERNAL_ssLOG_FUNC_EXIT_0() \
+        INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(__func__, 0)
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFuncName) \
+        INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(customFuncName, 0)
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_1(customFuncName) \
+        INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(customFuncName, 0)
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_1(level) \
+        INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(__func__, level)
+
+    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(customFuncName, level) \
+        Internal_ssLogFuncEntry(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(std::string(customFuncName)), \
+                                INTERNAL_ssLOG_GET_FILE_NAME(), \
+                                INTERNAL_ssLOG_GET_LINE_NUM(), \
+                                level);
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_0() \
+        static_assert(false, "INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL must provide a level")
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_1(level) \
+        INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(__func__, level)
+
+    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(customFuncName, level) \
+        Internal_ssLogFuncExit( INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(std::string(customFuncName)), \
+                                INTERNAL_ssLOG_GET_FILE_NAME(), \
+                                INTERNAL_ssLOG_GET_LINE_NUM() \
+                                /* NOTE: It should use the level from Entry */);
+#endif //#if !ssLOG_CALL_STACK
+
+#define INTERNAL_ssLOG_LINE_0() \
+    Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
+                        INTERNAL_ssLOG_GET_FILE_NAME(), \
+                        INTERNAL_ssLOG_GET_LINE_NUM(), "", \
+                        0);
+
+#define INTERNAL_ssLOG_LINE_1(debugText) \
+    std::stringstream localssLogString; \
+    localssLogString << debugText; \
+    Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
+                        INTERNAL_ssLOG_GET_FILE_NAME(), \
+                        INTERNAL_ssLOG_GET_LINE_NUM(), \
+                        localssLogString.str(), \
+                        0);
+
+// =======================================================================
+// Macros for ssLOG_PREPEND
+// =======================================================================
+
+#if !ssLOG_CALL_STACK_ONLY
+    #define ssLOG_PREPEND(x) \
+        do \
+        { \
+            std::stringstream localssLogString; \
+            localssLogString << x; \
+            Internal_ssLogSetPrepend(localssLogString); \
+        } while(0)
+    
+    #define ssLOG_PREPEND_RESET() Internal_ssLogResetPrepend()
+#else
+    #define ssLOG_PREPEND(x) do{} while(0)
+    #define ssLOG_PREPEND_RESET() do{} while(0)
+#endif
+
+// =======================================================================
+// Macros for ssLOG_ENABLE_LOG_TO_FILE, ssLOG_IS_LOG_TO_FILE_ENABLE, ssLOG_SET_LOG_FILENAME,
+// ssLOG_GET_LOG_FILENAME
+// =======================================================================
+
+#if ssLOG_LOG_TO_FILE || \
+    ssLOG_MODE == ssLOG_MODE_FILE || \
+    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
+
+    #define ssLOG_ENABLE_LOG_TO_FILE(enable) Internal_ssLogEnableLogToFile(enable)
+    #define ssLOG_IS_LOG_TO_FILE_ENABLED() Internal_ssLogIsEnabledLogToFile()
+    #define ssLOG_SET_LOG_FILENAME(filename) Internal_ssLogSetLogFilename(filename)
+    #define ssLOG_GET_LOG_FILENAME() Internal_ssLogGetLogFilename()
+#else
+    #define ssLOG_ENABLE_LOG_TO_FILE(enable) 
+    #define ssLOG_IS_LOG_TO_FILE_ENABLED() false
+    #define ssLOG_SET_LOG_FILENAME(filename) 
+    #define ssLOG_GET_LOG_FILENAME() ""
+#endif
+
+// =======================================================================
+// Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, 
+// ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, 
+// ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS, ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS, 
+// ssLOG_CACHE_OUTPUT_FOR_SCOPE, ssLOG_OUTPUT_ALL_CACHE and ssLOG_OUTPUT_ALL_CACHE_GROUPED
+// =======================================================================
+
+#define ssLOG_ENABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(true)
+
+#define ssLOG_DISABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(false)
+
+#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogSetCacheOutput(true)
+
+#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogSetCacheOutput(false)
+
+#define ssLOG_IS_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogIsCacheOutput()
+
+#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(true)
+
+#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(false)
+
+#define ssLOG_CACHE_OUTPUT_IN_SCOPE() \
+    Internal_ssLogCacheScope \
+    INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
+
+#define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
+
+#define ssLOG_OUTPUT_ALL_CACHE_GROUPED() Internal_ssLogOutputAllCacheGrouped()
+
+#define ssLOG_RESET_ALL_THREAD_INFO() Internal_ssLogResetAllThreadInfo()
+
+// =======================================================================
+// Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
+// =======================================================================
+
+#if !ssLOG_CALL_STACK_ONLY
+    #define ssLOG_BENCH_START( ... ) \
+        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
+    #define ssLOG_BENCH_END( ... ) \
+        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
+#else
+    #define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_BENCH_END( ... ) do{} while(false)
+#endif
+
+#define INTERNAL_ssLOG_BENCH_START_0() INTERNAL_ssLOG_BENCH_START_1("")
+
+#define INTERNAL_ssLOG_BENCH_START_1(benchName) \
+    INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
+    INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, 0)
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName) \
+    std::make_pair(std::string(benchName), std::chrono::high_resolution_clock::now())
+
+#define INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, level) \
+    do \
+    { \
+        std::string benchNameStr = benchName; \
+        std::stringstream localssLogString; \
+        if(benchNameStr.empty()) \
+            localssLogString << "Starting benchmark"; \
+        else \
+            localssLogString << "Starting benchmark \"" << benchNameStr << "\""; \
+        \
+        Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
+                            INTERNAL_ssLOG_GET_FILE_NAME(), \
+                            INTERNAL_ssLOG_GET_LINE_NUM(), \
+                            localssLogString.str(), \
+                            level); \
+    } while(0)
+
+#define INTERNAL_ssLOG_BENCH_END_0() \
+    static_assert(false, "ssLOG_BENCH_END must accept 1 argument")
+
+#define INTERNAL_ssLOG_BENCH_END_1(startVar) \
+    Interna_ssLogBenchEnd(  startVar, \
+                            INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
+                            INTERNAL_ssLOG_GET_FILE_NAME(), \
+                            INTERNAL_ssLOG_GET_LINE_NUM(), \
+                            0)
+
+// =======================================================================
+// Macros for ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL & ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL
+// =======================================================================
+
+#define ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(targetLevel) \
+    Internal_ssLogSetCurrentThreadTargetLevel(targetLevel)
+
+#define ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL() Internal_ssLogGetCurrentThreadTargetLevel()
+
+
+// =======================================================================
+// Functions/Classes Implementations
+// =======================================================================
+
+#if ssLOG_LOG_TO_FILE || \
+    ssLOG_MODE == ssLOG_MODE_FILE || \
+    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
+    
+    #include <fstream>
+    #include <ctime>
+    ssLOG_API extern std::ofstream ssLogFileStream;
+    ssLOG_API extern bool ssLogEnableLogToFile;
+    ssLOG_API extern std::string ssLogOutputFileName;
+    ssLOG_API extern bool ssLogReopenLogFile;
+    
+    inline void InternalUnsafe_ssLogToFileWithNewline(const std::stringstream& localss)
+    {
+        if(!ssLogEnableLogToFile || !ssLogFileStream.good() || !ssLogFileStream.is_open())
+            return;
+        if(localss.rdbuf()->in_avail())
+            ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
+        else
+            ssLogFileStream << ssLOG_ENDL;
+    }
+#endif
+
+#if ssLOG_SHOW_FILE_NAME
+    #if __cplusplus >= 202002L
+        consteval
+    #elif __cplusplus >= 201703L
+        constexpr
+    #else
+        inline
+    #endif
+    const char* Internal_ssLogGetFileName(const char* path)
+    {
+        const char* result = path;
+        while(*path != '\0')
+        {
+            if(*path == '/' || *path == '\\')
+                result = ++path;
+            else
+                ++path;
+        }
+        
+        return result;
+    };
+#endif
+
 #include "./ssLogThreadInfo.hpp"
 
 ssLOG_API extern std::unordered_map<std::thread::id, ssLogThreadInfo> ssLogInfoMap;
@@ -325,10 +625,6 @@ class Internal_ssLogMapReadGuard
             ssLogReadCount--;
         }
 };
-
-#define INTERNAL_ssLOG_MAP_READ_GUARD() \
-    Internal_ssLogMapReadGuard mapGuard = Internal_ssLogMapReadGuard(); \
-    (void)mapGuard;
 
 inline void Internal_ssLogPreActionChecks()
 {
@@ -507,26 +803,6 @@ inline std::string InternalUnsafe_ssLogGetThreadVSpace()
     }
 #endif
 
-#if ssLOG_SHOW_THREADS
-    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() \
-        "[Thread " << InternalUnsafe_ssLogGetThreadId() << "] "
-#else
-    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
-#endif
-
-// =======================================================================
-// Macros for ssLOG_LINE, ssLOG_FUNC, ssLOG_FUNC_ENTRY, ssLOG_FUNC_EXIT and ssLOG_FUNC_CONTENT
-// =======================================================================
-
-#if !ssLOG_CALL_STACK_ONLY
-    #define ssLOG_LINE( ... ) do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_LINE, __VA_ARGS__ ) } while(0)
-#else
-    #define ssLOG_LINE(...) do {} while(false)
-#endif
-
-//NOTE: ssLOG_CONTENT replaces ssLOG_FUNC_CONTENT
-#define ssLOG_CONTENT( ... ) ssLOG_FUNC_CONTENT( __VA_ARGS__ )
-
 class Internal_ssLogLevelApplier
 {
     public:
@@ -542,36 +818,27 @@ class Internal_ssLogLevelApplier
                                                         Internal_ssLogLevelApplier&);
 };
 
+//NOTE: Used only by color
 inline std::string Internal_ssLogLevelNoColor(int level)
 {
     switch(level)
     {
         case ssLOG_LEVEL_FATAL:
             return "[FATAL] ";
-        
         case ssLOG_LEVEL_ERROR:
             return "[ERROR] ";
-        
         case ssLOG_LEVEL_WARNING:
             return "[WARNING] ";
-        
         case ssLOG_LEVEL_INFO:
             return "[INFO] ";
-        
         case ssLOG_LEVEL_DEBUG:
             return "[DEBUG] ";
-        
         default:
             return "";
     }
 }
 
 #if !ssLOG_CALL_STACK
-    #define ssLOG_FUNC( ... ) do{}while(0)
-    #define ssLOG_FUNC_ENTRY( ... ) do{}while(0)
-    #define ssLOG_FUNC_EXIT( ... ) do{}while(0)
-    #define ssLOG_FUNC_CONTENT(expr) expr; do{}while(0)
-
     inline void Internal_ssLogLine( std::string funcName, 
                                     std::string fileName, 
                                     std::string lineNum,
@@ -619,23 +886,7 @@ inline std::string Internal_ssLogLevelNoColor(int level)
             }
         }
     }
-    
-    #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) expr;
-    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(...)
-    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(...) 
-    
-    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_0() \
-        static_assert(false, "INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL must provide a level")
-
-    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_1(...) 
-    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(...) 
-
-    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_0() \
-        static_assert(false, "INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL must provide a level")
-
-    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_1(...) 
-    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(...) 
-#else
+#else //#if !ssLOG_CALL_STACK
     inline std::string Internal_ssLog_TabAdder(int tabAmount, bool tree = false)
     {
         std::string returnString = "";
@@ -867,169 +1118,8 @@ inline std::string Internal_ssLogLevelNoColor(int level)
                                         #endif
             }
     };
+#endif //#if ssLOG_CALL_STACK
 
-    //INTERNAL_ssLOG_LIMIT_EXPR turns any expression into string limiting it to 50 characters
-    #define INTERNAL_ssLOG_LIMIT_EXPR(x) \
-        (std::string(#x).size() > 50 ? std::string(#x).substr(0, 50) + " ..." : #x)
-    
-    #define INTERNAL_ssLOG_LIMIT_STR(x) \
-        (x.size() > 50 ? x.substr(0, 50) + " ..." : x)
-
-    #define ssLOG_FUNC( ... ) INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC, __VA_ARGS__ )
-
-    #define INERNAL_ssLOG_FUNC_LEVELED( ... ) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_LEVELED_IMPL, __VA_ARGS__ )
-
-    #if !ssLOG_CALL_STACK_ONLY
-        #define ssLOG_FUNC_CONTENT(expr) INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, 0)
-    #else
-        #define ssLOG_FUNC_CONTENT(expr) expr
-    #endif
-
-    #define INTERNAL_ssLOG_FUNC_CONTENT_LEVELED(expr, level) \
-        std::string ssLogLimitedExpr = INTERNAL_ssLOG_LIMIT_EXPR(expr); \
-        Internal_ssLogFuncEntry(std::string("[") + ssLogLimitedExpr + "]", \
-                                INTERNAL_ssLOG_GET_FILE_NAME(), \
-                                INTERNAL_ssLOG_GET_LINE_NUM(), \
-                                level); \
-        \
-        expr; \
-        \
-        Internal_ssLogFuncExit( std::string("[") + ssLogLimitedExpr + "]", \
-                                INTERNAL_ssLOG_GET_FILE_NAME(), \
-                                INTERNAL_ssLOG_GET_LINE_NUM())
-    
-    #define INTERNAL_ssLOG_TO_STRING(x) (std::stringstream() << x).str()
-    
-    #define INTERNAL_ssLOG_FUNC_0() INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(0)
-    
-    #define INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(customFuncName) \
-        INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_1(INTERNAL_ssLOG_LIMIT_STR(customFuncName)))
-    
-    #define INTERNAL_ssLOG_FUNC_1(customFuncName) \
-        INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, 0)
-
-    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_0() \
-        static_assert(false, "INTERNAL_ssLOG_FUNC_LEVELED_IMPL must provide a level")
-
-    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_1(level) \
-        Internal_ssLogFunctionScope ssLogScopeObj = \
-        Internal_ssLogFunctionScope(INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FUNCTION_NAME_0()), \
-                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
-                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()), \
-                                    level)
-    
-    #define INTERNAL_ssLOG_FUNC_LEVELED_IMPL_2(customFuncName, level) \
-        Internal_ssLogFunctionScope ssLogScopeObj = \
-        Internal_ssLogFunctionScope(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(std::string(customFuncName)), \
-                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_FILE_NAME()), \
-                                    INTERNAL_ssLOG_TO_STRING(INTERNAL_ssLOG_GET_LINE_NUM()), \
-                                    level)
-
-    #define ssLOG_FUNC_ENTRY( ... ) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_ENTRY, __VA_ARGS__ ) } while(0)
-    
-    #define ssLOG_FUNC_EXIT( ... ) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_FUNC_EXIT, __VA_ARGS__ ) } while(0)
-
-    #define INTERNAL_ssLOG_FUNC_ENTRY_0() \
-        INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(__func__, 0)
-    
-    #define INTERNAL_ssLOG_FUNC_EXIT_0() \
-        INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(__func__, 0)
-
-    #define INTERNAL_ssLOG_FUNC_ENTRY_1(customFuncName) \
-        INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(customFuncName, 0)
-
-    #define INTERNAL_ssLOG_FUNC_EXIT_1(customFuncName) \
-        INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(customFuncName, 0)
-
-    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_0() \
-        static_assert(false, "INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL must provide a level")
-
-    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_1(level) \
-        INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(__func__, level)
-
-    #define INTERNAL_ssLOG_FUNC_ENTRY_LEVELED_IMPL_2(customFuncName, level) \
-        Internal_ssLogFuncEntry(INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(std::string(customFuncName)), \
-                                INTERNAL_ssLOG_GET_FILE_NAME(), \
-                                INTERNAL_ssLOG_GET_LINE_NUM(), \
-                                level);
-
-    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_0() \
-        static_assert(false, "INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL must provide a level")
-
-    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_1(level) \
-        INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(__func__, level)
-
-    #define INTERNAL_ssLOG_FUNC_EXIT_LEVELED_IMPL_2(customFuncName, level) \
-        Internal_ssLogFuncExit( INTERNAL_ssLOG_SHORTEN_CUSTOM_FUNCTION_NAME_STR(std::string(customFuncName)), \
-                                INTERNAL_ssLOG_GET_FILE_NAME(), \
-                                INTERNAL_ssLOG_GET_LINE_NUM() \
-                                /* NOTE: It should use the level from Entry */);
-#endif //#if !ssLOG_CALL_STACK
-
-#define INTERNAL_ssLOG_LINE_0() \
-    Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
-                        INTERNAL_ssLOG_GET_FILE_NAME(), \
-                        INTERNAL_ssLOG_GET_LINE_NUM(), "", \
-                        0);
-
-#define INTERNAL_ssLOG_LINE_1(debugText) \
-    std::stringstream localssLogString; \
-    localssLogString << debugText; \
-    Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
-                        INTERNAL_ssLOG_GET_FILE_NAME(), \
-                        INTERNAL_ssLOG_GET_LINE_NUM(), \
-                        localssLogString.str(), \
-                        0);
-
-
-// =======================================================================
-// Macros for ssLOG_PREPEND
-// =======================================================================
-
-#if !ssLOG_CALL_STACK_ONLY
-    #define ssLOG_PREPEND(x) \
-        do \
-        { \
-            std::stringstream localssLogString; \
-            localssLogString << x; \
-            Internal_ssLogSetPrepend(localssLogString); \
-        } while(0)
-    
-    #define ssLOG_PREPEND_RESET() Internal_ssLogResetPrepend()
-#else
-    #define ssLOG_PREPEND(x) do{} while(0)
-    #define ssLOG_PREPEND_RESET() do{} while(0)
-#endif
-
-// =======================================================================
-// Macros for ssLOG_ENABLE_LOG_TO_FILE, ssLOG_IS_LOG_TO_FILE_ENABLE, ssLOG_SET_LOG_FILENAME,
-// ssLOG_GET_LOG_FILENAME
-// =======================================================================
-
-#if ssLOG_LOG_TO_FILE || \
-    ssLOG_MODE == ssLOG_MODE_FILE || \
-    ssLOG_MODE == ssLOG_MODE_CONSOLE_AND_FILE
-
-    #define ssLOG_ENABLE_LOG_TO_FILE(enable) Internal_ssLogEnableLogToFile(enable)
-    #define ssLOG_IS_LOG_TO_FILE_ENABLED() Internal_ssLogIsEnabledLogToFile()
-    #define ssLOG_SET_LOG_FILENAME(filename) Internal_ssLogSetLogFilename(filename)
-    #define ssLOG_GET_LOG_FILENAME() Internal_ssLogGetLogFilename()
-#else
-    #define ssLOG_ENABLE_LOG_TO_FILE(enable) 
-    #define ssLOG_IS_LOG_TO_FILE_ENABLED() false
-    #define ssLOG_SET_LOG_FILENAME(filename) 
-    #define ssLOG_GET_LOG_FILENAME() ""
-#endif
-
-// =======================================================================
-// Macros for ssLOG_ENABLE_CACHE_OUTPUT, ssLOG_DISABLE_CACHE_OUTPUT, 
-// ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD, 
-// ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS, ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS, 
-// ssLOG_CACHE_OUTPUT_FOR_SCOPE, ssLOG_OUTPUT_ALL_CACHE and ssLOG_OUTPUT_ALL_CACHE_GROUPED
-// =======================================================================
 inline void Internal_ssLogSetAllCacheOutput(bool cache)
 {
     Internal_ssLogPreActionChecks();
@@ -1041,20 +1131,6 @@ inline void Internal_ssLogSetAllCacheOutput(bool cache)
             it->second.CacheOutput = cache;
     }
 }
-
-#define ssLOG_ENABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(true)
-
-#define ssLOG_DISABLE_CACHE_OUTPUT() Internal_ssLogSetAllCacheOutput(false)
-
-#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogSetCacheOutput(true)
-
-#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogSetCacheOutput(false)
-
-#define ssLOG_IS_CACHE_OUTPUT_FOR_CURRENT_THREAD() Internal_ssLogIsCacheOutput()
-
-#define ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(true)
-
-#define ssLOG_DISABLE_CACHE_OUTPUT_FOR_NEW_THREADS() ssLogNewThreadCacheByDefault.store(false)
 
 class Internal_ssLogCacheScope
 {
@@ -1069,10 +1145,6 @@ class Internal_ssLogCacheScope
             ssLOG_DISABLE_CACHE_OUTPUT_FOR_CURRENT_THREAD();
         }
 };
-
-#define ssLOG_CACHE_OUTPUT_IN_SCOPE() \
-    Internal_ssLogCacheScope \
-    INTERNAL_ssLOG_SELECT(ssLogCacheScopeObj, __LINE__) = Internal_ssLogCacheScope()
 
 inline void Internal_ssLogOutputAllCacheGrouped()
 {
@@ -1170,63 +1242,6 @@ inline void Internal_ssLogResetAllThreadInfo()
     ssLogNewThreadID = maxThreadID + 1;    
 }
 
-#define ssLOG_OUTPUT_ALL_CACHE() Internal_ssLogOutputAllCache()
-
-#define ssLOG_OUTPUT_ALL_CACHE_GROUPED() Internal_ssLogOutputAllCacheGrouped()
-
-#define ssLOG_RESET_ALL_THREAD_INFO() Internal_ssLogResetAllThreadInfo()
-
-// =======================================================================
-// Macros for ssLOG_BENCH_START and ssLOG_BENCH_END
-// =======================================================================
-
-#if !ssLOG_CALL_STACK_ONLY
-    #define ssLOG_BENCH_START( ... ) \
-        INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START, __VA_ARGS__ )
-    #define ssLOG_BENCH_END( ... ) \
-        do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
-#else
-    #define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
-    #define ssLOG_BENCH_END( ... ) do{} while(false)
-#endif
-
-#define INTERNAL_ssLOG_BENCH_START_0() INTERNAL_ssLOG_BENCH_START_1("")
-
-#define INTERNAL_ssLOG_BENCH_START_1(benchName) \
-    INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
-    INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, 0)
-
-#define INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName) \
-    std::make_pair(std::string(benchName), std::chrono::high_resolution_clock::now())
-
-#define INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, level) \
-    do \
-    { \
-        std::string benchNameStr = benchName; \
-        std::stringstream localssLogString; \
-        if(benchNameStr.empty()) \
-            localssLogString << "Starting benchmark"; \
-        else \
-            localssLogString << "Starting benchmark \"" << benchNameStr << "\""; \
-        \
-        Internal_ssLogLine( INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
-                            INTERNAL_ssLOG_GET_FILE_NAME(), \
-                            INTERNAL_ssLOG_GET_LINE_NUM(), \
-                            localssLogString.str(), \
-                            level); \
-    } while(0)
-
-#define INTERNAL_ssLOG_BENCH_END_0() \
-    static_assert(false, "ssLOG_BENCH_END must accept 1 argument")
-
-#define INTERNAL_ssLOG_BENCH_END_1(startVar) \
-    Interna_ssLogBenchEnd(  startVar, \
-                            INTERNAL_ssLOG_GET_FUNCTION_NAME_0(), \
-                            INTERNAL_ssLOG_GET_FILE_NAME(), \
-                            INTERNAL_ssLOG_GET_LINE_NUM(), \
-                            0)
-
-
 using Internal_ssLogHighResClock = std::chrono::time_point<std::chrono::high_resolution_clock>;
 inline void Interna_ssLogBenchEnd(  const std::pair<std::string, 
                                                     Internal_ssLogHighResClock>& startVar,
@@ -1272,10 +1287,6 @@ inline void Interna_ssLogBenchEnd(  const std::pair<std::string,
     }
 }
 
-// =======================================================================
-// Macros for ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL & ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL
-// =======================================================================
-
 inline void Internal_ssLogSetCurrentThreadTargetLevel(int targetLevel)
 {
     Internal_ssLogPreActionChecks();
@@ -1291,11 +1302,6 @@ inline int Internal_ssLogGetCurrentThreadTargetLevel()
     INTERNAL_ssLOG_MAP_READ_GUARD();
     return InternalUnsafe_ssLogGetTargetLogLevel();
 }
-
-#define ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(targetLevel) \
-    Internal_ssLogSetCurrentThreadTargetLevel(targetLevel)
-
-#define ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL() Internal_ssLogGetCurrentThreadTargetLevel()
 
 #include "ssLogLevels.hpp"
 
