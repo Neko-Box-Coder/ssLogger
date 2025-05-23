@@ -271,9 +271,20 @@ pipeline
                             error('Receiving non relevant PR action')
                         else
                         {
-                            timeout(time: 30, unit: 'MINUTES')
+                            if(env.GITHUB_PR_REPO_OWNER == REPO_OWNER)
                             {
-                                input 'Approval this job?'
+                                echo    "env.GITHUB_PR_REPO_OWNER (${env.GITHUB_PR_REPO_OWNER}) is " +
+                                        "the same as original REPO_OWNER (${REPO_OWNER})"
+                                echo "Skipping approval..."
+                            }
+                            else
+                            {
+                                echo    "env.GITHUB_PR_REPO_OWNER (${env.GITHUB_PR_REPO_OWNER}) is " +
+                                        " not the same as original REPO_OWNER (${REPO_OWNER})"
+                                timeout(time: 30, unit: 'MINUTES')
+                                {
+                                    input 'Approval this job?'
+                                }
                             }
                         }
                         
