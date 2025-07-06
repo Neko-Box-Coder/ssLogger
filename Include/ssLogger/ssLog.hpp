@@ -19,16 +19,49 @@
 // Macros for allowing overloadable Macro functions
 // =======================================================================
 
-// https://stackoverflow.com/questions/16683146/can-macros-be-overloaded-by-number-of-arguments
+//Modified from https://stackoverflow.com/questions/16683146/can-macros-be-overloaded-by-number-of-arguments
 #define INTERNAL_ssLOG_CAT( A, B ) A ## B
-#define INTERNAL_ssLOG_SELECT( NAME, NUM ) INTERNAL_ssLOG_CAT( NAME ## _, NUM )
+#define INTERNAL_ssLOG_CAT_MUTLI( A, B, ... ) A ## B
 #define INTERNAL_ssLOG_COMPOSE( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE2( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE3( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE4( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE5( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE6( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE7( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE8( NAME, ARGS ) NAME ARGS
+#define INTERNAL_ssLOG_COMPOSE9( NAME, ARGS ) NAME ARGS
+
+#define INTERNAL_ssLOG_SELECT( NAME, NUM ) INTERNAL_ssLOG_COMPOSE8(INTERNAL_ssLOG_COMPOSE7, (INTERNAL_ssLOG_CAT, ( NAME ## _, NUM )))
+
+#define INTERNAL_ssLOG_DELAYED_CAT_MUTLI( ... ) INTERNAL_ssLOG_COMPOSE( INTERNAL_ssLOG_CAT_MUTLI, (__VA_ARGS__) )
 
 #define INTERNAL_ssLOG_GET_COUNT( _0, _1, _2, _3, _4, _5, _6 /* ad nauseam */, COUNT, ... ) COUNT
 #define INTERNAL_ssLOG_EXPAND() ,,,,,, // 6 commas (or 7 empty tokens)
+
+#define INTERNAL_ssLOG_TEST_PAREN( ... ) PLACEHOLDER
+#define INTERNAL_ssLOG_CANCEL_INTERNAL_ssLOG_TEST_PAREN
+
+//Returns PLACEHOLDER __VA_ARGS__ if the first argument has parenthses, otherwise __VA_ARGS__
+#define INTERNAL_ssLOG_TEST_ARGS_BRACKET( ... ) \
+    INTERNAL_ssLOG_COMPOSE2(INTERNAL_ssLOG_DELAYED_CAT_MUTLI, \
+                            (INTERNAL_ssLOG_CANCEL_, INTERNAL_ssLOG_TEST_PAREN __VA_ARGS__)) __VA_ARGS__
+
 #define INTERNAL_ssLOG_VA_SIZE( ... ) \
-    INTERNAL_ssLOG_COMPOSE( INTERNAL_ssLOG_GET_COUNT, \
-                            (INTERNAL_ssLOG_EXPAND __VA_ARGS__ (), 0, 6, 5, 4, 3, 2, 1) )
+    INTERNAL_ssLOG_COMPOSE6 \
+    ( \
+        INTERNAL_ssLOG_COMPOSE5, \
+        ( \
+            INTERNAL_ssLOG_COMPOSE4, \
+            ( \
+                INTERNAL_ssLOG_COMPOSE3, \
+                ( \
+                    INTERNAL_ssLOG_GET_COUNT, \
+                    (INTERNAL_ssLOG_EXPAND INTERNAL_ssLOG_TEST_ARGS_BRACKET(__VA_ARGS__) () , 0, 6, 5, 4, 3, 2, 1) \
+                ) \
+            ) \
+        ) \
+    )
 
 #ifndef _MSC_VER
     #define INTERNAL_ssLOG_VA_SELECT( NAME, ... ) \
@@ -38,8 +71,7 @@
     //This is honestly retarded.
     #define INTERNAL_ssLOG_VA_ARGS_FIX( macro, args ) macro args
     #define INTERNAL_ssLOG_VA_SELECT( NAME, ... ) \
-        INTERNAL_ssLOG_VA_ARGS_FIX( INTERNAL_ssLOG_SELECT, \
-                                    ( NAME, INTERNAL_ssLOG_VA_SIZE( __VA_ARGS__ ) )) (__VA_ARGS__)
+        INTERNAL_ssLOG_COMPOSE9(INTERNAL_ssLOG_VA_ARGS_FIX, (INTERNAL_ssLOG_SELECT, ( NAME, INTERNAL_ssLOG_VA_SIZE( __VA_ARGS__ ) ))) (__VA_ARGS__)
 #endif
 
 // =======================================================================
