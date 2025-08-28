@@ -200,7 +200,7 @@ auto benchmark = ssLOG_BENCH_START("Operation");
 ssLOG_BENCH_END(benchmark);
 
 //Benchmarking with different log levels
-auto benchError = ssLOG_BENCH_ERROR("Critical Operation");
+auto benchError = ssLOG_BENCH_START_ERROR("Critical Operation");
 //... code ...
 ssLOG_BENCH_END(benchError);
 ```
