@@ -8,7 +8,8 @@ A lightweight, flexible C++11 logging library with call stack tracking and multi
 - 🗒️ **Call Stack Tracking**: Full function call stack visualization
 - 🎯 **Multiple Log Levels**: FATAL, ERROR, WARNING, INFO, DEBUG with runtime control
 - 🧵 **Thread Safety**: Built-in support for multi-threaded applications
-- 🚀 **Minimal Dependencies**: Header-only or CMake integration
+- 🔄 **Log Rotation**: Automatic file rotation based on size with configurable retention
+- 🚀 **Minimal Dependencies**: Header-only or CMake integration (C++11 compatible)
 - ⚡ **High Performance**: Optional caching and configurable thread safety
 - 🛠️ **Highly Configurable**: Extensive compile-time and runtime options
 
@@ -145,11 +146,34 @@ By default, when `ssLOG_MODE` is set to `ssLOG_MODE_FILE` or `ssLOG_MODE_CONSOLE
 the output log file is `<Weekday> <Month> <Day> <Hour>_<Minutes>_<Seconds> <Year>_log.txt`
 
 ```cpp
-ssLOG_ENABLE_LOG_TO_FILE(false)                     //Turns off logging to file at runtime
+ssLOG_ENABLE_LOG_TO_FILE(false);                    //Turns off logging to file at runtime
 bool loggingToFile = ssLOG_IS_LOG_TO_FILE_ENABLED();
 
-ssLOG_SET_LOG_FILENAME("custom_log_file.txt")       //Sets output log file at runtime
+ssLOG_SET_LOG_FILENAME("custom_log_file.txt");      //Sets output log file at runtime
 std::string logfile = ssLOG_GET_LOG_FILENAME();
+```
+
+### Log Rotation
+Automatically rotate log files when they exceed a specified size to prevent disk space issues.
+Log rotation is **disabled by default** and must be enabled at runtime. 
+By default when enabled, it will rotate with 5 log files and each log file has a 5 MB limit.
+
+```cpp
+ssLOG_ENABLE_ROTATION(true);        //Enable log rotation
+
+ssLOG_SET_MAX_LOG_SIZE_MB(10);      //10 MB
+ssLOG_SET_MAX_LOG_SIZE_MB(0.5);     //500 KB
+
+ssLOG_SET_MAX_ROTATED_FILES(10);    //Maximum number of rotated files to keep (default: 5)
+
+//Check current rotation settings
+bool rotationEnabled = ssLOG_IS_ROTATION_ENABLED();
+double maxSize = ssLOG_GET_MAX_LOG_SIZE_MB();
+int maxFiles = ssLOG_GET_MAX_ROTATED_FILES();
+size_t currentBytes = ssLOG_GET_CURRENT_FILE_SIZE();    //Current file size in bytes
+
+//Delete all rotated files
+ssLOG_CLEAR_ROTATED_FILES();
 ```
 
 ## 🔍 Advanced Features

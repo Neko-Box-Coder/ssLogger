@@ -332,12 +332,12 @@ if(${ssLOG_BUILD_TESTS})
             
             # target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE "-E")
 
-            # if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-            #     target_compile_definitions("${EXECUTABLE_NAME}${exeSuffix}" PUBLIC _CRT_SECURE_NO_WARNINGS)
-            #     target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE "/utf-8;/W4;")
-            # else()
-            #     target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE -Wall -Wpedantic -Werror)
-            # endif()
+            if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+                target_compile_definitions("${EXECUTABLE_NAME}${exeSuffix}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+                target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE "/utf-8;/W4;")
+            else()
+                target_compile_options("${EXECUTABLE_NAME}${exeSuffix}" PRIVATE -Wall -Wpedantic -Werror -Wno-sign-compare)
+            endif()
             
             if(NOT WIN32 AND "${ssLOG_BUILD_TYPE}" STREQUAL "SHARED")
                 set_target_properties("${EXECUTABLE_NAME}${exeSuffix}" PROPERTIES
