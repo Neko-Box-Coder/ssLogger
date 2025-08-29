@@ -23,6 +23,8 @@ timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogLineTestSource.exe"
 timeout /t 3
 CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogMultiThreadTestSource.exe"
+timeout /t 3
+CALL :RUN_TEST "%~dp0\..\Build\SourceTests\Debug\LogRotationTestSource.exe"
 
 EXIT 0
 

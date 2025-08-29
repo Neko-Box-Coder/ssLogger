@@ -11,3 +11,5 @@ sleep 1
 ../Build/SourceTests/LogLineTestSource
 sleep 1
 ../Build/SourceTests/LogMultiThreadTestSource
+sleep 1
+../Build/SourceTests/LogRotationTestSource

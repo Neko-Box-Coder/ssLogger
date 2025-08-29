@@ -487,11 +487,31 @@
     #define ssLOG_IS_LOG_TO_FILE_ENABLED() Internal_ssLogIsEnabledLogToFile()
     #define ssLOG_SET_LOG_FILENAME(filename) Internal_ssLogSetLogFilename(filename)
     #define ssLOG_GET_LOG_FILENAME() Internal_ssLogGetLogFilename()
+    
+    //Log rotation API macros
+    #define ssLOG_ENABLE_ROTATION(enable) Internal_ssLogEnableRotation(enable)
+    #define ssLOG_IS_ROTATION_ENABLED() Internal_ssLogIsRotationEnabled()
+    #define ssLOG_SET_MAX_LOG_SIZE_MB(sizeMB) Internal_ssLogSetMaxLogSizeMB(sizeMB)
+    #define ssLOG_GET_MAX_LOG_SIZE_MB() Internal_ssLogGetMaxLogSizeMB()
+    #define ssLOG_SET_MAX_ROTATED_FILES(maxFiles) Internal_ssLogSetMaxRotatedFiles(maxFiles)
+    #define ssLOG_GET_MAX_ROTATED_FILES() Internal_ssLogGetMaxRotatedFiles()
+    #define ssLOG_GET_CURRENT_FILE_SIZE() Internal_ssLogGetCurrentFileSize()
+    #define ssLOG_CLEAR_ROTATED_FILES() Internal_ssLogClearRotatedFiles()
 #else
     #define ssLOG_ENABLE_LOG_TO_FILE(enable) do{} while(0)
     #define ssLOG_IS_LOG_TO_FILE_ENABLED() false
     #define ssLOG_SET_LOG_FILENAME(filename) do{} while(0)
     #define ssLOG_GET_LOG_FILENAME() ""
+    
+    //Log rotation API macros (disabled when file logging is not available)
+    #define ssLOG_ENABLE_ROTATION(enable) do{} while(0)
+    #define ssLOG_IS_ROTATION_ENABLED() false
+    #define ssLOG_SET_MAX_LOG_SIZE_MB(sizeMB) do{} while(0)
+    #define ssLOG_GET_MAX_LOG_SIZE_MB() 0
+    #define ssLOG_SET_MAX_ROTATED_FILES(maxFiles) do{} while(0)
+    #define ssLOG_GET_MAX_ROTATED_FILES() 0
+    #define ssLOG_GET_CURRENT_FILE_SIZE() 0
+    #define ssLOG_CLEAR_ROTATED_FILES() do{} while(0)
 #endif
 
 // =======================================================================
@@ -605,20 +625,71 @@
     
     #include <fstream>
     #include <ctime>
+    #include <cstdio>
+    #include <queue>
     ssLOG_API extern std::ofstream ssLogFileStream;
     ssLOG_API extern bool ssLogEnableLogToFile;
     ssLOG_API extern std::string ssLogOutputFileName;
     ssLOG_API extern bool ssLogReopenLogFile;
     
+    //Log rotation variables
+    ssLOG_API extern bool ssLogEnableRotation;
+    ssLOG_API extern double ssLogMaxSizeMB;
+    ssLOG_API extern int ssLogMaxRotatedFiles;
+    ssLOG_API extern size_t ssLogCurrentFileBytes;
+    ssLOG_API extern std::queue<std::string> ssLogRotatedFiles;
+    
     inline void InternalUnsafe_ssLogToFileWithNewline(const std::stringstream& localss)
     {
         if(!ssLogEnableLogToFile || !ssLogFileStream.good() || !ssLogFileStream.is_open())
             return;
+        
+        size_t bytesWritten = 0;
+        
         if(localss.rdbuf()->in_avail())
+        {
+            bytesWritten = localss.str().length();
             ssLogFileStream << localss.rdbuf() << ssLOG_ENDL;
+        }
         else
             ssLogFileStream << ssLOG_ENDL;
+        
+        bytesWritten += 1; //For newline character
+        ssLogCurrentFileBytes += bytesWritten;
     }
+    
+    inline void Internal_ssLogRotateFile()
+    {
+        if(!ssLogEnableRotation)
+            return;
+        
+        ssLogRotatedFiles.push(ssLogOutputFileName);
+        if(ssLogMaxRotatedFiles > 0)
+        {
+            while(ssLogRotatedFiles.size() > static_cast<size_t>(ssLogMaxRotatedFiles))
+            {
+                //Remove the oldest file (first in queue)
+                std::string oldestFile = ssLogRotatedFiles.front();
+                std::remove(oldestFile.c_str());
+                ssLogRotatedFiles.pop();
+            }
+        }
+        
+        //Close current log file
+        if(ssLogFileStream.is_open())
+            ssLogFileStream.close();
+        
+        //Clear the filename so a new one will be generated
+        ssLogOutputFileName.clear();
+        
+        //Reset byte counter
+        ssLogCurrentFileBytes = 0;
+        
+        //Force reopening of log file (new file with new timestamp will be created)
+        ssLogReopenLogFile = true;
+    }
+    
+
 #endif
 
 #if ssLOG_SHOW_FILE_NAME
@@ -678,6 +749,17 @@ inline void Internal_ssLogPreActionChecks()
         std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
         while(ssLogReadCount > 0) {}    //Wait until all reads are done
         
+        //Check for log rotation before opening/reopening file
+        if( ssLogEnableLogToFile && 
+            !ssLogOutputFileName.empty() && 
+            ssLogFileStream.is_open() &&
+            ssLogEnableRotation &&
+            ssLogMaxSizeMB > 0.0 &&
+            ssLogCurrentFileBytes >= ssLogMaxSizeMB * 1024.0 * 1024.0)
+        {
+            Internal_ssLogRotateFile();
+        }
+        
         if((ssLogEnableLogToFile && ssLogReopenLogFile) || !ssLogFileStream.good())
         {
             if(ssLogFileStream.is_open())
@@ -696,6 +778,9 @@ inline void Internal_ssLogPreActionChecks()
             }
             
             ssLogFileStream.open(ssLogOutputFileName, std::ofstream::out);
+            
+            //Reset byte counter when opening a new file
+            ssLogCurrentFileBytes = 0;
         }
     }
     #endif
@@ -842,6 +927,69 @@ inline std::string InternalUnsafe_ssLogGetThreadVSpace()
         std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
         while(ssLogReadCount > 0) {}    //Wait until all reads are done
         return ssLogOutputFileName;
+    }
+    
+    inline void Internal_ssLogEnableRotation(bool enable)
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        ssLogEnableRotation = enable;
+    }
+    
+    inline bool Internal_ssLogIsRotationEnabled()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        return ssLogEnableRotation;
+    }
+    
+    inline void Internal_ssLogSetMaxLogSizeMB(double maxSizeMB)
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        ssLogMaxSizeMB = maxSizeMB;
+    }
+    
+    inline double Internal_ssLogGetMaxLogSizeMB()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        return ssLogMaxSizeMB;
+    }
+    
+    inline void Internal_ssLogSetMaxRotatedFiles(int maxFiles)
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        ssLogMaxRotatedFiles = maxFiles;
+    }
+    
+    inline int Internal_ssLogGetMaxRotatedFiles()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        return ssLogMaxRotatedFiles;
+    }
+    
+    inline size_t Internal_ssLogGetCurrentFileSize()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        return ssLogCurrentFileBytes;
+    }
+    
+    inline void Internal_ssLogClearRotatedFiles()
+    {
+        std::unique_lock<std::mutex> lk(ssLogMapWriteMutex);
+        while(ssLogReadCount > 0) {}    //Wait until all reads are done
+        
+        //Remove all files in the rotation queue
+        while(!ssLogRotatedFiles.empty())
+        {
+            std::string rotatedFile = ssLogRotatedFiles.front();
+            std::remove(rotatedFile.c_str());
+            ssLogRotatedFiles.pop();
+        }
     }
 #endif
 
