@@ -219,14 +219,18 @@ void my_custom_flush()
 
 ### Benchmarking
 ```cpp
-auto benchmark = ssLOG_BENCH_START("Operation");
+auto benchmark = ssLOG_BENCH_START("Operation");    //Starting benchmark "Operation"
+//Or `auto benchmark = ssLOG_BENCH_START_SILENT("Operation");` to not log the start of benchmark
 //... code to benchmark ...
-ssLOG_BENCH_END(benchmark);
+ssLOG_BENCH_END(benchmark);                         //Benchmark "Operation" took 116 milliseconds
+
+//The `auto` here is just std::pair<std::string, 
+//                                  std::chrono::time_point<std::chrono::high_resolution_clock>>
 
 //Benchmarking with different log levels
 auto benchError = ssLOG_BENCH_START_ERROR("Critical Operation");
 //... code ...
-ssLOG_BENCH_END(benchError);
+ssLOG_BENCH_END_ERROR(benchError);
 ```
 
 ### Content Logging

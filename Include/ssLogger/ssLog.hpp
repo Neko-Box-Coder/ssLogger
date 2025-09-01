@@ -560,7 +560,7 @@
 // =======================================================================
 
 #if ssLOG_DISABLE_LOGS || ssLOG_CALL_STACK_ONLY
-    #define ssLOG_BENCH_START( ... ) INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(__VA_ARGS__)
+    #define ssLOG_BENCH_START( ... ) ssLOG_BENCH_START_SILENT(__VA_ARGS__)
     #define ssLOG_BENCH_END( ... ) do{} while(false)
 #else
     #define ssLOG_BENCH_START( ... ) \
@@ -569,11 +569,19 @@
         do{ INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_END, __VA_ARGS__ ); } while(0)
 #endif
 
+#define ssLOG_BENCH_START_SILENT( ... ) \
+    INTERNAL_ssLOG_VA_SELECT( INTERNAL_ssLOG_BENCH_START_SILENT, __VA_ARGS__ )
+
 #define INTERNAL_ssLOG_BENCH_START_0() INTERNAL_ssLOG_BENCH_START_1("")
 
 #define INTERNAL_ssLOG_BENCH_START_1(benchName) \
     INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName); \
     INTERNAL_ssLOG_BENCH_START_INNER_PRINT_BENCH_LEVELED(benchName, 0)
+
+#define INTERNAL_ssLOG_BENCH_START_SILENT_0() INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH("")
+
+#define INTERNAL_ssLOG_BENCH_START_SILENT_1(benchName) \
+    INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName);
 
 #define INTERNAL_ssLOG_BENCH_START_INNER_CREATE_BENCH(benchName) \
     std::make_pair(std::string(benchName), std::chrono::high_resolution_clock::now())
