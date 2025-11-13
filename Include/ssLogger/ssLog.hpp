@@ -314,7 +314,7 @@
     #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() \
         "[Thread " << InternalUnsafe_ssLogGetThreadId() << "] "
 #else
-    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID()
+    #define INTERNAL_UNSAFE_ssLOG_PRINT_THREAD_ID() ""
 #endif
 
 #if ssLOG_DISABLE_LOGS || !ssLOG_CALL_STACK
